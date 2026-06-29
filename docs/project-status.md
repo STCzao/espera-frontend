@@ -19,7 +19,8 @@ mezclarse mentalmente:
 - Épicas en preparación: `Épica 1 - Autenticación y Onboarding`,
   `Épica 2 - Gestión de Negocios`.
 - Historias implementadas: `HU-1.1 - Registro con email y password`,
-  `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`.
+  `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`,
+  `HU-1.6 - Logout`.
 - Historias parciales: rutas base y placeholders para verificación de
   email, recuperación de password, onboarding, panel de negocio, QR y empleados.
 - Historias diferidas: mobile completa, deep links definitivos, cola persistida,
@@ -82,6 +83,7 @@ Estado:
 - `HU-1.3` implementada para `/login`;
 - `HU-1.5` implementada como mecanismo de transporte (sin pantalla propia)
   que protege todas las rutas detrás de `AuthLayout`;
+- `HU-1.6` implementada: botón "Cerrar sesión" en `BusinessPanelLayout`;
 - rutas creadas para el resto de auth pública;
 - placeholders visibles en flujos pendientes;
 - Google OAuth web tiene contrato conocido, pero no se expone como acción de
@@ -190,6 +192,9 @@ Cobertura automatizada:
   `accessToken` cacheado vía cookie de refresh, redirección a `/login` sin
   sesión ni cookie válida, y reintento automático cuando el `accessToken`
   cacheado ya venció.
+- Cypress e2e cubre `HU-1.6` en el panel: logout exitoso, logout que igual
+  redirige si el backend falla, y que el botón "atrás" del navegador no
+  vuelve a mostrar contenido protegido después de salir.
 
 ## Avance actual
 
@@ -214,8 +219,15 @@ Cobertura automatizada:
 - No agrega ruta ni pantalla propia; protege todo lo que vive detrás de
   `AuthLayout`.
 - Cobertura e2e: `cypress/e2e/refresh-token.cy.js`.
+- `HU-1.6` implementada en frontend: `LogoutButton` en el sidebar de
+  `BusinessPanelLayout` llama `POST /api/auth/logout` y siempre limpia la
+  sesión local y redirige a `/login`, incluso si la llamada al backend
+  falla.
+- Cobertura e2e: `cypress/e2e/logout.cy.js`.
 
 ## Próximo trabajo
 
-La siguiente unidad funcional propuesta es `HU-1.6 - Logout`, para cerrar el
-ciclo de sesión iniciado por login con una acción visible en el panel.
+Con el ciclo de sesión de la Épica 1 cerrado (registro, login, refresh y
+logout), la siguiente unidad funcional propuesta es retomar el onboarding de
+negocio (`HU-1.8`/`HU-1.9`) o las historias parciales de verificación de
+email y recuperación de password.
