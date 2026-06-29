@@ -19,7 +19,7 @@ mezclarse mentalmente:
 - Épicas en preparación: `Épica 1 - Autenticación y Onboarding`,
   `Épica 2 - Gestión de Negocios`.
 - Historias implementadas: `HU-1.1 - Registro con email y password`,
-  `HU-1.3 - Login con email y password`.
+  `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`.
 - Historias parciales: rutas base y placeholders para verificación de
   email, recuperación de password, onboarding, panel de negocio, QR y empleados.
 - Historias diferidas: mobile completa, deep links definitivos, cola persistida,
@@ -80,6 +80,8 @@ Estado:
 
 - `HU-1.1` implementada para `/register`;
 - `HU-1.3` implementada para `/login`;
+- `HU-1.5` implementada como mecanismo de transporte (sin pantalla propia)
+  que protege todas las rutas detrás de `AuthLayout`;
 - rutas creadas para el resto de auth pública;
 - placeholders visibles en flujos pendientes;
 - Google OAuth web tiene contrato conocido, pero no se expone como acción de
@@ -156,7 +158,9 @@ Estado:
 - Zustand será el estado global liviano para sesión y negocio actual.
 - TanStack Query manejará server-state, cache e invalidaciones.
 - React Hook Form y Zod manejarán formularios y validaciones.
-- El frontend guarda `accessToken` en estado/storage controlado por la app.
+- El frontend guarda `accessToken` solo en memoria (nunca en `localStorage` ni
+  `sessionStorage`), para no exponerlo a un eventual XSS; la sesión se
+  restaura tras una recarga vía la cookie `refreshToken` httpOnly.
 - El refresh token viaja por cookie `httpOnly`; el contrato backend también lo
   devuelve en body por compatibilidad, pero el frontend web no debe depender de
   leer la cookie desde JavaScript.
@@ -182,6 +186,10 @@ Cobertura automatizada:
   exitoso con redirección según `businessId`, y los errores funcionales
   `EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`, `LOGIN_TEMPORARILY_BLOCKED` y
   credenciales inválidas.
+- Cypress e2e cubre `HU-1.5` sobre rutas del panel: restauración de sesión sin
+  `accessToken` cacheado vía cookie de refresh, redirección a `/login` sin
+  sesión ni cookie válida, y reintento automático cuando el `accessToken`
+  cacheado ya venció.
 
 ## Avance actual
 
@@ -198,8 +206,16 @@ Cobertura automatizada:
   error del backend a mensajes en español y redirige al panel del negocio del
   usuario o a `/business/register` si todavía no tiene uno.
 - Cobertura e2e: `cypress/e2e/login.cy.js`.
+- `HU-1.5` implementada en frontend: `useSessionBootstrap` ya no depende de
+  tener un `accessToken` cacheado para intentar restaurar la sesión, porque
+  el interceptor de `httpClient` resuelve cualquier `401` contra
+  `POST /api/auth/refresh-token` (cookie httpOnly) antes de redirigir a
+  `/login`.
+- No agrega ruta ni pantalla propia; protege todo lo que vive detrás de
+  `AuthLayout`.
+- Cobertura e2e: `cypress/e2e/refresh-token.cy.js`.
 
 ## Próximo trabajo
 
-La siguiente unidad funcional propuesta es `HU-1.5 - Refresh Token` /
-`HU-1.6 - Logout`, para cerrar el ciclo de sesión iniciado por login.
+La siguiente unidad funcional propuesta es `HU-1.6 - Logout`, para cerrar el
+ciclo de sesión iniciado por login con una acción visible en el panel.

@@ -27,7 +27,7 @@ export function LoginFormPanel({ form, loginMutation, onSubmit, reduceMotion }) 
             Iniciá sesión
           </h1>
           <p className="mt-4 max-w-[340px] text-espera-text-muted">
-            Entrá con tu cuenta de Espera y empezá a gestionar tus turnos.
+            Entrá con tu cuenta de Espera y seguí configurando tu negocio.
           </p>
         </div>
         <img
