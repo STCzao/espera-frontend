@@ -314,6 +314,38 @@ incompletas.
   enviar, y verificar la redirección esperada según si la cuenta tiene
   negocio asociado.
 
+### Riesgo conocido (bloqueado por backend)
+
+`resolvePostLoginPath` (`src/features/auth/pages/LoginPage.jsx`) decide el
+destino post-login según `user.businessId`, pero **ese campo nunca llega
+poblado desde el backend**:
+
+- `JWTTokenService.generateAccessToken()` (`espera-back`,
+  `src/modules/auth/infrastructure/JWTTokenService.ts`) firma el JWT con
+  `email`, `role`, `firstName`, `lastName` y `approvalStatus`, pero nunca con
+  `businessId`. El middleware `authenticate.ts` declara el campo en el tipo
+  y lo lee del token decodificado, pero como nunca se firma, siempre llega
+  `undefined`.
+- Más de fondo: `User` (`espera-back`,
+  `src/modules/auth/domain/User.ts`) no tiene `businessId`. La relación real
+  es `Business.ownerUserId → User.id`, y no existe ningún endpoint que
+  resuelva "¿qué negocio(s) tiene este usuario?" — las rutas de
+  `business.routes.ts` ya requieren `:businessId` conocido de antemano.
+
+**Efecto observable:** todo login redirige hoy a `/business/register`,
+incluso para cuentas que ya tienen un negocio aprobado.
+
+**Qué falta del lado de backend para destrabarlo:** un contrato que
+devuelva el/los negocio(s) del usuario autenticado (extender
+`GET /api/auth/me` con `businesses: [...]`, o un endpoint dedicado como
+`GET /api/business/me`), y definir qué pasa si el usuario tiene más de un
+negocio (con el módulo `organization` ya en el repo, es plausible).
+
+Se documenta acá para trazabilidad/auditoría, no como `implementado`: el
+contrato de login en sí funciona, pero el redirect post-login queda
+funcionalmente incorrecto para dueños de negocio existentes hasta que el
+backend resuelva esto.
+
 ## HU-1.5 - Refresh Token
 
 Story points: no normalizado.
@@ -432,3 +464,114 @@ directo con un token cacheado.
   verificar que no redirige a `/login` (debe verse el `LoadingScreen` breve
   mientras se restaura por cookie) y que `localStorage` no contiene el
   `accessToken`.
+
+## HU-1.6 - Logout
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona autenticada puede cerrar su sesión desde el panel de negocio de
+forma explícita, y al volver atrás con el navegador no debe poder seguir
+viendo contenido protegido.
+
+### Pantallas / Rutas
+
+```text
+/panel/business/:businessId/*
+```
+
+No agrega pantalla propia: el botón vive en el layout del panel
+(`BusinessPanelLayout`), disponible desde cualquier sección.
+
+### Estados de UI
+
+- `idle`: botón "Cerrar sesión" disponible.
+- `confirming`: modal de confirmación abierto, esperando que el usuario
+  confirme o cancele.
+- `loading`: dentro del modal, botón de confirmar deshabilitado con label
+  "Cerrando sesión…".
+- sin estado de error visible: el logout nunca le muestra un error al
+  usuario, porque siempre termina sacándolo del panel (ver decisión abajo).
+
+### Integración frontend
+
+- `LogoutButton` (`src/features/auth/components/LogoutButton.jsx`) primero
+  abre `ConfirmDialog` (`src/shared/ui/ConfirmDialog.jsx`); solo al
+  confirmar dispara `authApi.logout()`, que llama `POST /api/auth/logout` y
+  limpia la sesión local si responde ok.
+- `ConfirmDialog` es un componente genérico de `shared/ui` (no exclusivo de
+  auth): título, descripción, label de confirmar/cancelar y estado de
+  carga configurables por props. Pensado para reusarse en cualquier acción
+  destructiva o irreversible del panel (ej. futuras eliminaciones), no solo
+  logout.
+- El componente no depende de que la llamada al backend tenga éxito: en
+  `onSettled` limpia la sesión local de forma explícita (`clearSession()`),
+  remueve la cache de TanStack Query (`queryKey: ['session']`) y redirige a
+  `/login` con `replace: true` sin importar si el backend respondió ok,
+  falló o no hubo red.
+- `replace: true` evita que el botón "atrás" del navegador vuelva a la
+  pantalla del panel; aunque el usuario fuerce el "atrás", `AuthLayout`
+  vuelve a correr `useSessionBootstrap` (HU-1.5) y, sin cookie de sesión
+  válida, redirige de nuevo a `/login`.
+- Se usa `BusinessPanelLayout` como único punto de montaje porque hoy es la
+  única superficie protegida por `AuthLayout`.
+
+### Contratos consumidos
+
+```text
+POST /api/auth/logout
+```
+
+### Datos esperados
+
+No hay payload relevante para la UI: la respuesta exitosa es
+`{ message: string }` y no se usa para nada más que confirmar el `200`.
+
+### Reglas de presentación
+
+- El botón del sidebar usa las clases utilitarias existentes
+  (`button secondary`) del layout del panel, no introduce un nuevo sistema
+  visual.
+- El ícono (`LogOut` de `lucide-react`) acompaña el label, nunca lo
+  reemplaza.
+- El modal de confirmación usa `role="alertdialog"`, foco automático en el
+  botón de confirmar al abrirse, y cierre con `Escape`.
+- El botón de confirmar dentro del modal usa el color de peligro
+  (`espera-danger`), distinto del botón que abre el modal, para remarcar
+  que es la acción irreversible.
+
+### Decisiones de producto / alcance
+
+El logout se trata como una acción que **siempre** termina en `/login`,
+incluso si `POST /api/auth/logout` falla por red o error de servidor. La
+alternativa (mostrar un error y dejar al usuario "atascado" en el panel)
+no tiene sentido de producto: la intención de salir es del usuario, no
+depende de que el backend confirme. El peor caso de un fallo de red es que
+la sesión del servidor (`RefreshSession`) quede viva hasta su expiración
+natural (30 días) en lugar de revocarse al instante, lo cual es un costo
+aceptable frente a frustrar la acción de logout.
+
+### Diferidos
+
+- Logout en todas las pestañas abiertas simultáneamente (no hay
+  sincronización entre pestañas).
+- Trampa de foco completa dentro del modal (hoy solo se enfoca el botón de
+  confirmar al abrir; no se restringe el `Tab` para que no salga del modal).
+- Tests de componentes.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`logout.cy.js`) cubre: cancelar el modal sin cerrar sesión,
+  logout exitoso con redirección, logout que redirige igual aunque el
+  backend falle, y que el botón "atrás" del navegador después de salir no
+  vuelve a mostrar el panel.
+- Flujo manual esperado: iniciar sesión, entrar al panel, hacer clic en
+  "Cerrar sesión", confirmar en el modal, verificar redirección a `/login`,
+  y confirmar que navegar de nuevo a una ruta del panel exige loguearse
+  otra vez.

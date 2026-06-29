@@ -1,5 +1,6 @@
 import { Building2, CalendarClock, QrCode, Settings2, UsersRound } from 'lucide-react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
 import { businessStatusLabels } from '../../shared/business/businessStatuses.js'
 
@@ -37,6 +38,7 @@ export function BusinessPanelLayout() {
           })}
         </nav>
         <small>Negocio: {businessId}</small>
+        <LogoutButton className="button secondary" />
       </aside>
       <section className="panel-layout__main">
         {approvalStatus === 'pending' && (
