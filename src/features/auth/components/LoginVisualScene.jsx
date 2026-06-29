@@ -52,16 +52,22 @@ function GhostLogo({ reduceMotion }) {
 function AmbientMotion({ reduceMotion }) {
   return (
     <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
-      <motion.div
+      <AmbientGlow
         animate={reduceMotion ? false : { opacity: [0.12, 0.26, 0.12], x: [-16, 22, -16] }}
         className="absolute left-[-18%] top-[18%] h-[34%] w-[70%] rotate-[-18deg] rounded-full bg-white/10 blur-3xl"
-        transition={{ duration: 9, ease: 'easeInOut', repeat: Infinity }}
+        duration={9}
       />
-      <motion.div
+      <AmbientGlow
         animate={reduceMotion ? false : { opacity: [0.1, 0.24, 0.1], y: [18, -22, 18] }}
         className="absolute bottom-[-16%] right-[-12%] h-[44%] w-[56%] rounded-full bg-[#aa54a7]/55 blur-3xl"
-        transition={{ duration: 11, ease: 'easeInOut', repeat: Infinity }}
+        duration={11}
       />
     </div>
+  )
+}
+
+function AmbientGlow({ animate, className, duration }) {
+  return (
+    <motion.div animate={animate} className={className} transition={{ duration, ease: 'easeInOut', repeat: Infinity }} />
   )
 }

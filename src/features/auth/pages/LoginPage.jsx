@@ -32,6 +32,7 @@ export function LoginPage() {
   const loginMutation = useMutation({
     mutationFn: authApi.login,
     onSuccess: async () => {
+      // Shares the AuthLayout session query key so /auth/me isn't fetched twice on redirect.
       const user = await queryClient.fetchQuery({
         queryKey: sessionQueryKey,
         queryFn: fetchSessionUser,

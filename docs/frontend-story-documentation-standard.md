@@ -25,6 +25,70 @@ estados visuales e integración con APIs.
 - Incluir ejemplos de request/response cuando el frontend tenga que consumirlos.
 - Documentar estados visuales, no solo endpoints.
 
+## Comentarios inline
+
+Replica el criterio que ya aplica el backend: por defecto el código no lleva
+comentarios, porque nombres de funciones y componentes ya explican el qué.
+
+- Agregar un comentario inline solo cuando el código contenga una decisión de
+  producto, un límite técnico, un workaround puntual o una separación de
+  responsabilidades que no sea evidente leyendo nombres y tipos.
+- Evitar comentarios que describan sintaxis obvia o repitan lo que ya dice el
+  nombre de la función/variable.
+- Cuando la situación se repita (mismo tipo de decisión en más de una
+  pantalla), preferir documentarla acá como regla general en lugar de
+  comentarla suelta en cada archivo.
+
+Ejemplos esperados de cuándo sí comentar en frontend:
+
+- una llamada a la API que precarga cache de TanStack Query con una
+  `queryKey` compartida para evitar un round-trip duplicado;
+- un mapeo de error de backend a mensaje de UI que depende de un código
+  funcional no evidente por el nombre del campo;
+- una decisión de UX que contradice lo "obvio" (ej. no redirigir
+  automáticamente después de una acción exitosa);
+- un workaround de entorno o de librería (ej. limitaciones de Cypress/Vite en
+  un script de `scripts/`).
+
+## Granularidad de componentes y funciones
+
+Separar por una razón concreta (reuso real, lógica propia o legibilidad de un
+bloque que creció demasiado), no por separar. Tres líneas claras en el mismo
+lugar son mejores que tres funciones de una línea que obligan a saltar entre
+fragmentos para entender una sola escena.
+
+### Cuándo extraer una función dentro del mismo archivo
+
+- Hay una duplicación real: el mismo patrón de JSX/lógica se repite más de una
+  vez en el archivo con distintos parámetros (ej. dos blobs animados con la
+  misma estructura, distintos valores de animación).
+- Un bloque de JSX tiene lógica propia (cálculo, condición, mapeo) que ensucia
+  la lectura del componente principal si queda inline.
+- No extraer un bloque de JSX de un solo uso y sin lógica solo para darle
+  nombre; eso fragmenta una escena cohesiva sin agregar valor.
+
+### Cuándo mover algo a un archivo nuevo
+
+- El componente, hook o función se usa o se va a usar desde más de una
+  pantalla/feature (ej. `AuthField`, `PasswordField`, compartidos entre
+  registro y login).
+- Encapsula una pieza con identidad propia dentro del vocabulario del
+  proyecto: escena visual, panel de formulario, campo, botón, estado vacío o
+  de error (ver regla general de páginas como orquestadoras).
+- Contiene lógica de negocio o integración (schemas de validación, mapeo de
+  errores de backend, llamadas a API) que conviene poder testear o importar
+  de forma aislada.
+- El archivo actual ya superó el tamaño en el que cuesta encontrar dónde
+  está cada cosa; en ese caso, separar primero lo que tenga identidad propia
+  (no fragmentar todo por igual).
+
+### Cuándo no separar
+
+- El elemento se usa una sola vez, no tiene lógica propia y su única función
+  es visual u ornamental dentro de esa pantalla puntual.
+- La separación obligaría a pasar muchas props solo para reconstruir un
+  bloque que, junto, se entiende mejor.
+
 ## Idioma
 
 - Código, nombres de funciones, variables y comentarios inline: inglés.
