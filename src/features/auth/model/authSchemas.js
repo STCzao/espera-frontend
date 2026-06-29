@@ -4,8 +4,8 @@ const nameRegex = /^[\p{L}\s'-]+$/u
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/
 
 export const loginSchema = z.object({
-  email: z.string().trim().email('Enter a valid email.').toLowerCase(),
-  password: z.string().min(1),
+  email: z.string().trim().email('Ingresá un email válido.').toLowerCase(),
+  password: z.string().min(1, 'Ingresá tu contraseña.'),
 })
 
 export const registerSchema = z

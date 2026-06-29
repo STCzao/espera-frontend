@@ -18,8 +18,9 @@ mezclarse mentalmente:
 - Estado: `setup inicial implementado`.
 - Épicas en preparación: `Épica 1 - Autenticación y Onboarding`,
   `Épica 2 - Gestión de Negocios`.
-- Historias implementadas: `HU-1.1 - Registro con email y password`.
-- Historias parciales: rutas base y placeholders para login, verificación de
+- Historias implementadas: `HU-1.1 - Registro con email y password`,
+  `HU-1.3 - Login con email y password`.
+- Historias parciales: rutas base y placeholders para verificación de
   email, recuperación de password, onboarding, panel de negocio, QR y empleados.
 - Historias diferidas: mobile completa, deep links definitivos, cola persistida,
   métricas operativas, notificaciones push end-to-end, Google OAuth end-to-end.
@@ -78,6 +79,7 @@ Responsabilidades:
 Estado:
 
 - `HU-1.1` implementada para `/register`;
+- `HU-1.3` implementada para `/login`;
 - rutas creadas para el resto de auth pública;
 - placeholders visibles en flujos pendientes;
 - Google OAuth web tiene contrato conocido, pero no se expone como acción de
@@ -176,6 +178,10 @@ Cobertura automatizada:
 - Cypress e2e cubre `HU-1.1` en `/register`: render, validaciones cliente,
   submit exitoso, normalización de datos, error backend y ausencia de CTA Google
   operativo mientras OAuth siga diferido.
+- Cypress e2e cubre `HU-1.3` en `/login`: render, validaciones cliente, submit
+  exitoso con redirección según `businessId`, y los errores funcionales
+  `EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`, `LOGIN_TEMPORARILY_BLOCKED` y
+  credenciales inválidas.
 
 ## Avance actual
 
@@ -185,8 +191,15 @@ Cobertura automatizada:
 - La pantalla valida campos en cliente, conserva errores inline y muestra estado
   de éxito orientando a verificar email.
 - Cobertura e2e: `cypress/e2e/register.cy.js`.
+- `HU-1.3` implementada en frontend para login local con email y password.
+- Ruta relacionada: `/login`.
+- Endpoints consumidos: `POST /api/auth/login`, `GET /api/auth/me`.
+- La pantalla valida campos en cliente, traduce los códigos funcionales de
+  error del backend a mensajes en español y redirige al panel del negocio del
+  usuario o a `/business/register` si todavía no tiene uno.
+- Cobertura e2e: `cypress/e2e/login.cy.js`.
 
 ## Próximo trabajo
 
-La siguiente unidad funcional propuesta es `HU-1.3 - Login con email y
-password`, para completar el acceso local y conectar sesión inicial.
+La siguiente unidad funcional propuesta es `HU-1.5 - Refresh Token` /
+`HU-1.6 - Logout`, para cerrar el ciclo de sesión iniciado por login.
