@@ -1,5 +1,7 @@
 import { Building2, CalendarClock, QrCode, Settings2, UsersRound } from 'lucide-react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
+import { businessStatusLabels } from '../../shared/business/businessStatuses.js'
 
 const navItems = [
   { to: 'profile', label: 'Perfil', icon: Building2 },
@@ -11,6 +13,9 @@ const navItems = [
 
 export function BusinessPanelLayout() {
   const { businessId } = useParams()
+  const currentBusiness = useCurrentBusinessStore()
+  const isCurrentBusiness = currentBusiness.businessId === businessId
+  const approvalStatus = isCurrentBusiness ? currentBusiness.approvalStatus : null
 
   return (
     <main className="panel-layout">
@@ -34,6 +39,22 @@ export function BusinessPanelLayout() {
         <small>Negocio: {businessId}</small>
       </aside>
       <section className="panel-layout__main">
+        {approvalStatus === 'pending' && (
+          <div className="business-alert business-alert--warning" role="status">
+            <strong>Tu negocio está pendiente de revisión.</strong>{' '}
+            Podés completar su configuración, pero todavía no estará disponible públicamente.
+          </div>
+        )}
+        {approvalStatus === 'rejected' && (
+          <div className="business-alert business-alert--danger" role="alert">
+            <strong>Este negocio fue rechazado.</strong> Revisá los datos cargados o contactá a soporte.
+          </div>
+        )}
+        {approvalStatus === 'approved' && currentBusiness.listingStatus && (
+          <div className="business-context" role="status">
+            Estado público: {businessStatusLabels[currentBusiness.listingStatus]}
+          </div>
+        )}
         <Outlet />
       </section>
     </main>

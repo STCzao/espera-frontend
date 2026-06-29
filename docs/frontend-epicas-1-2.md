@@ -115,7 +115,7 @@ Roles relevantes:
 
 ```ts
 type Role = "user" | "employee" | "business_admin" | "super_admin";
-type ApprovalStatus = "pending" | "approved" | "rejected";
+type BusinessApprovalStatus = "pending" | "approved" | "rejected";
 ```
 
 Permisos prácticos para UI:
@@ -170,6 +170,7 @@ type LoginResponse = {
 type RegisterRequest = {
   email: string;
   password: string;
+  confirmPassword: string;
   firstName: string;
   lastName: string;
 };
@@ -182,9 +183,8 @@ type RegisterResponse = {
 Estados de UX importantes:
 
 - Email no verificado: mostrar pantalla de aviso y acción de reenviar email.
-- Cuenta de negocio pendiente: bloquear ingreso al panel y mostrar estado de
-  revisión.
-- Cuenta de negocio rechazada: mostrar mensaje claro y canal de soporte.
+- Negocio pendiente: permitir ingresar y mostrar una alerta dentro del negocio.
+- Negocio rechazado: mostrar el estado por sucursal y un canal de soporte.
 - Login inválido o rate limit: mostrar error sin perder el formulario.
 
 ### Feature: `business-onboarding`
@@ -193,14 +193,14 @@ Pantallas sugeridas:
 
 - `/business/register`
 - `/business/register/google`
-- `/business/pending-review`
 
 Endpoints:
 
 ```text
 POST /api/auth/register-business
 POST /api/auth/register-business/google
-PATCH /api/auth/business-accounts/:userId/approve
+POST /api/business
+PATCH /api/business/:businessId/approve
 ```
 
 Contrato base:
@@ -209,6 +209,7 @@ Contrato base:
 type RegisterBusinessRequest = {
   email: string;
   password: string;
+  confirmPassword: string;
   firstName: string;
   lastName: string;
   businessName: string;
@@ -220,14 +221,14 @@ type RegisterBusinessRequest = {
 type RegisterBusinessResponse = {
   userId: string;
   businessId: string;
-  approvalStatus: "pending";
+  businessApprovalStatus: "pending";
 };
 ```
 
 Notas de producto:
 
-- La cuenta de negocio puede verificar email antes de ser aprobada.
-- El panel operativo debe quedar bloqueado hasta `approvalStatus: "approved"`.
+- La verificación de identidad y la revisión comercial son estados independientes.
+- Un negocio pendiente puede configurarse, aunque todavía no se publique.
 - Google OAuth web usa `state` y cookie temporal; el callback visual es del
   frontend.
 
@@ -502,7 +503,6 @@ Layouts:
 - `PublicLayout`: login, registro, reset, verificación, QR público.
 - `AuthLayout`: protege sesión autenticada.
 - `BusinessPanelLayout`: navegación lateral/superior del negocio.
-- `PendingReviewLayout`: cuenta autenticada pero no aprobada.
 
 ## Estados Globales Mínimos
 
@@ -515,8 +515,6 @@ type SessionState = {
     id: string;
     email: string;
     role: Role;
-    approvalStatus: ApprovalStatus;
-    businessId?: string;
   } | null;
   status: "unknown" | "authenticated" | "anonymous";
 };
@@ -527,6 +525,9 @@ Panel:
 ```ts
 type CurrentBusinessState = {
   businessId: string | null;
+  approvalStatus: BusinessApprovalStatus | null;
+  listingStatus: "draft" | "hidden" | "published" | null;
+  operationalStatus: "normal" | "delayed" | "paused" | "closed" | null;
   canEditBusiness: boolean;
   canManageEmployees: boolean;
   canOperateQueue: boolean;
@@ -540,8 +541,7 @@ El backend usa errores con mensaje y, en varios casos, `code`.
 Errores importantes para UX:
 
 - `EMAIL_NOT_VERIFIED`: mostrar aviso y reenviar verificación.
-- `ACCOUNT_PENDING_REVIEW`: enviar a pantalla de revisión pendiente.
-- `ACCOUNT_REJECTED`: mostrar rechazo y soporte.
+- Los estados `pending` y `rejected` se resuelven con el `approvalStatus` de cada negocio.
 - `LOGIN_TEMPORARILY_BLOCKED`: mostrar cooldown.
 - `BUSINESS_OWNERSHIP_REQUIRED`: bloquear pantalla o volver al selector.
 - `EMPLOYEE_INVITATION_PENDING`: indicar que ya existe invitación vigente.
@@ -564,8 +564,8 @@ Errores importantes para UX:
 - Requests autenticados envían `Authorization`.
 - Requests de sesión usan `credentials: "include"`.
 - Refresh token se rota y actualiza `accessToken`.
-- Rutas de panel verifican rol y aprobación.
-- `business_admin` no entra al panel si está pendiente.
+- Rutas de panel verifican sesión y acceso al negocio.
+- Un negocio pendiente no bloquea el acceso al panel ni al resto de sucursales.
 - `employee` no ve configuración ni empleados.
 - Formularios reflejan validaciones del backend.
 - Contratos diferidos se muestran como pantallas informativas, no como features

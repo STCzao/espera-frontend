@@ -30,4 +30,7 @@ export const authApi = {
   googleUrl() {
     return httpClient.get('/auth/google/url')
   },
+  async loginWithGoogle(payload) {
+    return persistSession(await httpClient.post('/auth/login/google', payload))
+  },
 }

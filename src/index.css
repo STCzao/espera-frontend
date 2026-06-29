@@ -1,34 +1,48 @@
 @import "tailwindcss";
 
 @theme {
-  --color-espera-bg: #f7f4fb;
+  --color-espera-primary: #500097;
+  --color-espera-violet-700: #752174;
+  --color-espera-violet-600: #822e81;
+  --color-espera-violet-500: #903a8d;
+  --color-espera-violet-400: #9d479a;
+  --color-espera-violet-300: #aa54a7;
+  --color-espera-bg: #fbf7fc;
   --color-espera-surface: #ffffff;
-  --color-espera-muted: #eee7f8;
-  --color-espera-text: #241832;
-  --color-espera-text-muted: #6c5d7e;
-  --color-espera-border: #ddd0ea;
-  --color-espera-purple: #6f35c5;
-  --color-espera-purple-strong: #4d238e;
-  --color-espera-purple-soft: #eadffc;
+  --color-espera-muted: #f2e8f3;
+  --color-espera-text: #2d1930;
+  --color-espera-text-muted: #705574;
+  --color-espera-border: #e5d3e7;
+  --color-espera-purple: #500097;
+  --color-espera-purple-strong: #500097;
+  --color-espera-purple-soft: #f2e8f3;
   --color-espera-danger: #b4235f;
-  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
 :root {
-  --bg: #f7f4fb;
+  --primary: #500097;
+  --violet-700: #752174;
+  --violet-600: #822e81;
+  --violet-500: #903a8d;
+  --violet-400: #9d479a;
+  --violet-300: #aa54a7;
+  --bg: #fbf7fc;
   --surface: #ffffff;
-  --surface-muted: #eee7f8;
-  --text: #241832;
-  --text-muted: #6c5d7e;
-  --border: #ddd0ea;
-  --accent: #6f35c5;
-  --accent-strong: #4d238e;
-  --accent-soft: #eadffc;
+  --surface-muted: #f2e8f3;
+  --text: #2d1930;
+  --text-muted: #705574;
+  --border: #e5d3e7;
+  --accent: var(--primary);
+  --accent-strong: var(--primary);
+  --accent-soft: #f2e8f3;
   --warning: #9b5a00;
   --danger: #b4235f;
-  --shadow: 0 16px 40px rgba(76, 35, 142, 0.1);
+  --shadow: 0 16px 40px rgba(80, 0, 151, 0.1);
   --radius: 8px;
-  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font: "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
   color: var(--text);
   background: var(--bg);
@@ -69,25 +83,9 @@ a {
 .public-layout {
   display: grid;
   min-height: 100svh;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 520px);
   background:
-    linear-gradient(120deg, rgba(111, 53, 197, 0.14), transparent 42%),
+    linear-gradient(120deg, rgba(144, 58, 141, 0.14), transparent 42%),
     var(--bg);
-}
-
-.public-layout__aside {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 48px;
-  background: var(--accent-strong);
-  color: #fbf8ff;
-}
-
-.public-layout__content {
-  display: grid;
-  align-items: center;
-  padding: 40px;
 }
 
 .brand-mark {
@@ -238,15 +236,140 @@ a {
   color: var(--text-muted);
 }
 
+.form-stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.form-stack label {
+  display: grid;
+  gap: 6px;
+  font-weight: 650;
+}
+
+.form-stack input {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.form-error {
+  margin: 0;
+  color: var(--danger) !important;
+}
+
+.business-alert,
+.business-context {
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.business-alert--warning {
+  border-color: #e7c47a;
+  background: #fff8e8;
+  color: #714500;
+}
+
+.business-alert--danger {
+  border-color: #efb7ca;
+  background: #fff1f5;
+  color: var(--danger);
+}
+
+.queue-steps__progress {
+  animation: queue-progress 3.6s linear infinite;
+}
+
+.queue-steps__dot {
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.queue-steps__meta,
+.queue-steps__label {
+  transition:
+    color 200ms ease,
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+.queue-steps__item--1 .queue-steps__dot,
+.queue-steps__item--1 .queue-steps__label,
+.queue-steps__item--1 .queue-steps__meta {
+  animation: queue-step-active 3.6s linear infinite;
+}
+
+.queue-steps__item--2 .queue-steps__dot,
+.queue-steps__item--2 .queue-steps__label,
+.queue-steps__item--2 .queue-steps__meta {
+  animation: queue-step-active 3.6s linear 1.2s infinite;
+}
+
+.queue-steps__item--3 .queue-steps__dot,
+.queue-steps__item--3 .queue-steps__label,
+.queue-steps__item--3 .queue-steps__meta {
+  animation: queue-step-active 3.6s linear 2.4s infinite;
+}
+
+@keyframes queue-progress {
+  0% {
+    transform: scaleX(0);
+    opacity: 0.35;
+  }
+  88% {
+    transform: scaleX(1);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes queue-step-active {
+  0%,
+  26%,
+  100% {
+    opacity: 0.52;
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+  }
+  8%,
+  18% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.12);
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.7);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-steps__progress,
+  .queue-steps__item--1 .queue-steps__dot,
+  .queue-steps__item--1 .queue-steps__label,
+  .queue-steps__item--1 .queue-steps__meta,
+  .queue-steps__item--2 .queue-steps__dot,
+  .queue-steps__item--2 .queue-steps__label,
+  .queue-steps__item--2 .queue-steps__meta,
+  .queue-steps__item--3 .queue-steps__dot,
+  .queue-steps__item--3 .queue-steps__label,
+  .queue-steps__item--3 .queue-steps__meta,
+  .queue-steps.is-static .queue-steps__progress {
+    animation: none;
+  }
+}
+
 @media (max-width: 860px) {
-  .public-layout,
   .panel-layout {
     grid-template-columns: 1fr;
-  }
-
-  .public-layout__aside {
-    min-height: 220px;
-    padding: 28px;
   }
 
   .panel-layout__sidebar {
@@ -265,8 +388,7 @@ a {
     justify-content: center;
   }
 
-  .panel-layout__main,
-  .public-layout__content {
+  .panel-layout__main {
     padding: 24px;
   }
 }
