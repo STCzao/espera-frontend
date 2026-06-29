@@ -28,9 +28,6 @@ function HeroStatement({ reduceMotion }) {
       initial={reduceMotion ? false : { opacity: 0, x: -18 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-white/58">
-        Acceso para negocios
-      </p>
       <h2 className="mt-5 max-w-[10ch] text-[clamp(3.6rem,7.4vw,7.8rem)] font-black uppercase leading-[0.82] tracking-[-0.075em] text-white">
         Tu local, sin espera.
       </h2>

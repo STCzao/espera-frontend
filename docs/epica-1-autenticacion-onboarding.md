@@ -12,8 +12,8 @@ al panel web de negocios. Los flujos mobile de usuario final quedan diferidos.
 ## Estado general
 
 - Estado: `implementado parcialmente`.
-- Historias implementadas: `HU-1.1`.
-- Historias parciales: rutas base para login, verificación de email, recuperación
+- Historias implementadas: `HU-1.1`, `HU-1.3`.
+- Historias parciales: rutas base para verificación de email, recuperación
   de password, callback OAuth y onboarding de negocio.
 - Historias diferidas: registro/login Google mobile.
 - Motivos de diferidos: dependen de la app móvil, deep links y configuración real
@@ -179,3 +179,137 @@ OAuth pero no completar el registro.
 - Flujo manual esperado: abrir `/register`, completar datos válidos, enviar,
   recibir confirmación y verificar que los errores de validación aparecen sin
   perder el formulario.
+
+## HU-1.3 - Login con email y password
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona con cuenta local y email verificado puede iniciar sesión desde
+`/login` con email y password, y queda redirigida al panel de su negocio (o al
+onboarding de negocio si todavía no tiene uno).
+
+### Pantallas / Rutas
+
+```text
+/login
+/forgot-password
+/register
+```
+
+### Estados de UI
+
+- `idle`: formulario listo para completar.
+- `loading`: botón deshabilitado con indicador de progreso.
+- `error`: mensaje inline específico según el código funcional devuelto por
+  backend.
+- `validation`: mensajes por campo antes de enviar.
+
+### Integración frontend
+
+- El botón `Ingresar` dispara `POST /api/auth/login`.
+- La validación previa usa `react-hook-form` y `zod` (`loginSchema`), sin
+  reglas de complejidad de password porque el backend tampoco las exige en
+  login.
+- Si el login responde `200`, el `accessToken` se guarda vía `persistSession`
+  y se precarga la cache de TanStack Query (`queryKey: ['session']`) llamando
+  a `GET /api/auth/me` antes de redirigir, para conocer `businessId` sin
+  esperar un segundo round-trip en `AuthLayout`.
+- Redirección post-login: si existe `location.state.from` (ruta protegida que
+  disparó el login), se vuelve ahí. Si no, y el usuario ya tiene
+  `businessId`, se navega a `/panel/business/:businessId`; si no tiene
+  negocio asociado, se navega a `/business/register`.
+- Si el backend responde error, se conserva el formulario y se muestra un
+  mensaje específico mapeado por código funcional (`getLoginErrorMessage`).
+- No se invalida cache adicional: el login es el punto de entrada de la
+  sesión, no hay datos previos que limpiar.
+
+### Contratos consumidos
+
+```text
+POST /api/auth/login
+GET /api/auth/me
+```
+
+### Datos enviados
+
+```ts
+type LoginRequest = {
+  email: string;
+  password: string;
+};
+```
+
+### Datos esperados
+
+```ts
+type LoginResponse = {
+  accessToken: string;
+  refreshToken: string;
+};
+
+type MeResponse = {
+  user: {
+    id: string;
+    email: string;
+    role: 'user' | 'employee' | 'business_admin' | 'super_admin';
+    businessId?: string;
+    approvalStatus: 'pending' | 'approved' | 'rejected';
+  };
+};
+```
+
+### Reglas de presentación
+
+- El formulario muestra campos de email y password, sin reglas de fuerza de
+  password (eso es exclusivo de registro).
+- El campo de password permite mostrar u ocultar el valor ingresado.
+- El botón principal se deshabilita mientras se envía el formulario.
+- Los errores de backend se traducen a mensajes en español según el código
+  funcional, nunca se muestra el mensaje crudo en inglés que devuelve la API:
+  - `EMAIL_NOT_VERIFIED`: invita a revisar el email, sin ofrecer un botón de
+    reenvío porque esa pantalla (`/verify-email`) sigue siendo un placeholder.
+  - `ACCOUNT_PENDING_REVIEW` / `ACCOUNT_REJECTED`: estado de revisión de la
+    cuenta de negocio.
+  - `LOGIN_TEMPORARILY_BLOCKED`: bloqueo temporal por intentos fallidos.
+  - Sin código (401 credenciales inválidas) o error inesperado: mensaje
+    genérico que no revela si falló el email o la password.
+- El copy visible de la interfaz se escribe en español rioplatense.
+
+### Decisiones de producto / alcance
+
+El login no resuelve membership en organizaciones ni selección entre varios
+negocios: usa directamente el `businessId` que ya viaja en `GET /api/auth/me`
+para un único negocio por cuenta de tipo `business_admin`. Selección
+multi-negocio queda fuera de esta historia.
+
+No se construye un flujo de reenvío de verificación desde el error
+`EMAIL_NOT_VERIFIED` porque esa pantalla todavía no tiene integración real;
+mostrar un botón que no hace nada violaría la regla de no prometer acciones
+incompletas.
+
+### Diferidos
+
+- Reenvío de verificación desde el error de login.
+- Selección de negocio cuando una cuenta pertenece a más de uno.
+- Login Google web end-to-end.
+- Tests de componentes.
+- Medición de analytics.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress cubre render de `/login`, validaciones cliente sin request al
+  backend, submit exitoso con normalización de email, redirección a
+  `/business/register` sin negocio asociado, redirección a
+  `/panel/business/:businessId` con negocio asociado, y los cuatro casos de
+  error funcional (`EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`,
+  `LOGIN_TEMPORARILY_BLOCKED`, credenciales inválidas sin código).
+- Flujo manual esperado: abrir `/login`, completar credenciales válidas,
+  enviar, y verificar la redirección esperada según si la cuenta tiene
+  negocio asociado.
