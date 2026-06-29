@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { tokenStorage } from './tokenStorage.js'
 
-const initialAccessToken = tokenStorage.getAccessToken()
-
 export const useSessionStore = create((set) => ({
-  accessToken: initialAccessToken,
+  accessToken: null,
   user: null,
-  status: initialAccessToken ? 'unknown' : 'anonymous',
+  // Never starts as anonymous: the accessToken is memory-only, so every load
+  // looks empty even when a valid httpOnly refreshToken session exists.
+  status: 'unknown',
   setAccessToken(accessToken) {
     tokenStorage.setAccessToken(accessToken)
     set({ accessToken })

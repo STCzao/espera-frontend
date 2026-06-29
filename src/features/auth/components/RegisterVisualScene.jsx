@@ -32,7 +32,8 @@ function HeroStatement({ reduceMotion }) {
         Tu local, sin espera.
       </h2>
       <p className="mt-7 max-w-[480px] text-lg leading-7 text-white/68">
-        Creá tu acceso, registrá el negocio y prepará el panel para operar turnos con claridad.
+        Creá tu cuenta y configurá tu negocio: cada ajuste que hagas define
+        cuánto esperan tus clientes.
       </p>
     </motion.section>
   )

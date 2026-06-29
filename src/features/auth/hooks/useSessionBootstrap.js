@@ -11,12 +11,12 @@ export async function fetchSessionUser() {
 }
 
 export function useSessionBootstrap() {
-  const accessToken = useSessionStore((state) => state.accessToken)
-
+  // Always enabled: even with no cached accessToken, httpClient retries a 401
+  // through POST /auth/refresh-token (httpOnly cookie), so this is what
+  // restores a session after a hard reload that lost the in-memory/local token.
   return useQuery({
     queryKey: sessionQueryKey,
     queryFn: fetchSessionUser,
-    enabled: Boolean(accessToken),
     retry: false,
   })
 }

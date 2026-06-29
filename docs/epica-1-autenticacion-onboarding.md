@@ -12,7 +12,7 @@ al panel web de negocios. Los flujos mobile de usuario final quedan diferidos.
 ## Estado general
 
 - Estado: `implementado parcialmente`.
-- Historias implementadas: `HU-1.1`, `HU-1.3`.
+- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`.
 - Historias parciales: rutas base para verificación de email, recuperación
   de password, callback OAuth y onboarding de negocio.
 - Historias diferidas: registro/login Google mobile.
@@ -313,3 +313,122 @@ incompletas.
 - Flujo manual esperado: abrir `/login`, completar credenciales válidas,
   enviar, y verificar la redirección esperada según si la cuenta tiene
   negocio asociado.
+
+## HU-1.5 - Refresh Token
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona que ya inició sesión no debe volver a loguearse mientras su
+sesión siga vigente en el backend, ni siquiera después de recargar la
+página o de que su `accessToken` en memoria haya quedado inválido o
+ausente.
+
+### Pantallas / Rutas
+
+```text
+/panel/business/:businessId/*
+```
+
+No agrega pantalla propia: es un mecanismo de transporte que protege todas
+las rutas detrás de `AuthLayout`.
+
+### Estados de UI
+
+- `loading`: `AuthLayout` muestra `LoadingScreen` mientras se resuelve la
+  sesión (intento de `/auth/me`, y si hace falta, `refresh-token`).
+- `authenticated`: se renderiza la ruta protegida.
+- `anonymous`: redirección a `/login` con `state.from` para volver después.
+
+### Integración frontend
+
+- `useSessionBootstrap` (dentro de `AuthLayout`) llama siempre a
+  `GET /api/auth/me`, sin condicionarlo a tener un `accessToken` cacheado.
+- `httpClient` ya intercepta cualquier `401` (salvo el del propio
+  `/auth/refresh-token`) y antes de propagar el error intenta
+  `POST /api/auth/refresh-token` (cookie `refreshToken` httpOnly, sin body),
+  y si responde ok, reintenta la request original una sola vez con el nuevo
+  `accessToken`.
+- Esto cubre dos casos antes no resueltos por separado: accessToken presente
+  pero vencido, y accessToken ausente por completo (recarga dura) pero con
+  cookie de sesión todavía válida.
+- Si el refresh falla (cookie ausente o inválida), se limpia la sesión local
+  y se deja que el `401` original propague, lo que lleva a `AuthLayout` a
+  redirigir a `/login`.
+- No hay refresh proactivo por expiración anticipada: el mecanismo es
+  reactivo, disparado por el primer `401` de cualquier request autenticada.
+- `tokenStorage` (`src/shared/auth/tokenStorage.js`) guarda el `accessToken`
+  únicamente en una variable de módulo, nunca en `localStorage` ni
+  `sessionStorage`. Cualquier recarga de página pierde el token a propósito;
+  la sesión se restaura siempre por la cookie httpOnly, no por storage
+  persistente legible desde JavaScript.
+
+### Contratos consumidos
+
+```text
+POST /api/auth/refresh-token
+GET /api/auth/me
+```
+
+### Datos esperados
+
+```ts
+type RefreshTokenResponse = {
+  accessToken: string;
+  refreshToken: string;
+};
+```
+
+El frontend web solo usa `accessToken` de la respuesta; el `refreshToken` en
+body se ignora porque la rotación real ocurre vía cookie httpOnly.
+
+### Reglas de presentación
+
+- No hay UI propia de esta historia: el éxito es invisible para el usuario
+  (no nota que hubo un refresh) y el único estado visible es el `loading`
+  breve mientras se resuelve.
+- El `LoadingScreen` debe evitar parpadeos largos: la resolución es un máximo
+  de dos requests (`/auth/me` + `/auth/refresh-token` + reintento).
+
+### Decisiones de producto / alcance
+
+`useSessionBootstrap` deja de condicionar el fetch de `/auth/me` a la
+presencia de `accessToken` en el store. Antes, sin token cacheado, la
+pantalla redirigía directo a `/login` sin intentar la cookie de refresh,
+contradiciendo el objetivo de la historia ("sin pedir login constante").
+
+No se implementa refresh proactivo (por ejemplo, decodificar `exp` del JWT y
+refrescar antes de que venza): el enfoque reactivo ya cubre el caso de uso
+real con menos complejidad, y evita mantener un timer de sesión en el
+cliente.
+
+Se decidió sacar el `accessToken` de `localStorage` por superficie de XSS: un
+script inyectado puede leer `localStorage` pero no una cookie `httpOnly`. El
+`accessToken` dura 15 minutos y vive solo en memoria; el `refreshToken`
+(30 días, el que de verdad importa proteger) ya estaba en cookie `httpOnly`
+desde las bases del proyecto. El costo del cambio es una restauración de
+sesión (un round-trip extra) en cada recarga dura, en vez de continuar
+directo con un token cacheado.
+
+### Diferidos
+
+- Refresh proactivo por expiración anticipada.
+- Métricas de sesión (duración, frecuencia de refresh).
+- Tests de componentes.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`refresh-token.cy.js`) cubre: restauración de sesión en una ruta
+  protegida sin `accessToken` en memoria vía cookie, redirección a `/login`
+  cuando no hay sesión ni cookie válida, y confirmación de que el
+  `accessToken` no queda persistido en `localStorage` tras un login exitoso.
+- Flujo manual esperado: iniciar sesión, recargar cualquier ruta del panel y
+  verificar que no redirige a `/login` (debe verse el `LoadingScreen` breve
+  mientras se restaura por cookie) y que `localStorage` no contiene el
+  `accessToken`.

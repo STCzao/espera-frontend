@@ -25,10 +25,10 @@ function HeroStatement({ reduceMotion }) {
       transition={{ duration: 0.5, ease: 'easeOut' }}
     >
       <h2 className="mt-5 max-w-[11ch] text-[clamp(3.4rem,6.8vw,7rem)] font-black uppercase leading-[0.84] tracking-[-0.07em] text-white">
-        Todo tu negocio, en un panel.
+        Tu negocio, en orden.
       </h2>
       <p className="mt-7 max-w-[460px] text-lg leading-7 text-white/68">
-        Iniciá sesión para gestionar turnos, horarios y el acceso de tu equipo,
+        Iniciá sesión para configurar tu negocio: horarios, equipo y accesos,
         todo desde un solo lugar.
       </p>
     </motion.section>
