@@ -47,3 +47,78 @@ Utilice la voz activa por defecto. Un control debe indicar con precisión lo que
 Considera el fracaso y el vacío como momentos para orientarte, no como una cuestión de estado de ánimo. Explica qué salió mal y cómo solucionarlo, utilizando el lenguaje de la interfaz, no el de una persona. Los errores no piden disculpas y nunca son ambiguos sobre lo sucedido. Una pantalla vacía es una invitación a actuar.
 
 Mantén un registro conversacional y adecuado: verbos simples, mayúsculas y minúsculas, sin muletillas, con un tono acorde a la marca y al público. Cada elemento debe cumplir una sola función. Una etiqueta identifica, un ejemplo demuestra, y nada cumple una doble función.
+
+## Criterios propios de Espera
+
+- Los textos visibles deben orientar acciones o decisiones del usuario, no nombrar
+  zonas obvias de la interfaz.
+- Evitar rótulos redundantes como si la pantalla fuese una plantilla o un
+  documento; si el componente ya comunica su función, no agregar texto
+  descriptivo al lado.
+- El logo puede cumplir una función institucional o de anclaje visual, pero no
+  necesita texto explicativo pegado cuando el contexto ya es claro.
+- La interfaz debe sentirse ejecutiva: menos etiquetas ornamentales, más
+  jerarquía, acciones claras y componentes que expliquen por uso.
+
+## Principios UI de Espera
+
+### Jerarquía visual
+
+- Cada pantalla debe poder leerse en pocos segundos: marca, objetivo principal y
+  acción disponible.
+- Evitar que fondos, logos fantasma, animaciones o elementos de proceso compitan
+  con la acción principal.
+- El formulario o herramienta de trabajo debe sentirse como destino natural de la
+  pantalla, no como un modal pegado encima de una pieza visual.
+- Los elementos secundarios deben apoyar la lectura, no ocupar el mismo peso que
+  el título o la acción principal.
+
+### Copy de interfaz
+
+- El copy visible se escribe en español rioplatense.
+- Usar voz activa y verbos de acción: `Crear cuenta`, `Volver`, `Iniciar sesión`.
+- Evitar explicar lo obvio: no escribir textos como `Panel de negocios`,
+  `Sección de registro` o similares si la pantalla ya lo comunica.
+- Cuando el usuario necesita contexto, escribirlo como orientación breve, no como
+  descripción interna del sistema.
+- Las acciones mantienen el mismo vocabulario durante todo el flujo.
+
+### Logo y marca
+
+- El logo no debe usarse como decoración suelta ni como etiqueta de sección.
+- Puede ubicarse dentro del formulario o de una zona institucional si ayuda a
+  anclar confianza y pertenencia.
+- Evitar agregar texto al lado del logo cuando el contexto ya es suficiente.
+- Las versiones fantasma o superpuestas del logo deben tener opacidad baja y no
+  interferir con la lectura.
+
+### Componentes y granularidad
+
+- Las pantallas no deben crecer como componentes monolíticos.
+- Separar escena visual, panel de formulario, botones, campos, estados de éxito y
+  recursos de marca en módulos pequeños.
+- La página enrutable debe orquestar estado e integración; los componentes deben
+  concentrarse en presentación e interacción local.
+- Si un patrón aparece más de una vez, extraerlo antes de que condicione futuras
+  historias.
+
+### Movimiento y rendimiento
+
+- Usar movimiento solo para reforzar estado, continuidad o foco.
+- Priorizar `opacity` y `transform`; evitar animaciones que recalculen layout.
+- Respetar `prefers-reduced-motion`.
+- Framer Motion debe cargarse en rutas donde aporta valor, no en toda la app.
+- Las animaciones ambientales deben ser sutiles y no impedir el uso rápido del
+  producto, especialmente en superficies que luego puedan operar en tiempo real.
+
+### Auth y panel
+
+- El registro crea primero la identidad del dueño; el negocio se registra después
+  en un flujo propio.
+- La UI no debe mezclar creación de cuenta con carga de negocio.
+- Google puede ser una vía rápida prioritaria, pero debe verse como una acción
+  de autenticación limpia, no como una pieza promocional.
+- Google solo debe mostrarse como acción operativa cuando el flujo pueda
+  completarse end-to-end; si el callback o el estado final están pendientes, se
+  documenta como diferido.
+- La acción manual por email/password debe seguir disponible y clara.

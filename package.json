@@ -7,12 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "start-server-and-test \"vite --host 127.0.0.1 --port 5173 --strictPort\" http://127.0.0.1:5173 \"node scripts/without-electron-run-as-node.mjs npx cypress run --e2e\"",
+    "test:e2e:open": "node scripts/without-electron-run-as-node.mjs npx cypress open --e2e"
   },
   "dependencies": {
+    "@fontsource/geist-mono": "^5.2.8",
+    "@fontsource/geist-sans": "^5.2.5",
     "@hookform/resolvers": "^5.4.0",
     "@tailwindcss/vite": "^4.3.1",
     "@tanstack/react-query": "^5.101.0",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^1.20.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
@@ -30,10 +35,12 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "babel-plugin-react-compiler": "^1.0.0",
+    "cypress": "^15.17.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "start-server-and-test": "^3.0.11",
     "vite": "^8.0.12"
   }
 }

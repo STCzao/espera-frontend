@@ -7,4 +7,10 @@ export const businessOnboardingApi = {
   registerBusinessWithGoogle(payload) {
     return httpClient.post('/auth/register-business/google', payload)
   },
+  createBusiness(payload) {
+    return httpClient.post('/business', payload)
+  },
+  approveBusiness(businessId) {
+    return httpClient.patch(`/business/${businessId}/approve`)
+  },
 }
