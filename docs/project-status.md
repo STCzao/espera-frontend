@@ -20,9 +20,10 @@ mezclarse mentalmente:
   `Épica 2 - Gestión de Negocios`.
 - Historias implementadas: `HU-1.1 - Registro con email y password`,
   `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`,
-  `HU-1.6 - Logout`, verificación de email (contrato de `HU-1.1`).
-- Historias parciales: rutas base y placeholders para recuperación de
-  password, onboarding combinado/Google, panel de negocio, QR y empleados.
+  `HU-1.6 - Logout`, `HU-1.7 - Recuperación de password`, verificación de
+  email (contrato de `HU-1.1`).
+- Historias parciales: rutas base y placeholders para onboarding
+  combinado/Google, panel de negocio, QR y empleados.
 - Historias diferidas: mobile completa, deep links definitivos, cola persistida,
   métricas operativas, notificaciones push end-to-end, Google OAuth end-to-end.
 
@@ -86,6 +87,7 @@ Estado:
 - `HU-1.6` implementada: botón "Cerrar sesión" en `BusinessPanelLayout`;
 - verificación de email implementada para `/verify-email`, con reenvío de
   enlace cuando el token falta, es inválido o venció;
+- `HU-1.7` implementada: `/forgot-password` y `/reset-password`;
 - rutas creadas para el resto de auth pública;
 - placeholders visibles en flujos pendientes;
 - Google OAuth web tiene contrato conocido, pero no se expone como acción de
@@ -200,6 +202,11 @@ Cobertura automatizada:
 - Cypress e2e cubre verificación de email en `/verify-email`: link sin
   token, verificación exitosa con CTA a login, token inválido/vencido,
   reenvío exitoso y reenvío fallido con mensaje genérico.
+- Cypress e2e cubre `HU-1.7` en `/forgot-password` y `/reset-password`:
+  validación de email, confirmación genérica exitosa, error genérico de
+  backend, link inválido sin token, validación de password y confirmación,
+  reset exitoso con redirección a `/login`, y enlace vencido/inválido sin
+  perder el formulario.
 
 ## Avance actual
 
@@ -245,10 +252,23 @@ Cobertura automatizada:
   iniciar sesión si fue exitosa, y ofrece reenvío con mensaje genérico (sin
   código funcional disponible) si el token falta, es inválido o venció.
 - Cobertura e2e: `cypress/e2e/verify-email.cy.js`.
+- `HU-1.7` implementada en frontend para recuperación de password.
+- Rutas relacionadas: `/forgot-password`, `/reset-password`.
+- Endpoints consumidos: `POST /api/auth/forgot-password`,
+  `POST /api/auth/reset-password`.
+- `/forgot-password` muestra confirmación genérica sin filtrar si el email
+  existe (refleja la misma ambigüedad que ya implementa el backend);
+  `/reset-password` lee el `token` del query string, exige la misma fuerza
+  de password que registro, y redirige a `/login` al guardar (el backend ya
+  revoca todas las sesiones activas del usuario).
+- Bugfix relacionado en backend: los enlaces de email de verificación y
+  reset tenían un prefijo `/auth/` que no existía en las rutas reales del
+  frontend; se corrigió en `espera-back` (commit `09e4e43`).
+- Cobertura e2e: `cypress/e2e/password-recovery.cy.js`.
 
 ## Próximo trabajo
 
 Con el ciclo de sesión de la Épica 1 cerrado (registro, login, refresh,
-logout y verificación de email), la siguiente unidad funcional propuesta es
-recuperación de password (`HU-1.7`) o retomar el onboarding combinado de
-negocio (`HU-1.8`/`HU-1.9`).
+logout, verificación de email y recuperación de password), la siguiente
+unidad funcional propuesta es retomar el onboarding combinado de negocio
+(`HU-1.8`/`HU-1.9`).

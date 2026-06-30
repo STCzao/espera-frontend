@@ -718,3 +718,148 @@ aceptable frente a frustrar la acción de logout.
   "Cerrar sesión", confirmar en el modal, verificar redirección a `/login`,
   y confirmar que navegar de nuevo a una ruta del panel exige loguearse
   otra vez.
+
+## HU-1.7 - Recuperación de password
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona con cuenta local que olvidó su password puede pedir un enlace
+de recuperación por email y, desde ahí, definir una contraseña nueva sin
+necesidad de tener sesión activa.
+
+### Pantallas / Rutas
+
+```text
+/forgot-password
+/reset-password?token=:token
+```
+
+### Estados de UI
+
+- `idle`: formulario listo para completar (en ambas pantallas).
+- `loading`: botón deshabilitado con indicador de progreso.
+- `success` (`/forgot-password`): confirmación genérica, sin revelar si el
+  email existe.
+- `invalid-link` (`/reset-password`): no llegó `token` en la URL.
+- `error`: mensaje específico (`/forgot-password`) o genérico de enlace
+  vencido/inválido (`/reset-password`).
+- `validation`: mensajes por campo antes de enviar.
+
+### Integración frontend
+
+- `/forgot-password` dispara `POST /api/auth/forgot-password` con el email.
+  El backend responde siempre `200` con el mismo mensaje genérico exista o
+  no la cuenta (para no filtrar qué emails están registrados); el frontend
+  refleja esto mostrando éxito sin más matices apenas la request resuelve
+  ok.
+- `/reset-password` lee `token` del query string (`useSearchParams`, mismo
+  patrón que `VerifyEmailPage`) y lo manda junto con `password` y
+  `confirmPassword` a `POST /api/auth/reset-password`.
+- Si el reset tiene éxito, se navega a `/login` (`replace: true`); el
+  backend ya revocó todas las `RefreshSession` activas del usuario, así que
+  cualquier sesión vieja en otra pestaña/dispositivo queda inválida en el
+  próximo request.
+- Sin `token` en la URL, `/reset-password` no intenta ninguna request:
+  muestra el estado de enlace inválido directo con link a
+  `/forgot-password`.
+
+### Contratos consumidos
+
+```text
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+```
+
+### Datos enviados
+
+```ts
+type ForgotPasswordRequest = {
+  email: string;
+};
+
+type ResetPasswordRequest = {
+  token: string;
+  password: string;
+  confirmPassword: string;
+};
+```
+
+### Datos esperados
+
+```ts
+type ForgotPasswordResponse = {
+  message: string;
+};
+
+type ResetPasswordResponse = {
+  message: string;
+};
+```
+
+### Reglas de presentación
+
+- El password nuevo exige las mismas reglas que registro (mínimo 8
+  caracteres, mayúscula, minúscula y número), validadas en cliente con el
+  mismo patrón que `registerSchema`.
+- Los errores de `POST /api/auth/reset-password` no traen código funcional
+  (`AppError` sin segundo argumento en `ResetPasswordUseCase`), así que se
+  usa un mensaje genérico de "enlace inválido o vencido" con link directo a
+  pedir uno nuevo, en vez de mostrar el texto en inglés del backend.
+- El copy visible de la interfaz se escribe en español rioplatense.
+- `/forgot-password` y `/reset-password` usan el mismo tratamiento visual
+  que `/login` y `/register` (escena animada + tarjeta), no el estilo
+  utilitario plano de `/verify-email`: son parte del mismo flujo de acceso
+  al panel, no pantallas de tránsito.
+
+### Decisiones de producto / alcance
+
+`/forgot-password` no distingue "email no encontrado" de "email enviado":
+el backend ya implementa esa ambigüedad a propósito (`RequestPasswordResetUseCase`
+devuelve el mismo mensaje en ambos casos) para no permitir enumerar cuentas
+registradas. El frontend respeta esa decisión y no agrega lógica que la
+contradiga.
+
+Al sumar estas dos pantallas con el mismo tratamiento visual de login y
+registro, la escena decorativa (fondo animado, glows, logo fantasma) dejaba
+de ser exclusiva de dos pantallas y pasaba a ser compartida por cuatro. Se
+extrajo `AuthVisualScene.jsx` (genérico, parametrizado por `title`,
+`description` y un slot opcional `decoration`) y `LoginVisualScene.jsx`/
+`RegisterVisualScene.jsx` pasaron a ser wrappers finos sobre ese
+componente, en vez de mantener cuatro copias del mismo bloque decorativo.
+
+### Diferidos
+
+- Reenvío del email de recuperación desde `/forgot-password` (el usuario
+  tiene que volver a completar el formulario si no llegó).
+- Tests de componentes.
+- Medición de analytics.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`password-recovery.cy.js`, 8 tests) cubre: validación de email
+  en `/forgot-password`, confirmación genérica exitosa, error genérico de
+  backend, link inválido sin token en `/reset-password`, validación de
+  password y de confirmación, reset exitoso con redirección a `/login`, y
+  enlace vencido/inválido sin perder el formulario.
+- Flujo manual esperado: pedir recuperación con un email registrado, abrir
+  el enlace del email real (no el de un test), completar la nueva
+  contraseña, y verificar que el login viejo (con sesiones previas) ya no
+  funciona en otras pestañas.
+
+### Nota técnica relacionada (backend)
+
+Los enlaces de `verify-email` y `reset-password` que arma el backend
+(`src/shared/infrastructure/email.ts`) tenían el prefijo `/auth/` (ej.
+`/auth/reset-password?token=...`), que no coincide con las rutas reales del
+frontend (`/reset-password`, `/verify-email`, sin prefijo). Se corrigió en
+`espera-back` (rama `bugfix/resolve-user-business`, commit
+`09e4e43`), junto con el valor de ejemplo de `APP_URL` en `.env.example`
+(apuntaba al puerto del backend, no al del frontend). Afectaba también al
+enlace de verificación de email ya mergeado.
