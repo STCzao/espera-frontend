@@ -12,6 +12,24 @@ export const resendVerificationSchema = z.object({
   email: z.string().trim().email('Ingresá un email válido.').toLowerCase(),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email('Ingresá un email válido.').toLowerCase(),
+})
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, 'La contraseña debe tener al menos 8 caracteres.')
+      .max(72, 'La contraseña no puede superar los 72 caracteres.')
+      .regex(passwordRegex, 'Usá al menos una mayúscula, una minúscula y un número.'),
+    confirmPassword: z.string().min(1, 'Confirmá tu contraseña.'),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: 'Las contraseñas no coinciden.',
+    path: ['confirmPassword'],
+  })
+
 export const registerSchema = z
   .object({
     email: z
