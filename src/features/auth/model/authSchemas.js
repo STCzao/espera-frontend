@@ -8,6 +8,10 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Ingresá tu contraseña.'),
 })
 
+export const resendVerificationSchema = z.object({
+  email: z.string().trim().email('Ingresá un email válido.').toLowerCase(),
+})
+
 export const registerSchema = z
   .object({
     email: z

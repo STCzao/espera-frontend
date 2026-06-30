@@ -20,9 +20,9 @@ mezclarse mentalmente:
   `Épica 2 - Gestión de Negocios`.
 - Historias implementadas: `HU-1.1 - Registro con email y password`,
   `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`,
-  `HU-1.6 - Logout`.
-- Historias parciales: rutas base y placeholders para verificación de
-  email, recuperación de password, onboarding, panel de negocio, QR y empleados.
+  `HU-1.6 - Logout`, verificación de email (contrato de `HU-1.1`).
+- Historias parciales: rutas base y placeholders para recuperación de
+  password, onboarding combinado/Google, panel de negocio, QR y empleados.
 - Historias diferidas: mobile completa, deep links definitivos, cola persistida,
   métricas operativas, notificaciones push end-to-end, Google OAuth end-to-end.
 
@@ -84,6 +84,8 @@ Estado:
 - `HU-1.5` implementada como mecanismo de transporte (sin pantalla propia)
   que protege todas las rutas detrás de `AuthLayout`;
 - `HU-1.6` implementada: botón "Cerrar sesión" en `BusinessPanelLayout`;
+- verificación de email implementada para `/verify-email`, con reenvío de
+  enlace cuando el token falta, es inválido o venció;
 - rutas creadas para el resto de auth pública;
 - placeholders visibles en flujos pendientes;
 - Google OAuth web tiene contrato conocido, pero no se expone como acción de
@@ -195,6 +197,9 @@ Cobertura automatizada:
 - Cypress e2e cubre `HU-1.6` en el panel: logout exitoso, logout que igual
   redirige si el backend falla, y que el botón "atrás" del navegador no
   vuelve a mostrar contenido protegido después de salir.
+- Cypress e2e cubre verificación de email en `/verify-email`: link sin
+  token, verificación exitosa con CTA a login, token inválido/vencido,
+  reenvío exitoso y reenvío fallido con mensaje genérico.
 
 ## Avance actual
 
@@ -231,10 +236,19 @@ Cobertura automatizada:
   sesión local y redirige a `/login`, incluso si la llamada al backend
   falla.
 - Cobertura e2e: `cypress/e2e/logout.cy.js`.
+- Verificación de email implementada en frontend (contrato de `HU-1.1`, sin
+  número de historia propio).
+- Ruta relacionada: `/verify-email`.
+- Endpoints consumidos: `GET /api/auth/verify-email`,
+  `POST /api/auth/resend-verification`.
+- La pantalla confirma el token al montarse vía `useQuery`, orienta a
+  iniciar sesión si fue exitosa, y ofrece reenvío con mensaje genérico (sin
+  código funcional disponible) si el token falta, es inválido o venció.
+- Cobertura e2e: `cypress/e2e/verify-email.cy.js`.
 
 ## Próximo trabajo
 
-Con el ciclo de sesión de la Épica 1 cerrado (registro, login, refresh y
-logout), la siguiente unidad funcional propuesta es retomar el onboarding de
-negocio (`HU-1.8`/`HU-1.9`) o las historias parciales de verificación de
-email y recuperación de password.
+Con el ciclo de sesión de la Épica 1 cerrado (registro, login, refresh,
+logout y verificación de email), la siguiente unidad funcional propuesta es
+recuperación de password (`HU-1.7`) o retomar el onboarding combinado de
+negocio (`HU-1.8`/`HU-1.9`).

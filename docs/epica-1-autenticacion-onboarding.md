@@ -12,9 +12,10 @@ al panel web de negocios. Los flujos mobile de usuario final quedan diferidos.
 ## Estado general
 
 - Estado: `implementado parcialmente`.
-- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`.
-- Historias parciales: rutas base para verificación de email, recuperación
-  de password, callback OAuth y onboarding de negocio.
+- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`. Verificación
+  de email (contrato de `HU-1.1`) también implementada.
+- Historias parciales: rutas base para recuperación de password, callback
+  OAuth y onboarding completo de negocio (alta combinada y Google).
 - Historias diferidas: registro/login Google mobile.
 - Motivos de diferidos: dependen de la app móvil, deep links y configuración real
   por plataforma.
@@ -160,7 +161,8 @@ OAuth pero no completar el registro.
 
 ### Diferidos
 
-- Reenvío de verificación desde esta pantalla.
+- Reenvío de verificación desde esta pantalla (existe en `/verify-email`,
+  no acá).
 - Registro y login Google web end-to-end.
 - Callback visual completo de Google.
 - Tests de componentes.
@@ -179,6 +181,117 @@ OAuth pero no completar el registro.
 - Flujo manual esperado: abrir `/register`, completar datos válidos, enviar,
   recibir confirmación y verificar que los errores de validación aparecen sin
   perder el formulario.
+
+## Verificación de email (cierre de contrato de HU-1.1)
+
+Sin número de historia propio en el backlog: `GET /api/auth/verify-email` y
+`POST /api/auth/resend-verification` están documentados como parte del
+contrato de `HU-1.1` en el backend, no de una historia separada.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona que se registró y recibió el email de verificación puede
+completar la activación de su cuenta abriendo el link, y queda orientada a
+iniciar sesión. Si el link es inválido o venció, puede pedir uno nuevo sin
+perder el flujo.
+
+### Pantallas / Rutas
+
+```text
+/verify-email?token=:token
+```
+
+### Estados de UI
+
+- `verifying`: se está confirmando el token contra el backend.
+- `success`: email verificado, CTA para ir a `/login`.
+- `invalid-link`: no llegó `token` en la URL (acceso directo a la ruta sin
+  link real).
+- `error`: el backend rechazó el token (inválido o vencido).
+- `resend-success`: se reenvió un nuevo email de verificación.
+- `resend-error`: no se pudo reenviar (cuenta ya verificada, rate limit, o
+  fallo de envío).
+
+### Integración frontend
+
+- Al montar, `VerifyEmailPage` lee `token` del query string
+  (`useSearchParams`) y dispara `GET /api/auth/verify-email?token=...` vía
+  `useQuery` (no `useEffect` + mutation manual: el fetch en mount es
+  exactamente el caso de uso de `useQuery`, con `enabled: Boolean(token)`
+  evitando la llamada cuando no hay token).
+- `retry: false` porque el token se invalida en el backend tras el primer
+  uso exitoso; reintentar automáticamente solo generaría un segundo error
+  inútil.
+- Tanto el estado "sin token" como el de "verificación fallida" reutilizan
+  `ResendVerificationForm` (`src/features/auth/components/ResendVerificationForm.jsx`),
+  que dispara `POST /api/auth/resend-verification` con el email ingresado.
+- No se autologuea al usuario tras verificar: el backend no devuelve sesión
+  en esta respuesta, solo confirma el email.
+
+### Contratos consumidos
+
+```text
+GET /api/auth/verify-email
+POST /api/auth/resend-verification
+```
+
+### Datos enviados
+
+```ts
+type ResendVerificationRequest = {
+  email: string;
+};
+```
+
+### Datos esperados
+
+```ts
+type VerifyEmailResponse = {
+  message: string;
+};
+
+type ResendVerificationResponse = {
+  message: string;
+};
+```
+
+### Reglas de presentación
+
+- Los errores de `GET /api/auth/verify-email` y de
+  `POST /api/auth/resend-verification` no traen código funcional
+  (`AppError` sin segundo argumento en ambos use cases), así que no se
+  intenta diferenciarlos por mensaje exacto del backend: se usa un mensaje
+  genérico en español para cada flujo en lugar de mostrar el texto en
+  inglés del backend o inventar una distinción que el contrato no ofrece.
+- El copy visible de la interfaz se escribe en español rioplatense.
+
+### Decisiones de producto / alcance
+
+No se distingue "token inválido" de "token vencido" en la UI porque el
+backend no expone esa diferencia con un código — ambos casos resuelven
+igual del lado del usuario (pedir un reenvío), así que la distinción no
+aporta valor de producto, solo complejidad.
+
+### Diferidos
+
+- Auto-reenvío cuando el usuario llega sin token (hoy requiere ingresar el
+  email manualmente).
+- Tests de componentes.
+- Medición de analytics.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`verify-email.cy.js`) cubre: link sin token, verificación
+  exitosa con CTA a login, token inválido/vencido, reenvío exitoso y
+  reenvío fallido con mensaje genérico.
+- Flujo manual esperado: registrarse, abrir el link del email de
+  verificación, confirmar que lleva a la pantalla de éxito, y desde ahí
+  iniciar sesión.
 
 ## HU-1.3 - Login con email y password
 
