@@ -206,11 +206,18 @@ Cobertura automatizada:
 - Cobertura e2e: `cypress/e2e/register.cy.js`.
 - `HU-1.3` implementada en frontend para login local con email y password.
 - Ruta relacionada: `/login`.
-- Endpoints consumidos: `POST /api/auth/login`, `GET /api/auth/me`.
+- Endpoints consumidos: `POST /api/auth/login`, `GET /api/auth/me`,
+  `GET /api/business/me`.
 - La pantalla valida campos en cliente, traduce los códigos funcionales de
   error del backend a mensajes en español y redirige al panel del negocio del
-  usuario o a `/business/register` si todavía no tiene uno.
+  usuario o a `/business/new` si todavía no tiene uno.
 - Cobertura e2e: `cypress/e2e/login.cy.js`.
+- Bugfix: `/business/register` (alta pública combinada, `POST
+  /api/auth/register-business`) era el destino post-login para cuentas sin
+  negocio, pidiéndole de nuevo identidad a un usuario ya autenticado. Se creó
+  `BusinessCreatePage.jsx` en `/business/new` (protegida, solo campos de
+  negocio, `POST /api/business`) como destino correcto.
+- Cobertura e2e: `cypress/e2e/business-create.cy.js`.
 - `HU-1.5` implementada en frontend: `useSessionBootstrap` ya no depende de
   tener un `accessToken` cacheado para intentar restaurar la sesión, porque
   el interceptor de `httpClient` resuelve cualquier `401` contra

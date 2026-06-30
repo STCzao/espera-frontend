@@ -8,14 +8,28 @@ import { LoginFormPanel } from '../components/LoginFormPanel.jsx'
 import { LoginVisualScene } from '../components/LoginVisualScene.jsx'
 import { fetchSessionUser, sessionQueryKey } from '../hooks/useSessionBootstrap.js'
 import { loginSchema } from '../model/authSchemas.js'
+import { businessOnboardingApi } from '../../business-onboarding/api/businessOnboardingApi.js'
 
 const defaultValues = {
   email: '',
   password: '',
 }
 
-function resolvePostLoginPath(user) {
-  return user?.businessId ? `/panel/business/${user.businessId}` : '/business/register'
+async function resolveOwnedBusinesses() {
+  try {
+    const { businesses } = await businessOnboardingApi.listMine()
+    return businesses
+  } catch {
+    // Resolving owned businesses should never block the post-login redirect;
+    // worst case the user lands on /business/register instead of their panel.
+    return []
+  }
+}
+
+function resolvePostLoginPath(businesses) {
+  // A user can own more than one business; selection between them is deferred,
+  // so the first one found is used as the redirect target for now.
+  return businesses[0]?.id ? `/panel/business/${businesses[0].id}` : '/business/new'
 }
 
 export function LoginPage() {
@@ -33,12 +47,12 @@ export function LoginPage() {
     mutationFn: authApi.login,
     onSuccess: async () => {
       // Shares the AuthLayout session query key so /auth/me isn't fetched twice on redirect.
-      const user = await queryClient.fetchQuery({
-        queryKey: sessionQueryKey,
-        queryFn: fetchSessionUser,
-      })
+      const [, businesses] = await Promise.all([
+        queryClient.fetchQuery({ queryKey: sessionQueryKey, queryFn: fetchSessionUser }),
+        resolveOwnedBusinesses(),
+      ])
 
-      navigate(location.state?.from?.pathname ?? resolvePostLoginPath(user), { replace: true })
+      navigate(location.state?.from?.pathname ?? resolvePostLoginPath(businesses), { replace: true })
     },
   })
 

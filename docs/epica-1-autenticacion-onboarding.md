@@ -214,14 +214,18 @@ onboarding de negocio si todavía no tiene uno).
 - La validación previa usa `react-hook-form` y `zod` (`loginSchema`), sin
   reglas de complejidad de password porque el backend tampoco las exige en
   login.
-- Si el login responde `200`, el `accessToken` se guarda vía `persistSession`
-  y se precarga la cache de TanStack Query (`queryKey: ['session']`) llamando
-  a `GET /api/auth/me` antes de redirigir, para conocer `businessId` sin
-  esperar un segundo round-trip en `AuthLayout`.
+- Si el login responde `200`, el `accessToken` se guarda vía `persistSession`,
+  y en paralelo se precarga la cache de TanStack Query (`queryKey:
+  ['session']`) llamando a `GET /api/auth/me` (para que `AuthLayout` no
+  repita el fetch) y se consulta `GET /api/business/me`
+  (`businessOnboardingApi.listMine()`) para saber si el usuario ya tiene
+  negocio propio.
 - Redirección post-login: si existe `location.state.from` (ruta protegida que
-  disparó el login), se vuelve ahí. Si no, y el usuario ya tiene
-  `businessId`, se navega a `/panel/business/:businessId`; si no tiene
-  negocio asociado, se navega a `/business/register`.
+  disparó el login), se vuelve ahí. Si no, y `GET /api/business/me` devuelve
+  al menos un negocio, se navega a `/panel/business/:id` (el primero de la
+  lista); si la lista viene vacía o la consulta falla, se navega a
+  `/business/new` (alta de negocio para cuenta ya autenticada, distinta de
+  `/business/register`).
 - Si el backend responde error, se conserva el formulario y se muestra un
   mensaje específico mapeado por código funcional (`getLoginErrorMessage`).
 - No se invalida cache adicional: el login es el punto de entrada de la
@@ -232,6 +236,7 @@ onboarding de negocio si todavía no tiene uno).
 ```text
 POST /api/auth/login
 GET /api/auth/me
+GET /api/business/me
 ```
 
 ### Datos enviados
@@ -256,9 +261,19 @@ type MeResponse = {
     id: string;
     email: string;
     role: 'user' | 'employee' | 'business_admin' | 'super_admin';
-    businessId?: string;
     approvalStatus: 'pending' | 'approved' | 'rejected';
   };
+};
+
+type MyBusinessesResponse = {
+  businesses: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    organizationId: string;
+    listingStatus: string;
+    operationalStatus: string;
+  }>;
 };
 ```
 
@@ -306,45 +321,60 @@ incompletas.
 - `npm run test:e2e`: ok.
 - Cypress cubre render de `/login`, validaciones cliente sin request al
   backend, submit exitoso con normalización de email, redirección a
-  `/business/register` sin negocio asociado, redirección a
-  `/panel/business/:businessId` con negocio asociado, y los cuatro casos de
-  error funcional (`EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`,
-  `LOGIN_TEMPORARILY_BLOCKED`, credenciales inválidas sin código).
+  `/business/new` sin negocio asociado, redirección a `/panel/business/:id`
+  con negocio asociado, redirección a `/business/new` cuando
+  `GET /business/me` falla, y los cuatro casos de error funcional
+  (`EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`, `LOGIN_TEMPORARILY_BLOCKED`,
+  credenciales inválidas sin código).
+- Cypress (`business-create.cy.js`) cubre `/business/new`: render con solo
+  campos de negocio (sin pedir identidad), validaciones cliente, submit
+  exitoso con redirección al panel, error de backend sin perder el
+  formulario, y redirección a `/login` si no hay sesión.
 - Flujo manual esperado: abrir `/login`, completar credenciales válidas,
   enviar, y verificar la redirección esperada según si la cuenta tiene
   negocio asociado.
 
-### Riesgo conocido (bloqueado por backend)
+### Historial del redirect post-login (resuelto)
 
-`resolvePostLoginPath` (`src/features/auth/pages/LoginPage.jsx`) decide el
-destino post-login según `user.businessId`, pero **ese campo nunca llega
-poblado desde el backend**:
+`resolvePostLoginPath` originalmente decidía el destino según
+`user.businessId`, pero ese campo nunca llegaba poblado desde el backend:
+`JWTTokenService.generateAccessToken()` (`espera-back`) nunca lo firmaba, y
+`User` no tiene esa relación — la relación real es `Business.ownerUserId →
+User.id` (`1:N`), y no existía ningún endpoint para resolverla. Esto se
+documentó como riesgo conocido y se resolvió en `espera-back` (rama
+`bugfix/resolve-user-business`) agregando `GET /api/business/me`.
 
-- `JWTTokenService.generateAccessToken()` (`espera-back`,
-  `src/modules/auth/infrastructure/JWTTokenService.ts`) firma el JWT con
-  `email`, `role`, `firstName`, `lastName` y `approvalStatus`, pero nunca con
-  `businessId`. El middleware `authenticate.ts` declara el campo en el tipo
-  y lo lee del token decodificado, pero como nunca se firma, siempre llega
-  `undefined`.
-- Más de fondo: `User` (`espera-back`,
-  `src/modules/auth/domain/User.ts`) no tiene `businessId`. La relación real
-  es `Business.ownerUserId → User.id`, y no existe ningún endpoint que
-  resuelva "¿qué negocio(s) tiene este usuario?" — las rutas de
-  `business.routes.ts` ya requieren `:businessId` conocido de antemano.
+`resolvePostLoginPath` ahora recibe la lista de negocios del usuario
+(`businessOnboardingApi.listMine()`, que llama `GET /api/business/me`) y usa
+el primero si existe, o `/business/new` si la lista viene vacía o la
+consulta falla por cualquier motivo (ver Integración frontend).
 
-**Efecto observable:** todo login redirige hoy a `/business/register`,
-incluso para cuentas que ya tienen un negocio aprobado.
+**Deuda técnica registrada:** la primera versión de `GET /api/business/me`
+quedó protegida con `authorize("business:edit")`, permiso exclusivo del rol
+`business_admin`. Una cuenta `user` sin negocio recibía `403` en lugar de
+`200 { businesses: [] }`, mezclando autorización con resultado de dominio.
+Se corrigió quitando ese gate (el endpoint ya scopea por `ownerUserId`, el
+permiso de rol no agregaba seguridad real), pero queda como antecedente de
+que el acoplamiento implícito entre rol y "tiene negocio" puede repetirse si
+se agregan otros caminos a `business_admin`.
 
-**Qué falta del lado de backend para destrabarlo:** un contrato que
-devuelva el/los negocio(s) del usuario autenticado (extender
-`GET /api/auth/me` con `businesses: [...]`, o un endpoint dedicado como
-`GET /api/business/me`), y definir qué pasa si el usuario tiene más de un
-negocio (con el módulo `organization` ya en el repo, es plausible).
+**Segundo hallazgo, durante prueba manual:** el destino original sin negocio
+era `/business/register` (`BusinessRegisterPage.jsx`), pero esa pantalla
+consume `POST /api/auth/register-business` — el contrato de **alta pública
+combinada** de HU-1.8/1.9 (crea cuenta + negocio para alguien sin cuenta
+previa). Un usuario ya autenticado terminaba reescribiendo nombre, apellido,
+email y password que ya había provisto. El contrato correcto para "cuenta
+existente sin negocio" ya existía y nunca se usaba: `POST /api/business`
+(`RegisterBusinessUseCase`, módulo `business`), que solo pide datos de
+negocio y toma `ownerUserId` de la sesión. Ese endpoint tenía a su vez el
+mismo bug de permiso que `GET /api/business/me` (`authorize("business:edit")`
+bloqueando al rol `user`, que es exactamente para quien existe el endpoint);
+se corrigió igual, quitando el gate de rol.
 
-Se documenta acá para trazabilidad/auditoría, no como `implementado`: el
-contrato de login en sí funciona, pero el redirect post-login queda
-funcionalmente incorrecto para dueños de negocio existentes hasta que el
-backend resuelva esto.
+Se creó `BusinessCreatePage.jsx` (ruta `/business/new`, protegida por
+`AuthLayout`) como pantalla dedicada para este caso, con solo los campos de
+negocio. `BusinessRegisterPage.jsx` y `/business/register` quedan intactos
+para su propósito original (alta pública combinada).
 
 ## HU-1.5 - Refresh Token
 
