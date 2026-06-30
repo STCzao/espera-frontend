@@ -42,13 +42,19 @@ describe('HU-1.3 - Login con email y password', () => {
       body: { user: { id: 'user_1', email: 'santi@example.com', role: 'user' } },
     }).as('me')
 
+    cy.intercept('GET', '**/business/me', {
+      statusCode: 200,
+      body: { businesses: [] },
+    }).as('myBusinesses')
+
     cy.get('#email').type(' SANTI@EXAMPLE.COM ')
     cy.get('#password').type('Password1')
     cy.contains('button', /ingresar/i).click()
 
     cy.wait('@login')
     cy.wait('@me')
-    cy.url().should('include', '/business/register')
+    cy.wait('@myBusinesses')
+    cy.url().should('include', '/business/new')
   })
 
   it('redirige al panel del negocio cuando el usuario ya tiene uno asignado', () => {
@@ -60,9 +66,14 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
       body: {
-        user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin', businessId: 'biz_1' },
+        user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' },
       },
     }).as('me')
+
+    cy.intercept('GET', '**/business/me', {
+      statusCode: 200,
+      body: { businesses: [{ id: 'biz_1', name: 'Cafe Espera' }] },
+    }).as('myBusinesses')
 
     cy.get('#email').type('santi@example.com')
     cy.get('#password').type('Password1')
@@ -70,7 +81,33 @@ describe('HU-1.3 - Login con email y password', () => {
 
     cy.wait('@login')
     cy.wait('@me')
+    cy.wait('@myBusinesses')
     cy.url().should('include', '/panel/business/biz_1')
+  })
+
+  it('redirige a /business/new si falla la consulta de negocios propios', () => {
+    cy.intercept('POST', '**/auth/login', {
+      statusCode: 200,
+      body: { accessToken: 'access-token-123', refreshToken: 'refresh-token-123' },
+    }).as('login')
+
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
+    }).as('me')
+
+    cy.intercept('GET', '**/business/me', { statusCode: 500, body: { message: 'Internal server error.' } }).as(
+      'myBusinesses',
+    )
+
+    cy.get('#email').type('santi@example.com')
+    cy.get('#password').type('Password1')
+    cy.contains('button', /ingresar/i).click()
+
+    cy.wait('@login')
+    cy.wait('@me')
+    cy.wait('@myBusinesses')
+    cy.url().should('include', '/business/new')
   })
 
   it('muestra el mensaje de email no verificado sin perder el formulario', () => {

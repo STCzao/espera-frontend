@@ -1,6 +1,9 @@
 import { httpClient } from '../../../shared/api/httpClient.js'
 
 export const businessOnboardingApi = {
+  listMine() {
+    return httpClient.get('/business/me')
+  },
   registerBusiness(payload) {
     return httpClient.post('/auth/register-business', payload)
   },
