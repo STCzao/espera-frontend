@@ -11,8 +11,8 @@ const ForgotPasswordPage = lazy(() => import('../../features/auth/pages/ForgotPa
 const ResetPasswordPage = lazy(() => import('../../features/auth/pages/ResetPasswordPage.jsx').then((module) => ({ default: module.ResetPasswordPage })))
 const VerifyEmailPage = lazy(() => import('../../features/auth/pages/VerifyEmailPage.jsx').then((module) => ({ default: module.VerifyEmailPage })))
 const GoogleCallbackPage = lazy(() => import('../../features/auth/pages/GoogleCallbackPage.jsx').then((module) => ({ default: module.GoogleCallbackPage })))
-const BusinessRegisterPage = lazy(() => import('../../features/business-onboarding/pages/BusinessRegisterPage.jsx').then((module) => ({ default: module.BusinessRegisterPage })))
 const BusinessCreatePage = lazy(() => import('../../features/business-onboarding/pages/BusinessCreatePage.jsx').then((module) => ({ default: module.BusinessCreatePage })))
+const NoBusinessPanel = lazy(() => import('../../features/business-onboarding/pages/NoBusinessPanel.jsx').then((module) => ({ default: module.NoBusinessPanel })))
 const BusinessProfilePage = lazy(() => import('../../features/business-profile/pages/BusinessProfilePage.jsx').then((module) => ({ default: module.BusinessProfilePage })))
 const BusinessHoursPage = lazy(() => import('../../features/business-hours/pages/BusinessHoursPage.jsx').then((module) => ({ default: module.BusinessHoursPage })))
 const BusinessOperationsPage = lazy(() => import('../../features/business-operations/pages/BusinessOperationsPage.jsx').then((module) => ({ default: module.BusinessOperationsPage })))
@@ -32,14 +32,16 @@ export function AppRouter() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/oauth/google/callback" element={<GoogleCallbackPage />} />
-          <Route path="/business/register" element={<BusinessRegisterPage />} />
           <Route path="/business/employee-invitations/:token" element={<AcceptEmployeeInvitationPage />} />
           <Route path="/q/:token" element={<ResolveQrPage />} />
         </Route>
 
         <Route element={<AuthLayout />}>
           <Route path="/business/new" element={<BusinessCreatePage />} />
-          <Route path="/panel/business/:businessId" element={<BusinessPanelLayout />}>
+          <Route path="/panel" element={<BusinessPanelLayout />}>
+            <Route index element={<NoBusinessPanel />} />
+          </Route>
+          <Route path="/panel/business/:businessSlug" element={<BusinessPanelLayout />}>
             <Route index element={<Navigate to="profile" replace />} />
             <Route path="profile" element={<BusinessProfilePage />} />
             <Route path="hours" element={<BusinessHoursPage />} />

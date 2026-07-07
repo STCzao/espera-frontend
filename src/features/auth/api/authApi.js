@@ -1,9 +1,15 @@
 import { httpClient } from '../../../shared/api/httpClient.js'
 import { clearSession, persistSession } from '../../../shared/auth/session.js'
+import { useSessionStore } from '../../../shared/auth/sessionStore.js'
 
 export const authApi = {
   async login(payload) {
     return persistSession(await httpClient.post('/auth/login', payload))
+  },
+  async refreshToken() {
+    const payload = await httpClient.post('/auth/refresh-token')
+    useSessionStore.getState().setAccessToken(payload.accessToken)
+    return payload
   },
   async register(payload) {
     return httpClient.post('/auth/register', payload)

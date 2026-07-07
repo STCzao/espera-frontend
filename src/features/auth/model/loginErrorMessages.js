@@ -1,6 +1,5 @@
 const messagesByCode = {
   EMAIL_NOT_VERIFIED: 'Todavía no verificaste tu email. Revisá tu casilla para activar la cuenta.',
-  ACCOUNT_PENDING_REVIEW: 'Tu cuenta de negocio está en revisión. Te avisamos cuando esté aprobada.',
   ACCOUNT_REJECTED: 'La solicitud de tu negocio fue rechazada. Contactanos si creés que es un error.',
   LOGIN_TEMPORARILY_BLOCKED: 'Hubo demasiados intentos fallidos. Probá de nuevo en unos minutos.',
 }
