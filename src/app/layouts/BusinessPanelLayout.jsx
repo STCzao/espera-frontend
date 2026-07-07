@@ -1,6 +1,9 @@
+import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Building2, CalendarClock, QrCode, Settings2, UsersRound } from 'lucide-react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
+import { businessOnboardingApi } from '../../features/business-onboarding/api/businessOnboardingApi.js'
 import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
 import { businessStatusLabels } from '../../shared/business/businessStatuses.js'
 
@@ -13,10 +16,35 @@ const navItems = [
 ]
 
 export function BusinessPanelLayout() {
-  const { businessId } = useParams()
-  const currentBusiness = useCurrentBusinessStore()
-  const isCurrentBusiness = currentBusiness.businessId === businessId
-  const approvalStatus = isCurrentBusiness ? currentBusiness.approvalStatus : null
+  const { businessSlug } = useParams()
+  const setCurrentBusiness = useCurrentBusinessStore((state) => state.setCurrentBusiness)
+  const clearCurrentBusiness = useCurrentBusinessStore((state) => state.clearCurrentBusiness)
+  const currentSlug = useCurrentBusinessStore((state) => state.slug)
+  const name = useCurrentBusinessStore((state) => state.name)
+  const status = useCurrentBusinessStore((state) => state.status)
+  const listingStatus = useCurrentBusinessStore((state) => state.listingStatus)
+
+  const businessesQuery = useQuery({
+    queryKey: ['business-me'],
+    queryFn: businessOnboardingApi.listMine,
+    select: (data) => data.businesses,
+    enabled: Boolean(businessSlug),
+  })
+
+  useEffect(() => {
+    if (!businessSlug) {
+      clearCurrentBusiness()
+      return
+    }
+
+    const match = businessesQuery.data?.find((business) => business.slug === businessSlug)
+    if (match) {
+      setCurrentBusiness(match)
+    }
+  }, [businessSlug, businessesQuery.data, setCurrentBusiness, clearCurrentBusiness])
+
+  const isCurrentBusiness = Boolean(businessSlug) && currentSlug === businessSlug
+  const approvalStatus = isCurrentBusiness ? status : null
 
   return (
     <main className="panel-layout">
@@ -29,6 +57,15 @@ export function BusinessPanelLayout() {
           {navItems.map((item) => {
             const Icon = item.icon
 
+            if (!businessSlug) {
+              return (
+                <span key={item.to} className="panel-layout__nav-item--disabled" aria-disabled="true">
+                  <Icon size={18} aria-hidden="true" />
+                  <span>{item.label}</span>
+                </span>
+              )
+            }
+
             return (
               <NavLink key={item.to} to={item.to}>
                 <Icon size={18} aria-hidden="true" />
@@ -37,7 +74,7 @@ export function BusinessPanelLayout() {
             )
           })}
         </nav>
-        <small>Negocio: {businessId}</small>
+        {businessSlug && <small>Negocio: {isCurrentBusiness && name ? name : '…'}</small>}
         <LogoutButton className="button secondary" />
       </aside>
       <section className="panel-layout__main">
@@ -52,9 +89,9 @@ export function BusinessPanelLayout() {
             <strong>Este negocio fue rechazado.</strong> Revisá los datos cargados o contactá a soporte.
           </div>
         )}
-        {approvalStatus === 'approved' && currentBusiness.listingStatus && (
+        {approvalStatus === 'approved' && listingStatus && (
           <div className="business-context" role="status">
-            Estado público: {businessStatusLabels[currentBusiness.listingStatus]}
+            Estado público: {businessStatusLabels[listingStatus]}
           </div>
         )}
         <Outlet />

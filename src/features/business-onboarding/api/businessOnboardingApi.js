@@ -4,11 +4,8 @@ export const businessOnboardingApi = {
   listMine() {
     return httpClient.get('/business/me')
   },
-  registerBusiness(payload) {
-    return httpClient.post('/auth/register-business', payload)
-  },
-  registerBusinessWithGoogle(payload) {
-    return httpClient.post('/auth/register-business/google', payload)
+  listCategories() {
+    return httpClient.get('/business/categories')
   },
   createBusiness(payload) {
     return httpClient.post('/business', payload)
