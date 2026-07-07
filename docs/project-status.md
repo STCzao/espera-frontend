@@ -15,17 +15,18 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `setup inicial implementado`.
-- Épicas en preparación: `Épica 1 - Autenticación y Onboarding`,
-  `Épica 2 - Gestión de Negocios`.
-- Historias implementadas: `HU-1.1 - Registro con email y password`,
-  `HU-1.3 - Login con email y password`, `HU-1.5 - Refresh Token`,
-  `HU-1.6 - Logout`, `HU-1.7 - Recuperación de password`, verificación de
-  email (contrato de `HU-1.1`).
-- Historias parciales: rutas base y placeholders para onboarding
-  combinado/Google, panel de negocio, QR y empleados.
-- Historias diferidas: mobile completa, deep links definitivos, cola persistida,
-  métricas operativas, notificaciones push end-to-end, Google OAuth end-to-end.
+- Estado: `Épica 1 cerrada (alcance web)`.
+- Épicas: `Épica 1 - Autenticación y Onboarding` cerrada en su alcance web;
+  `Épica 2 - Gestión de Negocios` en preparación (rutas y placeholders
+  creados, integración real pendiente).
+- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
+  `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`).
+- Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
+- Historias parciales: rutas base y placeholders para panel de negocio, QR y
+  empleados (Épica 2).
+- Historias diferidas transversales: mobile completa, deep links
+  definitivos, cola persistida, métricas operativas, notificaciones push
+  end-to-end.
 
 ## Stack actual
 
@@ -76,7 +77,8 @@ Responsabilidades:
 - registro de usuario;
 - recuperación de password;
 - verificación de email;
-- callback OAuth web.
+- login/registro con Google (callback OAuth web);
+- onboarding de negocio (panel vacío + alta de negocio).
 
 Estado:
 
@@ -88,16 +90,18 @@ Estado:
 - verificación de email implementada para `/verify-email`, con reenvío de
   enlace cuando el token falta, es inválido o venció;
 - `HU-1.7` implementada: `/forgot-password` y `/reset-password`;
-- rutas creadas para el resto de auth pública;
-- placeholders visibles en flujos pendientes;
-- Google OAuth web tiene contrato conocido, pero no se expone como acción de
-  registro hasta implementar el callback completo;
-- integración real pendiente historia por historia.
+- `HU-1.9` implementada: botón "Continuar con Google" unificado en
+  `/login` y `/register`, callback real en `/oauth/google/callback`;
+- `HU-1.8` implementada: `/panel` recibe sin negocio con aviso + CTA,
+  `/business/new` da de alta el negocio con el mismo lenguaje visual que
+  login/registro;
+- integración real de Épica 1 completa en su alcance web.
 
 ### Panel de negocios
 
 Responsabilidades:
 
+- onboarding: panel vacío + alta de negocio (`HU-1.8`);
 - perfil del negocio;
 - horarios;
 - ventanillas activas;
@@ -107,9 +111,12 @@ Responsabilidades:
 
 Estado:
 
-- layout base creado;
-- rutas creadas;
-- integración real pendiente historia por historia.
+- onboarding (`HU-1.8`) implementado end-to-end: `BusinessPanelLayout`
+  resuelve el negocio actual por `slug` contra `GET /business/me` y
+  muestra el banner de `pending`/`rejected`/`approved`;
+- perfil, horarios, ventanillas, estado operativo, QR y empleados: layout
+  base y rutas creadas, pantallas siguen siendo `PlaceholderPage` (Épica 2,
+  integración real pendiente historia por historia).
 
 ### Entrada pública QR
 
@@ -186,12 +193,12 @@ Comandos principales:
 Cobertura automatizada:
 
 - Cypress e2e cubre `HU-1.1` en `/register`: render, validaciones cliente,
-  submit exitoso, normalización de datos, error backend y ausencia de CTA Google
-  operativo mientras OAuth siga diferido.
+  submit exitoso, normalización de datos, error backend y el botón
+  "Continuar con Google" (`HU-1.9`).
 - Cypress e2e cubre `HU-1.3` en `/login`: render, validaciones cliente, submit
-  exitoso con redirección según `businessId`, y los errores funcionales
-  `EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`, `LOGIN_TEMPORARILY_BLOCKED` y
-  credenciales inválidas.
+  exitoso con redirección por `slug`, los errores funcionales
+  `EMAIL_NOT_VERIFIED`, `ACCOUNT_REJECTED`, `LOGIN_TEMPORARILY_BLOCKED` y
+  credenciales inválidas, y el botón "Continuar con Google" (`HU-1.9`).
 - Cypress e2e cubre `HU-1.5` sobre rutas del panel: restauración de sesión sin
   `accessToken` cacheado vía cookie de refresh, redirección a `/login` sin
   sesión ni cookie válida, y reintento automático cuando el `accessToken`
@@ -207,6 +214,16 @@ Cobertura automatizada:
   backend, link inválido sin token, validación de password y confirmación,
   reset exitoso con redirección a `/login`, y enlace vencido/inválido sin
   perder el formulario.
+- Cypress e2e cubre `HU-1.8` en `/business/new`: render con solo campos de
+  negocio, validaciones cliente, alta exitosa con refresh de token y
+  redirección por `slug`, error de backend sin perder el formulario, y
+  redirección a `/login` sin sesión.
+- Cypress e2e cubre `HU-1.9` en `/oauth/google/callback`: login exitoso sin
+  negocio, login exitoso con negocio, cancelación en Google, enlace sin
+  `code`/`state`, y error funcional (`AUTH_PROVIDER_MISMATCH`).
+- 47 tests e2e en total, todos verdes (`business-create`, `google-login`,
+  `login`, `logout`, `password-recovery`, `refresh-token`, `register`,
+  `verify-email`).
 
 ## Avance actual
 
@@ -222,14 +239,17 @@ Cobertura automatizada:
   `GET /api/business/me`.
 - La pantalla valida campos en cliente, traduce los códigos funcionales de
   error del backend a mensajes en español y redirige al panel del negocio del
-  usuario o a `/business/new` si todavía no tiene uno.
+  usuario (por `slug`) o a `/panel` (vacío) si todavía no tiene uno.
 - Cobertura e2e: `cypress/e2e/login.cy.js`.
-- Bugfix: `/business/register` (alta pública combinada, `POST
-  /api/auth/register-business`) era el destino post-login para cuentas sin
-  negocio, pidiéndole de nuevo identidad a un usuario ya autenticado. Se creó
-  `BusinessCreatePage.jsx` en `/business/new` (protegida, solo campos de
-  negocio, `POST /api/business`) como destino correcto.
-- Cobertura e2e: `cypress/e2e/business-create.cy.js`.
+- Bugfix histórico (superado en `HU-1.8`): `/business/register` (alta
+  pública combinada, `POST /api/auth/register-business`) era el destino
+  post-login para cuentas sin negocio, pidiéndole de nuevo identidad a un
+  usuario ya autenticado. Se creó `BusinessCreatePage.jsx` en
+  `/business/new` (protegida, solo campos de negocio, `POST /api/business`)
+  como destino correcto, y luego, con `HU-1.8`, se eliminó por completo
+  `/business/register` y se reemplazó el gate obligatorio por el panel
+  vacío en `/panel`. Ver `HU-1.8` en
+  `docs/epica-1-autenticacion-onboarding.md` para el detalle completo.
 - `HU-1.5` implementada en frontend: `useSessionBootstrap` ya no depende de
   tener un `accessToken` cacheado para intentar restaurar la sesión, porque
   el interceptor de `httpClient` resuelve cualquier `401` contra
@@ -265,10 +285,42 @@ Cobertura automatizada:
   reset tenían un prefijo `/auth/` que no existía en las rutas reales del
   frontend; se corrigió en `espera-back` (commit `09e4e43`).
 - Cobertura e2e: `cypress/e2e/password-recovery.cy.js`.
+- `HU-1.8` implementada en frontend para onboarding de negocio.
+- Rutas relacionadas: `/panel` (vacío, sin negocio), `/business/new`
+  (alta), `/panel/business/:businessSlug/*` (con negocio).
+- Endpoints consumidos: `GET /api/business/me`, `GET /api/business/categories`,
+  `POST /api/business`, `POST /api/auth/refresh-token`.
+- El post-login ya no obliga a completar el formulario de negocio antes de
+  entrar al panel: `/panel` muestra un aviso + CTA cuando no hay negocio.
+  `BusinessCreatePage` usa el mismo lenguaje visual que login/registro y,
+  al crear el negocio, refresca el token (para reflejar `business_admin`
+  sin esperar el próximo login) y redirige por `slug`.
+- `BusinessPanelLayout` resuelve el negocio actual contra `GET /business/me`
+  y muestra el banner de `pending`/`rejected`/`approved` — antes era código
+  muerto que nunca se alimentaba.
+- Cobertura e2e: `cypress/e2e/business-create.cy.js`.
+- `HU-1.9` implementada en frontend para login/registro unificado con
+  Google.
+- Rutas relacionadas: `/login`, `/register`, `/oauth/google/callback`.
+- Endpoints consumidos: `GET /api/auth/google/url`,
+  `POST /api/auth/login/google`.
+- Un mismo botón ("Continuar con Google") y un mismo endpoint sirven para
+  crear cuenta o loguearse, sin que el frontend necesite distinguir los dos
+  casos (el backend resuelve *find-or-create*). `GoogleCallbackPage` usa
+  `useQuery` (no `useMutation` + `useEffect`, que quedaba encallado en
+  `pending` bajo `StrictMode`) siguiendo el mismo patrón que
+  `VerifyEmailPage`.
+- Cobertura e2e: `cypress/e2e/google-login.cy.js`.
 
 ## Próximo trabajo
 
-Con el ciclo de sesión de la Épica 1 cerrado (registro, login, refresh,
-logout, verificación de email y recuperación de password), la siguiente
-unidad funcional propuesta es retomar el onboarding combinado de negocio
-(`HU-1.8`/`HU-1.9`).
+Con `HU-1.8` y `HU-1.9` cerradas, la Épica 1 queda completa en su alcance
+web (`HU-1.2`/`HU-1.4` mobile quedan diferidas). El próximo trabajo es la
+`Épica 2 - Gestión de Negocios`: reemplazar los placeholders de perfil,
+horarios, ventanillas, estado operativo, QR y empleados por integración
+real. El backend ya tiene esas historias implementadas (`HU-2.1` a
+`HU-2.8`, ver `docs/epica-2-gestion-negocios.md` en `espera-back`); del
+lado frontend falta conectar cada pantalla a su endpoint y resolver el gap
+de contrato documentado en `epica-1-autenticacion-onboarding.md` (esas
+rutas piden `businessId` interno, el frontend hoy solo tiene el `slug`
+expuesto).

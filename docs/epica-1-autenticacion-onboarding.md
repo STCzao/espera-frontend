@@ -3,22 +3,23 @@
 ## Resumen
 
 La Épica 1 cubre el acceso inicial a Espera desde el frontend web: registro,
-login, sesión, verificación de email, recuperación de password y onboarding de
-negocios.
+login, sesión, verificación de email, recuperación de password, onboarding de
+negocios (con y sin Google) y el panel vacío que recibe a un usuario sin
+negocio todavía.
 
 El primer corte se enfoca en flujos públicos del panel y en preparar el acceso
 al panel web de negocios. Los flujos mobile de usuario final quedan diferidos.
 
 ## Estado general
 
-- Estado: `implementado parcialmente`.
-- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`. Verificación
-  de email (contrato de `HU-1.1`) también implementada.
-- Historias parciales: rutas base para recuperación de password, callback
-  OAuth y onboarding completo de negocio (alta combinada y Google).
-- Historias diferidas: registro/login Google mobile.
-- Motivos de diferidos: dependen de la app móvil, deep links y configuración real
-  por plataforma.
+- Estado: `implementado` (alcance web). Mobile queda diferido.
+- Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
+  `HU-1.8`, `HU-1.9`. Verificación de email (contrato de `HU-1.1`) también
+  implementada.
+- Historias diferidas: `HU-1.2` y `HU-1.4`, registro/login con Google en app
+  móvil.
+- Motivos de diferidos: dependen de la app móvil, deep links y configuración
+  real por plataforma (no hay app móvil registrada todavía).
 
 ## Superficies involucradas
 
@@ -39,9 +40,8 @@ POST /api/auth/resend-verification
 POST /api/auth/forgot-password
 POST /api/auth/reset-password
 GET /api/auth/google/url
-POST /api/auth/register-business
-POST /api/auth/register-business/google
 POST /api/auth/login/google
+GET /api/business/categories
 ```
 
 Sesión:
@@ -52,11 +52,24 @@ POST /api/auth/logout
 GET /api/auth/me
 ```
 
+Panel (requiere sesión):
+
+```text
+GET /api/business/me
+POST /api/business
+```
+
 Admin:
 
 ```text
-PATCH /api/business/:businessId/approve
+PATCH /api/auth/business-accounts/:userId/approve
 ```
+
+**Deprecados, no usar en flujos nuevos:** `POST /api/auth/register-business` y
+`POST /api/auth/register-business/google` (alta combinada de cuenta+negocio
+en un paso, arquitectura previa a `HU-1.8`/`HU-1.9`). El flujo vigente separa
+siempre cuenta (`POST /api/auth/register` o `POST /api/auth/login/google`) de
+negocio (`POST /api/business`, autenticado). Ver `HU-1.8` y `HU-1.9` abajo.
 
 ## HU-1.1 - Registro con email y password
 
@@ -332,13 +345,14 @@ onboarding de negocio si todavía no tiene uno).
   ['session']`) llamando a `GET /api/auth/me` (para que `AuthLayout` no
   repita el fetch) y se consulta `GET /api/business/me`
   (`businessOnboardingApi.listMine()`) para saber si el usuario ya tiene
-  negocio propio.
+  negocio propio. Esta lógica vive en `usePostLoginRedirect`
+  (`src/features/auth/hooks/usePostLoginRedirect.js`), compartida con el
+  login por Google (`HU-1.9`) para no duplicarla.
 - Redirección post-login: si existe `location.state.from` (ruta protegida que
   disparó el login), se vuelve ahí. Si no, y `GET /api/business/me` devuelve
-  al menos un negocio, se navega a `/panel/business/:id` (el primero de la
-  lista); si la lista viene vacía o la consulta falla, se navega a
-  `/business/new` (alta de negocio para cuenta ya autenticada, distinta de
-  `/business/register`).
+  al menos un negocio, se navega a `/panel/business/:slug` (el primero de la
+  lista, usando el `slug` público, nunca el `id` interno); si la lista viene
+  vacía o la consulta falla, se navega a `/panel` (panel vacío, ver `HU-1.8`).
 - Si el backend responde error, se conserva el formulario y se muestra un
   mensaje específico mapeado por código funcional (`getLoginErrorMessage`).
 - No se invalida cache adicional: el login es el punto de entrada de la
@@ -383,12 +397,19 @@ type MyBusinessesResponse = {
     id: string;
     name: string;
     slug: string;
-    organizationId: string;
+    status: 'pending' | 'approved' | 'rejected' | 'suspended';
     listingStatus: string;
     operationalStatus: string;
   }>;
 };
 ```
+
+`id` es el UUID interno del negocio: se usa solo para llamadas de API (hoy,
+para poblar `useCurrentBusinessStore` desde `BusinessPanelLayout`), nunca en
+URLs ni en texto visible. `slug` es el identificador público, usado en rutas
+(`/panel/business/:slug`) y en cualquier lugar donde el usuario vea el
+negocio nombrado. `status` es el estado de aprobación comercial del negocio
+(distinto de `listingStatus`, que controla visibilidad pública en discovery).
 
 ### Reglas de presentación
 
@@ -400,11 +421,14 @@ type MyBusinessesResponse = {
   funcional, nunca se muestra el mensaje crudo en inglés que devuelve la API:
   - `EMAIL_NOT_VERIFIED`: invita a revisar el email, sin ofrecer un botón de
     reenvío porque esa pantalla (`/verify-email`) sigue siendo un placeholder.
-  - `ACCOUNT_PENDING_REVIEW` / `ACCOUNT_REJECTED`: estado de revisión de la
-    cuenta de negocio.
+  - `ACCOUNT_REJECTED`: la solicitud de negocio fue rechazada por el equipo.
   - `LOGIN_TEMPORARILY_BLOCKED`: bloqueo temporal por intentos fallidos.
   - Sin código (401 credenciales inválidas) o error inesperado: mensaje
     genérico que no revela si falló el email o la password.
+  - `ACCOUNT_PENDING_REVIEW` **ya no existe** desde `HU-1.8`: un
+    `business_admin` con negocio `pending` puede loguearse normalmente y ve
+    su estado dentro del panel (`BusinessPanelLayout`), no como error de
+    login. Ver `HU-1.8`.
 - El copy visible de la interfaz se escribe en español rioplatense.
 
 ### Decisiones de producto / alcance
@@ -423,7 +447,6 @@ incompletas.
 
 - Reenvío de verificación desde el error de login.
 - Selección de negocio cuando una cuenta pertenece a más de uno.
-- Login Google web end-to-end.
 - Tests de componentes.
 - Medición de analytics.
 
@@ -432,17 +455,14 @@ incompletas.
 - `npm run lint`: ok.
 - `npm run build`: ok.
 - `npm run test:e2e`: ok.
-- Cypress cubre render de `/login`, validaciones cliente sin request al
-  backend, submit exitoso con normalización de email, redirección a
-  `/business/new` sin negocio asociado, redirección a `/panel/business/:id`
-  con negocio asociado, redirección a `/business/new` cuando
-  `GET /business/me` falla, y los cuatro casos de error funcional
-  (`EMAIL_NOT_VERIFIED`, `ACCOUNT_PENDING_REVIEW`, `LOGIN_TEMPORARILY_BLOCKED`,
-  credenciales inválidas sin código).
-- Cypress (`business-create.cy.js`) cubre `/business/new`: render con solo
-  campos de negocio (sin pedir identidad), validaciones cliente, submit
-  exitoso con redirección al panel, error de backend sin perder el
-  formulario, y redirección a `/login` si no hay sesión.
+- Cypress (`login.cy.js`, 10 tests) cubre render de `/login`, validaciones
+  cliente sin request al backend, submit exitoso con normalización de email
+  y redirección a `/panel` sin negocio asociado, redirección a
+  `/panel/business/:slug` con negocio asociado, redirección a `/panel`
+  cuando `GET /business/me` falla, los casos de error funcional
+  (`EMAIL_NOT_VERIFIED`, `ACCOUNT_REJECTED`, `LOGIN_TEMPORARILY_BLOCKED`,
+  credenciales inválidas sin código), y el botón de Google pidiendo la URL
+  de autorización.
 - Flujo manual esperado: abrir `/login`, completar credenciales válidas,
   enviar, y verificar la redirección esperada según si la cuenta tiene
   negocio asociado.
@@ -486,8 +506,16 @@ se corrigió igual, quitando el gate de rol.
 
 Se creó `BusinessCreatePage.jsx` (ruta `/business/new`, protegida por
 `AuthLayout`) como pantalla dedicada para este caso, con solo los campos de
-negocio. `BusinessRegisterPage.jsx` y `/business/register` quedan intactos
-para su propósito original (alta pública combinada).
+negocio. `BusinessRegisterPage.jsx` y `/business/register` quedaron
+intactos en ese momento para su propósito original (alta pública combinada).
+
+**Continúa en `HU-1.8`:** ese propósito original dejó de existir. El backend
+deprecó `POST /api/auth/register-business` (alta combinada) a favor del
+flujo separado cuenta→negocio, así que `BusinessRegisterPage.jsx` y la ruta
+`/business/register` se eliminaron por completo — no quedó ningún flujo que
+los consumiera. Ver `HU-1.8` para el rediseño final del onboarding de
+negocio (panel vacío en vez de gate obligatorio, `BusinessCreatePage.jsx`
+con el mismo lenguaje visual que login/registro).
 
 ## HU-1.5 - Refresh Token
 
@@ -863,3 +891,333 @@ frontend (`/reset-password`, `/verify-email`, sin prefijo). Se corrigió en
 `09e4e43`), junto con el valor de ejemplo de `APP_URL` en `.env.example`
 (apuntaba al puerto del backend, no al del frontend). Afectaba también al
 enlace de verificación de email ya mergeado.
+
+## HU-1.8 - Registro de negocio con cuenta pendiente
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona con cuenta verificada puede entrar al panel **sin tener negocio
+todavía**: lo ve vacío, con un aviso y un botón para registrarlo cuando
+quiera. Al registrarlo, el negocio queda pendiente de revisión, pero la
+persona sigue operando el panel (por ahora, viéndolo) sin que nada la
+bloquee.
+
+### Pantallas / Rutas
+
+```text
+/panel
+/panel/business/:businessSlug/*
+/business/new
+```
+
+### Estados de UI
+
+- `empty`: `/panel` sin negocio asociado — aviso + botón "Registrar tu
+  negocio", sidebar con la navegación deshabilitada (no hay nada que
+  navegar todavía).
+- `pending`: banner de advertencia en `BusinessPanelLayout` cuando
+  `status === 'pending'`.
+- `rejected`: banner de error cuando `status === 'rejected'`.
+- `approved`: sin banner de aprobación; si además hay `listingStatus`, se
+  muestra el estado público de discovery.
+- `loading` / `error` (alta de negocio): mismos estados que cualquier
+  formulario del resto de la épica.
+
+### Integración frontend
+
+- El post-login (`HU-1.3`, `HU-1.9`) manda a `/panel` cuando la cuenta no
+  tiene negocios, en vez de forzar un formulario antes de dejar entrar al
+  panel.
+- `BusinessPanelLayout` (`src/app/layouts/BusinessPanelLayout.jsx`) resuelve
+  el negocio actual a partir del `:businessSlug` de la URL: consulta
+  `GET /business/me`, busca el que matchea por `slug` y llena
+  `useCurrentBusinessStore` (`src/shared/business/currentBusinessStore.js`)
+  con `id`, `slug`, `name`, `status`, `listingStatus`, `operationalStatus`.
+  Sin `businessSlug` en la URL (ruta `/panel`), limpia el store y renderiza
+  `NoBusinessPanel` como `index`.
+- `NoBusinessPanel.jsx` es solo el aviso + link a `/business/new`; no arma
+  el negocio, delega en `BusinessCreatePage`.
+- `BusinessCreatePage.jsx` (ruta `/business/new`, protegida por
+  `AuthLayout`) pide nombre, categoría (`GET /business/categories`) y
+  dirección, dispara `POST /business` y, en el `onSuccess`:
+  1. llama a `authApi.refreshToken()` — el JWT actual sigue diciendo
+     `role: user` hasta el próximo login/refresh, y recién con el token
+     nuevo refleja `business_admin`;
+  2. navega a `/panel/business/:businessSlug` con el `slug` que devuelve la
+     respuesta (nunca el `id`).
+- El sidebar de `BusinessPanelLayout` nunca muestra el `id`/UUID interno:
+  mientras se resuelve el negocio actual muestra `…`, y una vez resuelto
+  muestra `name`.
+
+### Contratos consumidos
+
+```text
+GET /api/business/me
+GET /api/business/categories
+POST /api/business
+POST /api/auth/refresh-token
+```
+
+### Datos enviados
+
+```ts
+type CreateBusinessRequest = {
+  name: string;
+  categoryId: string;
+  address: string;
+};
+```
+
+### Datos esperados
+
+```ts
+type CreateBusinessResponse = {
+  businessId: string;
+  businessSlug: string;
+  status: 'pending';
+};
+```
+
+### Reglas de presentación
+
+- `BusinessCreatePage` usa el mismo lenguaje visual que `/login` y
+  `/register` (`BusinessCreateVisualScene.jsx` + `BusinessCreateFormPanel.jsx`,
+  ambos reusando `AuthVisualScene`/`AuthField` en vez de inventar un
+  sistema propio): coherencia visual en todo el onboarding, no solo en el
+  primer paso.
+- El botón de navegación de la sidebar se deshabilita visualmente
+  (`panel-layout__nav-item--disabled`) en vez de ocultarse cuando no hay
+  negocio: comunica que esas secciones van a existir, no que no existen.
+- El copy visible de la interfaz se escribe en español rioplatense.
+
+### Decisiones de producto / alcance
+
+El diseño original obligaba a completar el formulario de negocio antes de
+dejar entrar al panel (gate previo). Se cambió a "panel primero, negocio
+cuando quieras" porque el objetivo real de esta historia es que la persona
+pueda **ver** el panel apenas verifica su cuenta, no que opere con datos
+reales — operar de verdad es Épica 2. Forzar el formulario antes de mostrar
+nada no aportaba valor y sí fricción.
+
+`POST /business` no expone el `id` interno en ningún lugar visible (URL,
+sidebar, breadcrumbs); solo se usa internamente, guardado en
+`useCurrentBusinessStore`, para el día en que las pantallas de gestión
+(perfil, horarios, QR, empleados — hoy placeholders) necesiten armar
+llamadas a los endpoints que todavía piden `businessId` en la URL (ver
+Riesgos y Pendientes al final del documento).
+
+Se llama a `POST /auth/refresh-token` explícitamente después de crear el
+negocio, en vez de esperar a que el usuario recargue o vuelva a loguearse:
+sin esto, el usuario vería reflejado su nuevo rol `business_admin` recién
+en la próxima sesión, lo cual es confuso justo después de una acción que
+acaba de completar.
+
+### Diferidos
+
+- Selección entre negocios cuando una cuenta tiene más de uno (siempre se
+  usa el primero de la lista, igual que en `HU-1.3`).
+- Páginas de gestión reales (perfil, horarios, operación, QR, empleados):
+  hoy son placeholders (`PlaceholderPage`), Épica 2.
+- `PendingReviewLayout.jsx`, `BusinessPendingReviewPage.jsx` y
+  `ApprovalStatusBadge.jsx` quedaron como scaffolding de un intento previo,
+  sin ruta que los use; no se eliminaron ni se conectaron, decisión
+  pendiente para un bugfix aparte.
+- Tests de componentes.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`business-create.cy.js`, 5 tests) cubre: render de `/business/new`
+  con solo campos de negocio, validaciones cliente, alta exitosa con
+  refresh de token y redirección por `slug`, error de backend sin perder el
+  formulario, y redirección a `/login` sin sesión.
+- Flujo manual esperado: loguearse sin negocio, ver `/panel` vacío con el
+  aviso, tocar "Registrar tu negocio", completar el formulario, confirmar
+  que redirige a `/panel/business/:slug` con el banner de "pendiente de
+  revisión" visible.
+
+## HU-1.9 - OAuth de Google (panel web)
+
+Story points: no normalizado.
+
+Estado: `implementado`
+
+### Objetivo de experiencia
+
+Una persona puede crear cuenta o iniciar sesión indistintamente con Google
+desde `/login` **o** `/register` — el resultado es el mismo (sesión
+iniciada, mismo destino post-login que `HU-1.3`) sin que la persona tenga
+que saber de antemano si ya tenía cuenta o no.
+
+### Pantallas / Rutas
+
+```text
+/login
+/register
+/oauth/google/callback
+```
+
+### Estados de UI
+
+- `idle`: botón "Continuar con Google" disponible (en login y en registro).
+- `loading` (botón): pidiendo la URL de autorización a Google, justo antes
+  de redirigir el navegador.
+- `loading` (callback): "Conectando con Google…" mientras se intercambia
+  `code`/`state` por sesión.
+- `error` (callback): mensaje específico según el motivo (cancelado en
+  Google, enlace inválido, o código funcional del backend) con link a
+  volver a `/login`.
+- éxito: no tiene estado propio visible, redirige igual que un login
+  exitoso por email/password.
+
+### Integración frontend
+
+- `useGoogleAuthRedirect` (`src/features/auth/hooks/useGoogleAuthRedirect.js`)
+  centraliza el pedido de `GET /auth/google/url` y el
+  `window.location.assign(url)`; lo usan tanto `LoginPage` como
+  `RegisterPage`.
+- `GoogleAuthButton` (`src/features/auth/components/GoogleAuthButton.jsx`)
+  es el botón + divisor + mensaje de error, compartido entre
+  `LoginFormPanel` y `RegisterFormPanel` — mismo componente, no una copia
+  por pantalla.
+- `GoogleCallbackPage.jsx` lee `code`, `state` y `error` de la URL
+  (`useSearchParams`) y usa **`useQuery`** (no `useMutation` disparado
+  desde un `useEffect`) para llamar `POST /auth/login/google`, siguiendo el
+  mismo patrón que `VerifyEmailPage` (fetch en mount atado a un parámetro
+  de URL). Al resolver con éxito, dispara el mismo
+  `usePostLoginRedirect` que usa `LoginPage`.
+- El backend resuelve login/registro en un único endpoint
+  (`POST /auth/login/google`) con semántica *find-or-create*: si el email
+  de Google no tiene cuenta, la crea (`role: user`, sin password, email
+  verificado por Google); si ya existe, hace login. El frontend no
+  necesita distinguir los dos casos.
+
+### Contratos consumidos
+
+```text
+GET /api/auth/google/url
+POST /api/auth/login/google
+```
+
+### Datos enviados
+
+```ts
+type LoginWithGoogleRequest = {
+  code: string;
+  state: string;
+};
+```
+
+### Datos esperados
+
+```ts
+type GoogleUrlResponse = {
+  url: string;
+  state: string;
+};
+
+type LoginWithGoogleResponse = {
+  accessToken: string;
+  refreshToken: string;
+};
+```
+
+### Reglas de presentación
+
+- El botón es idéntico en `/login` y `/register`: mismo ícono, mismo label
+  ("Continuar con Google"), mismo lugar relativo al formulario (debajo, con
+  un divisor "o").
+- Los códigos de error del backend se traducen en `getLoginErrorMessage`
+  (compartido con `HU-1.3`, ver `loginErrorMessages.js`):
+  `GOOGLE_OAUTH_STATE_MISMATCH`, `GOOGLE_EMAIL_NOT_VERIFIED`,
+  `AUTH_PROVIDER_MISMATCH` (el email ya existe pero se registró con
+  password), `GOOGLE_ACCOUNT_MISMATCH` y `ACCOUNT_REJECTED`.
+- El copy visible de la interfaz se escribe en español rioplatense.
+
+### Decisiones de producto / alcance
+
+Se descartó a propósito un endpoint de "registro con Google" separado del
+de "login con Google" (que hubiera espejado `POST /auth/register` vs
+`POST /auth/login`). Esa separación tiene sentido en email/password porque
+registrar necesita verificar el email y pedir password — Google ya
+resuelve las dos cosas por su cuenta (entrega el email verificado, es el
+propio mecanismo de auth), así que no había ninguna razón real para
+bloquear a alguien nuevo con "no encontramos tu cuenta, registrate primero"
+cuando ya demostró ser dueño del email. Un solo botón, un solo endpoint,
+mismo resultado desde cualquiera de las dos pantallas.
+
+**Nota técnica (bug de librería):** la primera versión de
+`GoogleCallbackPage` usaba `useMutation` disparada desde un `useEffect` al
+montar. Bajo `StrictMode`, la mutación quedaba encallada en `pending` para
+siempre — el fetch se completaba (confirmado con la request real en las
+DevTools) pero el estado de React Query nunca se actualizaba a
+`success`/`error`. Se resolvió reemplazando el patrón por `useQuery` con
+`enabled`, igual que ya hacía `VerifyEmailPage` para el mismo tipo de caso
+("ejecutar un fetch una vez al montar, atado a un parámetro de la URL").
+
+**Nota técnica (config, backend):** en desarrollo local, `GOOGLE_CALLBACK_URL`
+y `APP_URL` (`espera-back/.env`, no trackeado en git) deben apuntar al
+**origen del frontend** (`http://localhost:5173`), no al del backend
+(`http://localhost:3000`). Google redirige el navegador directo a
+`GOOGLE_CALLBACK_URL` tal cual está configurado — si apunta al backend, cae
+en un `404 Cannot GET` porque ahí no existe (ni debe existir) una ruta
+`GET /auth/google/callback`: quien procesa el `code`/`state` es
+`GoogleCallbackPage.jsx` en el frontend. Además, el "Authorized redirect
+URI" configurado en Google Cloud Console tiene que matchear exacto ese
+valor, o Google rechaza el intercambio con `redirect_uri_mismatch`.
+
+### Diferidos
+
+- `HU-1.2` / `HU-1.4`: registro/login con Google en app móvil (dependen de
+  la app móvil y su configuración OAuth propia).
+- Tests de componentes.
+- Medición de analytics.
+
+### Validación
+
+- `npm run lint`: ok.
+- `npm run build`: ok.
+- `npm run test:e2e`: ok.
+- Cypress (`google-login.cy.js`, 5 tests) cubre: login exitoso sin
+  negocios (→ `/panel`), login exitoso con negocio (→
+  `/panel/business/:slug`), cancelación en Google, enlace sin
+  `code`/`state`, y error funcional (`AUTH_PROVIDER_MISMATCH`). Se sumó un
+  test a `login.cy.js` y otro a `register.cy.js` para el botón pidiendo la
+  URL de autorización.
+- Validado manualmente end-to-end en navegador real contra Google OAuth
+  real (no solo mockeado): detectó y permitió corregir el problema de
+  `GOOGLE_CALLBACK_URL`/`APP_URL` mal configurados, que ningún test
+  automatizado con intercepts podía haber encontrado.
+- Flujo manual esperado: desde `/login` o `/register`, tocar "Continuar con
+  Google", completar el consentimiento real, y verificar que vuelve
+  autenticado al destino correcto según tenga o no negocio.
+
+## Riesgos y Pendientes Transversales
+
+- **Gap de contrato con backend:** los endpoints de gestión de negocio
+  (perfil, horarios, service-windows, estado operativo, QR, empleados — 9
+  rutas en total) siguen pidiendo el `businessId` interno en la URL, pero
+  el frontend hoy solo expone/usa el `slug` en rutas y UI. El `id` queda
+  disponible en `useCurrentBusinessStore` para cuando esas pantallas dejen
+  de ser placeholders, pero no está probado end-to-end porque todavía no
+  existen. Si el backend no ofrece una forma de resolver `slug → id` (o no
+  acepta `slug` directamente en esas rutas), esas pantallas no van a poder
+  armar sus llamadas.
+- **Scaffolding sin resolver:** `PendingReviewLayout.jsx`,
+  `BusinessPendingReviewPage.jsx` y `ApprovalStatusBadge.jsx` no están
+  ruteados en ningún lado. Candidatos a eliminar o a wirear, pendiente de
+  decisión.
+- **Selección de negocio:** ninguna pantalla soporta todavía elegir entre
+  varios negocios de una misma cuenta; siempre se opera con el primero de
+  la lista.
+- **Cobertura E2E 100% mockeada:** Cypress corre contra `cy.intercept`, sin
+  backend real ni base de datos real en el pipeline. La validación con
+  Google OAuth real (`HU-1.9`) y con Postman/backend real sigue siendo
+  manual.
+- Cierre de `HU-1.2`/`HU-1.4` (mobile) cuando exista app registrada.
