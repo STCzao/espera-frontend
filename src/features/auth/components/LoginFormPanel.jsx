@@ -2,10 +2,11 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AuthField } from './AuthField.jsx'
+import { GoogleAuthButton } from './GoogleAuthButton.jsx'
 import { PasswordField } from './PasswordField.jsx'
 import { getLoginErrorMessage } from '../model/loginErrorMessages.js'
 
-export function LoginFormPanel({ form, loginMutation, onSubmit, reduceMotion }) {
+export function LoginFormPanel({ form, googleLoginMutation, loginMutation, onGoogleLogin, onSubmit, reduceMotion }) {
   const {
     formState: { errors },
     handleSubmit,
@@ -80,6 +81,8 @@ export function LoginFormPanel({ form, loginMutation, onSubmit, reduceMotion }) 
             </>
           )}
         </button>
+
+        <GoogleAuthButton googleMutation={googleLoginMutation} onClick={onGoogleLogin} />
 
         <p className="text-center text-sm text-espera-text-muted">
           ¿Todavía no tenés cuenta?{' '}

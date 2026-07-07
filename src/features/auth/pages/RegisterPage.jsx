@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useReducedMotion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { authApi } from '../api/authApi.js'
+import { useGoogleAuthRedirect } from '../hooks/useGoogleAuthRedirect.js'
 import { RegisterFormPanel } from '../components/RegisterFormPanel.jsx'
 import { RegisterSuccessPanel } from '../components/RegisterSuccessPanel.jsx'
 import { RegisterVisualScene } from '../components/RegisterVisualScene.jsx'
@@ -18,6 +19,7 @@ const defaultValues = {
 
 export function RegisterPage() {
   const shouldReduceMotion = useReducedMotion()
+  const { googleLoginMutation, triggerGoogleLogin } = useGoogleAuthRedirect()
   const form = useForm({
     defaultValues,
     resolver: zodResolver(registerSchema),
@@ -46,6 +48,8 @@ export function RegisterPage() {
       ) : (
         <RegisterFormPanel
           form={form}
+          googleLoginMutation={googleLoginMutation}
+          onGoogleLogin={triggerGoogleLogin}
           onSubmit={handleSubmit}
           reduceMotion={shouldReduceMotion}
           registerMutation={registerMutation}

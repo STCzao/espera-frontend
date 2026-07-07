@@ -2,10 +2,13 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthField } from './AuthField.jsx'
+import { GoogleAuthButton } from './GoogleAuthButton.jsx'
 import { PasswordField } from './PasswordField.jsx'
 
 export function RegisterFormPanel({
   form,
+  googleLoginMutation,
+  onGoogleLogin,
   onSubmit,
   reduceMotion,
   registerMutation,
@@ -115,6 +118,8 @@ export function RegisterFormPanel({
             </>
           )}
         </button>
+
+        <GoogleAuthButton googleMutation={googleLoginMutation} onClick={onGoogleLogin} />
 
         <p className="text-center text-sm text-espera-text-muted">
           ¿Ya tenés cuenta?{' '}
