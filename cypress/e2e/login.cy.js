@@ -54,7 +54,8 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.wait('@login')
     cy.wait('@me')
     cy.wait('@myBusinesses')
-    cy.url().should('include', '/business/new')
+    cy.url().should('include', '/panel')
+    cy.url().should('not.include', '/panel/business')
   })
 
   it('redirige al panel del negocio cuando el usuario ya tiene uno asignado', () => {
@@ -72,7 +73,7 @@ describe('HU-1.3 - Login con email y password', () => {
 
     cy.intercept('GET', '**/business/me', {
       statusCode: 200,
-      body: { businesses: [{ id: 'biz_1', name: 'Cafe Espera' }] },
+      body: { businesses: [{ id: 'biz_1', slug: 'cafe-espera', name: 'Cafe Espera', status: 'pending' }] },
     }).as('myBusinesses')
 
     cy.get('#email').type('santi@example.com')
@@ -82,10 +83,10 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.wait('@login')
     cy.wait('@me')
     cy.wait('@myBusinesses')
-    cy.url().should('include', '/panel/business/biz_1')
+    cy.url().should('include', '/panel/business/cafe-espera')
   })
 
-  it('redirige a /business/new si falla la consulta de negocios propios', () => {
+  it('redirige a /panel si falla la consulta de negocios propios', () => {
     cy.intercept('POST', '**/auth/login', {
       statusCode: 200,
       body: { accessToken: 'access-token-123', refreshToken: 'refresh-token-123' },
@@ -107,7 +108,8 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.wait('@login')
     cy.wait('@me')
     cy.wait('@myBusinesses')
-    cy.url().should('include', '/business/new')
+    cy.url().should('include', '/panel')
+    cy.url().should('not.include', '/panel/business')
   })
 
   it('muestra el mensaje de email no verificado sin perder el formulario', () => {
@@ -125,10 +127,10 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.contains('button', /ingresar/i).should('be.visible')
   })
 
-  it('muestra el mensaje de cuenta de negocio pendiente de revisión', () => {
+  it('muestra el mensaje de cuenta de negocio rechazada', () => {
     cy.intercept('POST', '**/auth/login', {
       statusCode: 403,
-      body: { message: 'Your account is still under review.', code: 'ACCOUNT_PENDING_REVIEW' },
+      body: { message: 'Your account approval request was rejected.', code: 'ACCOUNT_REJECTED' },
     }).as('login')
 
     cy.get('#email').type('santi@example.com')
@@ -136,7 +138,7 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.contains('button', /ingresar/i).click()
 
     cy.wait('@login')
-    cy.contains(/cuenta de negocio está en revisión/i).should('be.visible')
+    cy.contains(/solicitud de tu negocio fue rechazada/i).should('be.visible')
   })
 
   it('muestra el mensaje de bloqueo temporal por intentos fallidos', () => {
