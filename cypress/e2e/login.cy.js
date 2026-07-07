@@ -171,4 +171,19 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.wait('@login')
     cy.contains(/email o contraseña incorrectos/i).should('be.visible')
   })
+
+  it('pide la URL de Google y redirige el navegador al hacer click en "Continuar con Google"', () => {
+    // Points at an in-app path (instead of a real accounts.google.com URL) so the
+    // real window.location.assign() call in this test stays same-origin and doesn't
+    // navigate Cypress out of the app under test.
+    cy.intercept('GET', '**/auth/google/url', {
+      statusCode: 200,
+      body: { url: '/oauth/google/callback?mock=1', state: 'mock-state' },
+    }).as('googleUrl')
+
+    cy.contains('button', /continuar con google/i).click()
+
+    cy.wait('@googleUrl')
+    cy.url().should('include', '/oauth/google/callback?mock=1')
+  })
 })

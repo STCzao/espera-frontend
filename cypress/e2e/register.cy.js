@@ -5,7 +5,7 @@ describe('HU-1.1 - Registro con email y password', () => {
     cy.visit('/register')
   })
 
-  it('muestra la pantalla de registro local sin acciones OAuth activas', () => {
+  it('muestra la pantalla de registro con el formulario local y la opción de Google', () => {
     cy.contains('h1', /creá tu cuenta/i).should('be.visible')
     cy.contains('button', /crear cuenta/i).should('be.visible')
     cy.get('#firstName').should('be.visible')
@@ -13,7 +13,21 @@ describe('HU-1.1 - Registro con email y password', () => {
     cy.get('#email').should('be.visible')
     cy.get('#password').should('be.visible')
     cy.get('#confirmPassword').should('be.visible')
-    cy.contains(/continuar con google/i).should('not.exist')
+    cy.contains('button', /continuar con google/i).scrollIntoView().should('be.visible')
+  })
+
+  it('pide la URL de Google y redirige el navegador al hacer click en "Continuar con Google"', () => {
+    // Points at an in-app path so the real window.location.assign() call in this
+    // test stays same-origin and doesn't navigate Cypress out of the app under test.
+    cy.intercept('GET', '**/auth/google/url', {
+      statusCode: 200,
+      body: { url: '/oauth/google/callback?mock=1', state: 'mock-state' },
+    }).as('googleUrl')
+
+    cy.contains('button', /continuar con google/i).click()
+
+    cy.wait('@googleUrl')
+    cy.url().should('include', '/oauth/google/callback?mock=1')
   })
 
   it('permite mostrar y ocultar la contraseña', () => {
