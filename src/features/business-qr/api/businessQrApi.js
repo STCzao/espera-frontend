@@ -7,6 +7,9 @@ export const businessQrApi = {
   regenerateQr(businessId) {
     return httpClient.post(`/business/${businessId}/qr/regenerate`)
   },
+  getQrPng(businessId) {
+    return httpClient.getBlob(`/business/${businessId}/qr.png`)
+  },
   resolveQr(token) {
     return httpClient.get(`/qr/${token}`)
   },
