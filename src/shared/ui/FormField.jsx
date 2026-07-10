@@ -1,4 +1,4 @@
-export function AuthField({ description, error, label, registration, type = 'text', ...props }) {
+export function FormField({ description, error, label, registration, type = 'text', ...props }) {
   const inputId = registration.name
   const descriptionId = description ? `${inputId}-description` : undefined
   const errorId = error ? `${inputId}-error` : undefined

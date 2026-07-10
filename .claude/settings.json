@@ -6,7 +6,15 @@
       "Bash(node scripts/without-electron-run-as-node.mjs npx cypress run --e2e --config baseUrl=http://127.0.0.1:5199 --spec \"cypress/e2e/zz-debug.cy.js\")",
       "Bash(pkill -f \"vite --host 127.0.0.1 --port 5199\" 2>/dev/null; rm -f /tmp/debug.cy.js /tmp/vite*.log; echo done)",
       "Bash(node scripts/without-electron-run-as-node.mjs npx cypress run --e2e --config baseUrl=http://127.0.0.1:5199 --spec \"cypress/e2e/register.cy.js\")",
-      "Bash(pkill -f \"vite --host 127.0.0.1 --port 5199\" 2>/dev/null; rm -f /tmp/vite5.log; echo done)"
+      "Bash(pkill -f \"vite --host 127.0.0.1 --port 5199\" 2>/dev/null; rm -f /tmp/vite5.log; echo done)",
+      "Bash(cat src/modules/business/domain/BusinessCategoryConfig.ts)",
+      "Bash(cat src/modules/business/domain/BusinessCategoryConfigRegistry.ts)",
+      "Bash(node scripts/without-electron-run-as-node.mjs npx cypress run --e2e --config baseUrl=http://127.0.0.1:5199 --spec \"cypress/e2e/business-profile.cy.js\")",
+      "Bash(node scripts/without-electron-run-as-node.mjs npx cypress run --e2e --config baseUrl=http://127.0.0.1:5199 --spec \"cypress/e2e/zz-visual-check.cy.js\")",
+      "Bash(rm \"d:/Programacion/SaaS/Espera/espera-front/cypress/e2e/zz-visual-check.cy.js\")",
+      "Bash(rm -rf \"d:/Programacion/SaaS/Espera/espera-front/cypress/screenshots/zz-visual-check.cy.js\")",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)"
     ],
     "additionalDirectories": [
       "\\tmp"

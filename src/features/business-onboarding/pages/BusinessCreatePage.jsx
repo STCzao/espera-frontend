@@ -13,6 +13,7 @@ import { createBusinessSchema } from '../model/businessOnboardingSchemas.js'
 const defaultValues = {
   name: '',
   categoryId: '',
+  phone: '',
   address: '',
 }
 

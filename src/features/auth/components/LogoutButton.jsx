@@ -28,7 +28,7 @@ export function LogoutButton({ className }) {
     <>
       <button className={className} onClick={() => setIsConfirmOpen(true)} type="button">
         <LogOut size={16} aria-hidden="true" />
-        Cerrar sesión
+        <span className="panel-layout__logout-label">Cerrar sesión</span>
       </button>
       <ConfirmDialog
         confirmLabel="Cerrar sesión"
