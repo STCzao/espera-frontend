@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { AuthField } from './AuthField.jsx'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormField } from '../../../shared/ui/FormField.jsx'
 import { GoogleAuthButton } from './GoogleAuthButton.jsx'
 import { PasswordField } from './PasswordField.jsx'
 import { getLoginErrorMessage } from '../model/loginErrorMessages.js'
@@ -12,8 +13,6 @@ export function LoginFormPanel({ form, googleLoginMutation, loginMutation, onGoo
     handleSubmit,
     register,
   } = form
-
-  const isBusy = loginMutation.isPending
 
   return (
     <motion.section
@@ -39,7 +38,7 @@ export function LoginFormPanel({ form, googleLoginMutation, loginMutation, onGoo
       </div>
 
       <form className="mt-8 grid gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <AuthField
+        <FormField
           autoComplete="email"
           error={errors.email?.message}
           label="Email"
@@ -64,23 +63,9 @@ export function LoginFormPanel({ form, googleLoginMutation, loginMutation, onGoo
           <FormError>{getLoginErrorMessage(loginMutation.error)}</FormError>
         )}
 
-        <button
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-espera-border bg-white px-4 font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isBusy}
-          type="submit"
-        >
-          {isBusy ? (
-            <>
-              <Loader2 className="animate-spin" size={18} aria-hidden="true" />
-              Ingresando
-            </>
-          ) : (
-            <>
-              Ingresar
-              <ArrowRight size={18} aria-hidden="true" />
-            </>
-          )}
-        </button>
+        <FormButton icon={ArrowRight} isPending={loginMutation.isPending} pendingLabel="Ingresando">
+          Ingresar
+        </FormButton>
 
         <GoogleAuthButton googleMutation={googleLoginMutation} onClick={onGoogleLogin} />
 

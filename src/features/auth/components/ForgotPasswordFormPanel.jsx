@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { ArrowRight, Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { AuthField } from './AuthField.jsx'
+import { FormField } from '../../../shared/ui/FormField.jsx'
 
 export function ForgotPasswordFormPanel({ form, forgotMutation, onSubmit, reduceMotion }) {
   const {
@@ -36,7 +36,7 @@ export function ForgotPasswordFormPanel({ form, forgotMutation, onSubmit, reduce
       </div>
 
       <form className="mt-8 grid gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <AuthField
+        <FormField
           autoComplete="email"
           error={errors.email?.message}
           label="Email"

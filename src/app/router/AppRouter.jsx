@@ -13,6 +13,7 @@ const VerifyEmailPage = lazy(() => import('../../features/auth/pages/VerifyEmail
 const GoogleCallbackPage = lazy(() => import('../../features/auth/pages/GoogleCallbackPage.jsx').then((module) => ({ default: module.GoogleCallbackPage })))
 const BusinessCreatePage = lazy(() => import('../../features/business-onboarding/pages/BusinessCreatePage.jsx').then((module) => ({ default: module.BusinessCreatePage })))
 const NoBusinessPanel = lazy(() => import('../../features/business-onboarding/pages/NoBusinessPanel.jsx').then((module) => ({ default: module.NoBusinessPanel })))
+const BusinessHomePage = lazy(() => import('../../features/business-home/pages/BusinessHomePage.jsx').then((module) => ({ default: module.BusinessHomePage })))
 const BusinessProfilePage = lazy(() => import('../../features/business-profile/pages/BusinessProfilePage.jsx').then((module) => ({ default: module.BusinessProfilePage })))
 const BusinessHoursPage = lazy(() => import('../../features/business-hours/pages/BusinessHoursPage.jsx').then((module) => ({ default: module.BusinessHoursPage })))
 const BusinessOperationsPage = lazy(() => import('../../features/business-operations/pages/BusinessOperationsPage.jsx').then((module) => ({ default: module.BusinessOperationsPage })))
@@ -42,7 +43,7 @@ export function AppRouter() {
             <Route index element={<NoBusinessPanel />} />
           </Route>
           <Route path="/panel/business/:businessSlug" element={<BusinessPanelLayout />}>
-            <Route index element={<Navigate to="profile" replace />} />
+            <Route index element={<BusinessHomePage />} />
             <Route path="profile" element={<BusinessProfilePage />} />
             <Route path="hours" element={<BusinessHoursPage />} />
             <Route path="operations" element={<BusinessOperationsPage />} />

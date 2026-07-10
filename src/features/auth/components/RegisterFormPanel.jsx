@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AuthField } from './AuthField.jsx'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormField } from '../../../shared/ui/FormField.jsx'
 import { GoogleAuthButton } from './GoogleAuthButton.jsx'
 import { PasswordField } from './PasswordField.jsx'
 
@@ -19,8 +20,6 @@ export function RegisterFormPanel({
     handleSubmit,
     register,
   } = form
-
-  const isBusy = registerMutation.isPending
 
   return (
     <motion.section
@@ -56,13 +55,13 @@ export function RegisterFormPanel({
 
       <form className="mt-8 grid gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
-          <AuthField
+          <FormField
             autoComplete="given-name"
             error={errors.firstName?.message}
             label="Nombre"
             registration={register('firstName')}
           />
-          <AuthField
+          <FormField
             autoComplete="family-name"
             error={errors.lastName?.message}
             label="Apellido"
@@ -70,7 +69,7 @@ export function RegisterFormPanel({
           />
         </div>
 
-        <AuthField
+        <FormField
           autoComplete="email"
           error={errors.email?.message}
           label="Email"
@@ -101,23 +100,9 @@ export function RegisterFormPanel({
           </FormError>
         )}
 
-        <button
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-espera-border bg-white px-4 font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isBusy}
-          type="submit"
-        >
-          {registerMutation.isPending ? (
-            <>
-              <Loader2 className="animate-spin" size={18} aria-hidden="true" />
-              Creando cuenta
-            </>
-          ) : (
-            <>
-              Crear cuenta
-              <ArrowRight size={18} aria-hidden="true" />
-            </>
-          )}
-        </button>
+        <FormButton icon={ArrowRight} isPending={registerMutation.isPending} pendingLabel="Creando cuenta">
+          Crear cuenta
+        </FormButton>
 
         <GoogleAuthButton googleMutation={googleLoginMutation} onClick={onGoogleLogin} />
 

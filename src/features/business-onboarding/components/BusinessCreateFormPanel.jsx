@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { AuthField } from '../../auth/components/AuthField.jsx'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormField } from '../../../shared/ui/FormField.jsx'
+import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
 
 export function BusinessCreateFormPanel({
   categoriesQuery,
@@ -15,8 +17,6 @@ export function BusinessCreateFormPanel({
     handleSubmit,
     register,
   } = form
-
-  const isBusy = createMutation.isPending
 
   return (
     <motion.section
@@ -49,41 +49,39 @@ export function BusinessCreateFormPanel({
       </div>
 
       <form className="mt-8 grid gap-5" onSubmit={handleSubmit(onSubmit)} noValidate>
-        <AuthField
+        <FormField
           autoComplete="organization"
           error={errors.name?.message}
           label="Nombre del negocio"
           registration={register('name')}
         />
 
-        <label className="grid gap-2 text-sm font-semibold text-espera-text" htmlFor="categoryId">
-          Categoría
-          <select
-            aria-invalid={Boolean(errors.categoryId)}
-            className="min-h-12 rounded-lg border border-espera-border bg-white px-4 text-base font-normal text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft"
-            defaultValue=""
-            disabled={categoriesQuery.isLoading}
-            id="categoryId"
-            {...register('categoryId')}
-          >
-            <option disabled value="">
-              {categoriesQuery.isLoading ? 'Cargando categorías…' : 'Seleccioná una categoría'}
+        <FormSelect
+          error={errors.categoryId?.message}
+          label="Categoría"
+          loading={categoriesQuery.isLoading}
+          loadingLabel="Cargando categorías…"
+          placeholder="Seleccioná una categoría"
+          registration={register('categoryId')}
+        >
+          {categoriesQuery.data?.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
             </option>
-            {categoriesQuery.data?.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          {categoriesQuery.isError && (
-            <span className="text-xs font-normal text-espera-danger">No pudimos cargar las categorías.</span>
-          )}
-          {errors.categoryId && (
-            <span className="text-xs font-normal text-espera-danger">{errors.categoryId.message}</span>
-          )}
-        </label>
+          ))}
+        </FormSelect>
+        {categoriesQuery.isError && (
+          <span className="-mt-3 text-xs font-normal text-espera-danger">No pudimos cargar las categorías.</span>
+        )}
 
-        <AuthField
+        <FormField
+          autoComplete="tel"
+          error={errors.phone?.message}
+          label="Teléfono (opcional)"
+          registration={register('phone')}
+        />
+
+        <FormField
           autoComplete="street-address"
           error={errors.address?.message}
           label="Dirección"
@@ -96,23 +94,9 @@ export function BusinessCreateFormPanel({
           </FormError>
         )}
 
-        <button
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-espera-border bg-white px-4 font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isBusy}
-          type="submit"
-        >
-          {isBusy ? (
-            <>
-              <Loader2 className="animate-spin" size={18} aria-hidden="true" />
-              Creando…
-            </>
-          ) : (
-            <>
-              Crear negocio
-              <ArrowRight size={18} aria-hidden="true" />
-            </>
-          )}
-        </button>
+        <FormButton icon={ArrowRight} isPending={createMutation.isPending} pendingLabel="Creando…">
+          Crear negocio
+        </FormButton>
       </form>
     </motion.section>
   )

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 
 export const businessProfileSchema = z.object({
-  name: z.string().min(1).optional(),
-  categoryId: z.string().min(1).optional(),
-  address: z.string().optional(),
+  name: z.string().trim().min(1, 'Ingresá el nombre del negocio.'),
+  categoryId: z.string().trim().min(1, 'Seleccioná una categoría.'),
+  phone: z.string().trim().max(30, 'Máximo 30 caracteres.').optional(),
+  address: z.string().trim().min(1, 'Ingresá la dirección.'),
 })
