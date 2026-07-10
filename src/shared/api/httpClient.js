@@ -39,7 +39,7 @@ async function request(path, options = {}, retrying = false) {
     return null
   }
 
-  return response.json()
+  return options.responseType === 'blob' ? response.blob() : response.json()
 }
 
 async function refreshSession() {
@@ -62,6 +62,9 @@ async function refreshSession() {
 export const httpClient = {
   get(path) {
     return request(path)
+  },
+  getBlob(path) {
+    return request(path, { responseType: 'blob' })
   },
   post(path, body) {
     return request(path, {
