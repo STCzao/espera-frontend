@@ -15,18 +15,19 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `Épica 1 cerrada (alcance web)`.
-- Épicas: `Épica 1 - Autenticación y Onboarding` cerrada en su alcance web;
-  `Épica 2 - Gestión de Negocios` en preparación (rutas y placeholders
-  creados, integración real pendiente).
+- Estado: `Épica 1 y 2 cerradas (alcance web)`.
+- Épicas: `Épica 1 - Autenticación y Onboarding` y `Épica 2 - Gestión de
+  Negocios` cerradas en su alcance web; `Épica 3 - Cola` no arrancó
+  (backend solo tiene rutas stub en `/api/queue`).
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
-  `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`).
+  `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
+  (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
+  `HU-2.6`, `HU-2.8`.
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
-- Historias parciales: rutas base y placeholders para panel de negocio, QR y
-  empleados (Épica 2).
 - Historias diferidas transversales: mobile completa, deep links
   definitivos, cola persistida, métricas operativas, notificaciones push
-  end-to-end.
+  end-to-end, gate de UI por rol `employee` en el panel (ver `HU-2.8` en
+  `docs/epica-2-gestion-negocios.md`).
 
 ## Stack actual
 
@@ -60,6 +61,7 @@ src/
   features/
     auth/
     business-onboarding/
+    business-home/
     business-profile/
     business-hours/
     business-operations/
@@ -102,21 +104,23 @@ Estado:
 Responsabilidades:
 
 - onboarding: panel vacío + alta de negocio (`HU-1.8`);
-- perfil del negocio;
-- horarios;
-- ventanillas activas;
-- estado operativo;
-- QR;
-- empleados.
+- perfil del negocio (`HU-2.6`);
+- horarios (`HU-2.2`);
+- ventanillas activas (`HU-2.3`);
+- estado operativo (`HU-2.5`);
+- QR (`HU-2.4`);
+- empleados (`HU-2.8`).
 
 Estado:
 
 - onboarding (`HU-1.8`) implementado end-to-end: `BusinessPanelLayout`
   resuelve el negocio actual por `slug` contra `GET /business/me` y
   muestra el banner de `pending`/`rejected`/`approved`;
-- perfil, horarios, ventanillas, estado operativo, QR y empleados: layout
-  base y rutas creadas, pantallas siguen siendo `PlaceholderPage` (Épica 2,
-  integración real pendiente historia por historia).
+- perfil, horarios, ventanillas, estado operativo, QR y empleados
+  implementados end-to-end contra el backend real (Épica 2 completa, ver
+  `docs/epica-2-gestion-negocios.md`);
+- gate de UI por rol (`employee` vs `business_admin`) diferido: hoy ambos
+  roles ven el mismo menú en el panel.
 
 ### Entrada pública QR
 
@@ -221,9 +225,16 @@ Cobertura automatizada:
 - Cypress e2e cubre `HU-1.9` en `/oauth/google/callback`: login exitoso sin
   negocio, login exitoso con negocio, cancelación en Google, enlace sin
   `code`/`state`, y error funcional (`AUTH_PROVIDER_MISMATCH`).
-- 47 tests e2e en total, todos verdes (`business-create`, `google-login`,
-  `login`, `logout`, `password-recovery`, `refresh-token`, `register`,
-  `verify-email`).
+- Cypress e2e cubre `HU-2.6` en `/panel/business/:businessSlug/profile`:
+  precarga de datos, validación de campos requeridos, atributos de categoría
+  informativos, guardado exitoso, error de backend sin perder el formulario.
+- 52 tests e2e en total, todos verdes (`business-create`, `business-profile`,
+  `google-login`, `login`, `logout`, `password-recovery`, `refresh-token`,
+  `register`, `verify-email`).
+- Sin cobertura e2e todavía: `HU-2.2` (horarios), `HU-2.3`/`HU-2.5`
+  (operación), `HU-2.4` (QR), `HU-2.8` (empleados). Las cuatro están
+  validadas manualmente contra el backend real, ver
+  `docs/epica-2-gestion-negocios.md`.
 
 ## Avance actual
 
@@ -311,16 +322,70 @@ Cobertura automatizada:
   `pending` bajo `StrictMode`) siguiendo el mismo patrón que
   `VerifyEmailPage`.
 - Cobertura e2e: `cypress/e2e/google-login.cy.js`.
+- `HU-2.1` implementada junto con `HU-1.8` (ver esa historia arriba); en esta
+  épica se sumó el campo `phone` (opcional) al alta de negocio.
+- `HU-2.6` implementada en frontend para editar perfil del negocio.
+- Ruta relacionada: `/panel/business/:businessSlug/profile`.
+- Endpoints consumidos: `GET /api/business/me`, `GET /api/business/categories`,
+  `GET /api/business/categories/:categoryId/config`,
+  `PATCH /api/business/:businessId/profile`.
+- Cobertura e2e: `cypress/e2e/business-profile.cy.js`.
+- `HU-2.2` implementada en frontend para configurar horarios de atención.
+- Ruta relacionada: `/panel/business/:businessSlug/hours`.
+- Endpoints consumidos: `GET /api/business/:businessId/hours`,
+  `PUT /api/business/:businessId/hours`.
+- La validación cliente espeja las reglas del backend (apertura antes que
+  cierre, sin solapamientos, sin fechas no laborables repetidas) reusando
+  helpers puros para no duplicar la lógica de comparación en dos formatos.
+- Sin cobertura e2e todavía; validado manualmente.
+- `HU-2.3` y `HU-2.5` implementadas en frontend, comparten pantalla
+  ("Operación").
+- Ruta relacionada: `/panel/business/:businessSlug/operations`.
+- Endpoints consumidos: `PUT /api/business/:businessId/service-windows`,
+  `PATCH /api/business/:businessId/operational-status`.
+- Se detectó y resolvió un gap de contrato durante `HU-2.3`:
+  `activeServiceWindows` no se podía leer desde ningún endpoint (solo
+  escribir); se pidió al backend sumarlo a `GET /business/me` y ya está
+  mergeado.
+- Sin cobertura e2e todavía; validado manualmente, incluyendo el caso `0`
+  ventanillas ("sin atención disponible").
+- `HU-2.4` implementada en frontend para el QR del negocio.
+- Ruta relacionada: `/panel/business/:businessSlug/qr`.
+- Endpoints consumidos: `GET /api/business/:businessId/qr`,
+  `POST /api/business/:businessId/qr/regenerate`,
+  `GET /api/business/:businessId/qr.png`.
+- Se sumó `httpClient.getBlob()` porque el PNG es un endpoint autenticado
+  que devuelve binario, no JSON; el mismo blob se reusa para mostrar la
+  imagen y para la descarga.
+- Sin cobertura e2e todavía; validado manualmente, incluyendo regeneración
+  con transición de 24hs.
+- `HU-2.8` implementada en frontend para invitar y gestionar empleados.
+- Rutas relacionadas: `/panel/business/:businessSlug/employees`,
+  `/business/employee-invitations/:token` (pública).
+- Endpoints consumidos: `POST /api/business/:businessId/employees/invitations`,
+  `GET /api/business/:businessId/employees`,
+  `DELETE /api/business/:businessId/employees/:userId`,
+  `POST /api/business/employee-invitations/:token/accept`.
+- Validado manualmente end-to-end contra el backend real sin depender de
+  email real (Resend sin dominio configurado en desarrollo): token de
+  invitación tomado directo de la base para simular el link del mail.
+- Diferido: el rol `employee` no tiene todavía ninguna pantalla operativa
+  ni gate de UI propio en el panel; ver `HU-2.8` en
+  `docs/epica-2-gestion-negocios.md`.
+- Sin cobertura e2e todavía.
 
 ## Próximo trabajo
 
-Con `HU-1.8` y `HU-1.9` cerradas, la Épica 1 queda completa en su alcance
-web (`HU-1.2`/`HU-1.4` mobile quedan diferidas). El próximo trabajo es la
-`Épica 2 - Gestión de Negocios`: reemplazar los placeholders de perfil,
-horarios, ventanillas, estado operativo, QR y empleados por integración
-real. El backend ya tiene esas historias implementadas (`HU-2.1` a
-`HU-2.8`, ver `docs/epica-2-gestion-negocios.md` en `espera-back`); del
-lado frontend falta conectar cada pantalla a su endpoint y resolver el gap
-de contrato documentado en `epica-1-autenticacion-onboarding.md` (esas
-rutas piden `businessId` interno, el frontend hoy solo tiene el `slug`
-expuesto).
+Con `HU-2.1` a `HU-2.8` cerradas, la Épica 2 queda completa en su alcance
+web. El próximo trabajo es la `Épica 3 - Cola`: el backend todavía no la
+arrancó (solo hay un router montado en `/api/queue` con tres rutas stub sin
+implementación real — `createTurn`, `callNext`, `cancelTurn`). El frontend
+no debe consumir esas rutas hasta que tengan implementación real.
+
+Deuda conocida a resolver en paralelo o antes de Épica 3:
+
+- cobertura e2e de Cypress para `HU-2.2`, `HU-2.3`/`HU-2.5`, `HU-2.4` y
+  `HU-2.8` (hoy solo validadas manualmente);
+- gate de UI por rol (`employee` vs `business_admin`) en la navegación del
+  panel — tiene más sentido diseñarlo junto con la primera pantalla real
+  que un `employee` vaya a usar (operar la cola).
