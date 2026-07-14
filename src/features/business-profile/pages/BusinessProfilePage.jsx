@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
@@ -32,26 +32,29 @@ export function BusinessProfilePage() {
   })
   const currentBusiness = businessesQuery.data?.find((business) => business.slug === businessSlug)
 
+  // `values` (not `defaultValues` + reset() in an effect) keeps the form in
+  // sync with the fetched business without a StrictMode double-effect race:
+  // in dev, React invokes effects twice, and a reset() firing after the user
+  // already started editing would silently wipe their input.
+  const formValues = useMemo(
+    () =>
+      currentBusiness
+        ? {
+            name: currentBusiness.name ?? '',
+            categoryId: currentBusiness.categoryId ?? '',
+            phone: currentBusiness.phone ?? '',
+            address: currentBusiness.address ?? '',
+          }
+        : defaultValues,
+    [currentBusiness],
+  )
+
   const {
     control,
     formState: { errors },
     handleSubmit,
     register,
-    reset,
-  } = useForm({ defaultValues, resolver: zodResolver(businessProfileSchema) })
-
-  useEffect(() => {
-    if (!currentBusiness) {
-      return
-    }
-
-    reset({
-      name: currentBusiness.name ?? '',
-      categoryId: currentBusiness.categoryId ?? '',
-      phone: currentBusiness.phone ?? '',
-      address: currentBusiness.address ?? '',
-    })
-  }, [currentBusiness, reset])
+  } = useForm({ values: formValues, resolver: zodResolver(businessProfileSchema) })
 
   const categoriesQuery = useBusinessCategories()
   const selectedCategoryId = useWatch({ control, name: 'categoryId' })

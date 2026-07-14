@@ -115,7 +115,13 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
   it('muestra el error de backend sin perder el formulario', () => {
     authenticateVisit()
 
+    cy.intercept('GET', '**/business/categories/cat-uuid-123/config', {
+      statusCode: 200,
+      body: { categoryId: 'cat-uuid-123', attributes: [] },
+    }).as('categoryConfig')
+
     cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.wait('@categoryConfig')
     cy.get('input[name="address"]').clear().type('Av. Corrientes 1234')
 
     cy.intercept('PATCH', '**/business/biz_1/profile', {

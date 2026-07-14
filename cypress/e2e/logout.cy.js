@@ -4,13 +4,37 @@ describe('HU-1.6 - Logout', () => {
   function loginAndLand() {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
-      body: {
-        user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin', businessId: 'biz_1' },
-      },
+      body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
     }).as('me')
 
-    cy.visit('/panel/business/biz_1/profile')
+    cy.intercept('GET', '**/business/me', {
+      statusCode: 200,
+      body: {
+        businesses: [
+          {
+            id: 'biz_1',
+            slug: 'cafe-espera',
+            name: 'Cafe Espera',
+            status: 'approved',
+            phone: '+54 11 4000-1234',
+            address: 'Av. Corrientes 1234',
+            activeServiceWindows: 1,
+            listingStatus: 'draft',
+            operationalStatus: 'normal',
+          },
+        ],
+      },
+    }).as('businessMe')
+
+    cy.intercept('GET', '**/business/categories', {
+      statusCode: 200,
+      body: { categories: [{ id: 'cat-uuid-123', name: 'Cafetería' }] },
+    }).as('categories')
+
+    cy.visit('/panel/business/cafe-espera/profile')
     cy.wait('@me')
+    cy.wait('@businessMe')
+    cy.wait('@categories')
     cy.contains('h1', /perfil del negocio/i).should('be.visible')
   }
 
@@ -30,7 +54,7 @@ describe('HU-1.6 - Logout', () => {
     cy.get('[role="alertdialog"]').contains('button', /cancelar/i).click()
 
     cy.get('[role="alertdialog"]').should('not.exist')
-    cy.url().should('include', '/panel/business/biz_1/profile')
+    cy.url().should('include', '/panel/business/cafe-espera/profile')
   })
 
   it('cierra la sesión y redirige a /login cuando el backend responde ok', () => {
