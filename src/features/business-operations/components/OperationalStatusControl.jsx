@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
@@ -18,19 +18,23 @@ const statusLabels = {
 }
 
 export function OperationalStatusControl({ businessId, operationalStatus }) {
+  // `values` (not `defaultValues` + reset() in an effect) keeps the form in
+  // sync with the store without a StrictMode double-effect race: in dev,
+  // React invokes effects twice, and a reset() firing after the user already
+  // started editing would silently wipe their input.
+  const formValues = useMemo(
+    () => ({ operationalStatus: operationalStatus ?? 'normal', reason: '' }),
+    [operationalStatus],
+  )
+
   const {
     formState: { errors },
     handleSubmit,
     register,
-    reset,
   } = useForm({
-    defaultValues: { operationalStatus: operationalStatus ?? 'normal', reason: '' },
+    values: formValues,
     resolver: zodResolver(operationalStatusSchema),
   })
-
-  useEffect(() => {
-    reset({ operationalStatus: operationalStatus ?? 'normal', reason: '' })
-  }, [operationalStatus, reset])
 
   const updateMutation = useMutation({
     mutationFn: (values) => businessOperationsApi.updateOperationalStatus(businessId, values),

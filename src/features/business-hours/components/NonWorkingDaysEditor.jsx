@@ -6,7 +6,9 @@ const inputClassName =
 
 export function NonWorkingDaysEditor({ control, errors, register }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'nonWorkingDays' })
-  const arrayError = typeof errors?.nonWorkingDays?.message === 'string' ? errors.nonWorkingDays.message : null
+  // zodResolver puts array-level refine() errors under `.root`, not `.message`
+  // directly, when the field is registered via useFieldArray.
+  const arrayError = errors?.nonWorkingDays?.root?.message ?? errors?.nonWorkingDays?.message ?? null
 
   return (
     <div className="grid gap-4">

@@ -48,6 +48,7 @@ describe('BusinessCreatePage - Crear negocio con cuenta existente', () => {
       expect(request.body).to.deep.equal({
         name: 'Cafe Espera',
         categoryId: 'cat-uuid-123',
+        phone: '',
         address: 'Av. Corrientes 1234',
       })
 
