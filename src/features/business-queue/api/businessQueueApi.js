@@ -7,4 +7,7 @@ export const businessQueueApi = {
   callNext(queueId) {
     return httpClient.post('/queue/turns/call-next', { queueId })
   },
+  getQueueList(queueId) {
+    return httpClient.get(`/queue/${queueId}/turns`)
+  },
 }

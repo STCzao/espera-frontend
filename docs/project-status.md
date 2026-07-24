@@ -15,17 +15,19 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `Épica 1 y 2 cerradas (alcance web)`.
+- Estado: `Épica 1 y 2 cerradas (alcance web)`; `Épica 3 - Cola` en progreso
+  (alcance panel).
 - Épicas: `Épica 1 - Autenticación y Onboarding` y `Épica 2 - Gestión de
-  Negocios` cerradas en su alcance web; `Épica 3 - Cola` no arrancó
-  (backend solo tiene rutas stub en `/api/queue`).
+  Negocios` cerradas en su alcance web. `Épica 3 - Cola` completa del lado
+  backend (12 historias, tiempo real vía Socket.IO); del lado panel se
+  implementaron `HU-6.1` y `HU-3.8`, ver `docs/epica-3-cola.md`.
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
   `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
   (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
-  `HU-2.6`, `HU-2.8`.
+  `HU-2.6`, `HU-2.8`, `HU-6.1` (dashboard cola), `HU-3.8` (lista de turnos).
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
 - Historias diferidas transversales: mobile completa, deep links
-  definitivos, cola persistida, métricas operativas, notificaciones push
+  definitivos, métricas operativas (`HU-6.5`), notificaciones push
   end-to-end, gate de UI por rol `employee` en el panel (ver `HU-2.8` en
   `docs/epica-2-gestion-negocios.md`).
 
@@ -57,6 +59,7 @@ src/
     auth/
     business/
     config/
+    queue/
     ui/
   features/
     auth/
@@ -67,6 +70,7 @@ src/
     business-operations/
     business-qr/
     business-employees/
+    business-queue/
 ```
 
 ## Superficies frontend
@@ -109,7 +113,8 @@ Responsabilidades:
 - ventanillas activas (`HU-2.3`);
 - estado operativo (`HU-2.5`);
 - QR (`HU-2.4`);
-- empleados (`HU-2.8`).
+- empleados (`HU-2.8`);
+- cola: dashboard en vivo + lista de turnos (`HU-6.1`/`HU-3.8`).
 
 Estado:
 
@@ -119,6 +124,11 @@ Estado:
 - perfil, horarios, ventanillas, estado operativo, QR y empleados
   implementados end-to-end contra el backend real (Épica 2 completa, ver
   `docs/epica-2-gestion-negocios.md`);
+- cola: dashboard y lista de turnos implementados y con tiempo real vía
+  Socket.IO (`HU-6.1`/`HU-3.8`, ver `docs/epica-3-cola.md`); falta agregar
+  turno manual, cancelar y marcar atendido (`HU-3.9`/`HU-3.10`/`HU-3.11`);
+  hay un bug de backend conocido que rompe el refresco en vivo
+  específicamente al crear un turno nuevo (no al llamar/cancelar/atender);
 - gate de UI por rol (`employee` vs `business_admin`) diferido: hoy ambos
   roles ven el mismo menú en el panel.
 
@@ -228,13 +238,34 @@ Cobertura automatizada:
 - Cypress e2e cubre `HU-2.6` en `/panel/business/:businessSlug/profile`:
   precarga de datos, validación de campos requeridos, atributos de categoría
   informativos, guardado exitoso, error de backend sin perder el formulario.
-- 52 tests e2e en total, todos verdes (`business-create`, `business-profile`,
-  `google-login`, `login`, `logout`, `password-recovery`, `refresh-token`,
-  `register`, `verify-email`).
-- Sin cobertura e2e todavía: `HU-2.2` (horarios), `HU-2.3`/`HU-2.5`
-  (operación), `HU-2.4` (QR), `HU-2.8` (empleados). Las cuatro están
-  validadas manualmente contra el backend real, ver
-  `docs/epica-2-gestion-negocios.md`.
+- Cypress e2e cubre `HU-2.2` en `/panel/business/:businessSlug/hours`:
+  estados vacíos, validación de al menos un rango, apertura antes que
+  cierre, guardado con día no laborable, error de backend.
+- Cypress e2e cubre `HU-2.3`/`HU-2.5` en
+  `/panel/business/:businessSlug/operations`: precarga de ventanillas y
+  estado operativo, validación de máximo, guardado con `0` ventanillas
+  ("sin atención disponible") y con más de `0`, cambio de estado operativo
+  con mensaje del backend, error de backend.
+- Cypress e2e cubre `HU-2.4` en `/panel/business/:businessSlug/qr`: QR
+  activo con enlace, estado "en transición", descarga de PNG, regeneración
+  con aviso de vigencia del QR anterior, error de backend.
+- Cypress e2e cubre `HU-2.8` en `/panel/business/:businessSlug/employees` y
+  `/business/employee-invitations/:token`: estado vacío, listado de
+  activos, validación de email, invitación exitosa, error de backend,
+  revocación; aceptación de invitación exitosa, validación de contraseñas,
+  token inválido/vencido.
+- Cypress e2e cubre `HU-6.1`/`HU-3.8` en
+  `/panel/business/:businessSlug/queue`: negocio sin cola todavía,
+  métricas + lista de turnos activos, "Cola vacía" deshabilitado sin
+  turnos esperando, llamar al siguiente turno actualiza dashboard y lista,
+  error de backend al llamar, error al cargar estado/lista.
+- 84 tests e2e en total, todos verdes (`accept-employee-invitation`,
+  `business-create`, `business-employees`, `business-hours`,
+  `business-operations`, `business-profile`, `business-qr`,
+  `business-queue`, `google-login`, `login`, `logout`,
+  `password-recovery`, `refresh-token`, `register`, `verify-email`).
+- Sin cobertura e2e todavía: el resto de Épica 3 del lado panel (`HU-3.9`,
+  `HU-3.10`, `HU-3.11`, `HU-6.4`, `HU-6.5`), ver `docs/epica-3-cola.md`.
 
 ## Avance actual
 
@@ -372,20 +403,43 @@ Cobertura automatizada:
 - Diferido: el rol `employee` no tiene todavía ninguna pantalla operativa
   ni gate de UI propio en el panel; ver `HU-2.8` en
   `docs/epica-2-gestion-negocios.md`.
-- Sin cobertura e2e todavía.
+- Cobertura e2e: `cypress/e2e/business-employees.cy.js`,
+  `cypress/e2e/accept-employee-invitation.cy.js`.
+- `HU-6.1` implementada en frontend para el dashboard de la cola.
+- `HU-3.8` implementada en frontend para la lista de turnos activos.
+- Ruta relacionada: `/panel/business/:businessSlug/queue`.
+- Endpoints consumidos: `GET /api/queue/:queueId/status`,
+  `GET /api/queue/:queueId/turns`, `POST /api/queue/turns/call-next`.
+- Se sumó `socket.io-client` como dependencia nueva; `useQueueRoom`
+  (`shared/queue/useQueueRoom.js`) centraliza la suscripción al room
+  `queue:{queueId}` para toda la pantalla de cola.
+- Se detectó y resolvió, antes de esta HU, la falta de `queueId` en
+  `GET /business/me` y de creación automática de `Queue` (incluido backfill
+  para negocios ya aprobados) — ver `HU-6.1` en `docs/epica-3-cola.md`.
+- Bug de backend encontrado validando el tiempo real: crear un turno
+  (`CreateTurnUseCase`/`CreateManualTurnUseCase`) no emite `queue:update` —
+  confirmado con un cliente socket.io-client puro, sin frontend de por
+  medio. Reportado al backend, sin resolver todavía. El resto de las
+  acciones (llamar siguiente, cancelar, atender) sí emiten correctamente.
+- Cobertura e2e: `cypress/e2e/business-queue.cy.js`.
 
 ## Próximo trabajo
 
 Con `HU-2.1` a `HU-2.8` cerradas, la Épica 2 queda completa en su alcance
-web. El próximo trabajo es la `Épica 3 - Cola`: el backend todavía no la
-arrancó (solo hay un router montado en `/api/queue` con tres rutas stub sin
-implementación real — `createTurn`, `callNext`, `cancelTurn`). El frontend
-no debe consumir esas rutas hasta que tengan implementación real.
+web. Épica 3 (Cola) está completa del lado backend; del lado panel se
+implementaron `HU-6.1` y `HU-3.8`. Sigue: `HU-3.9` (agregar turno manual),
+`HU-3.10` (cancelar desde panel), `HU-3.11` (marcar atendido) — las tres
+comparten la lista de `HU-3.8` — y luego `HU-6.4` (historial) y `HU-6.5`
+(métricas). `HU-3.1`/`HU-3.3`/`HU-3.4`/`HU-3.5`/`HU-3.6` no aplican a este
+repo (cliente final: mobile o entrada QR pública).
 
-Deuda conocida a resolver en paralelo o antes de Épica 3:
+Bloqueante externo a resolver antes de considerar cerrada la experiencia de
+tiempo real: el bug de backend de arriba (creación de turno sin emitir
+`queue:update`).
 
-- cobertura e2e de Cypress para `HU-2.2`, `HU-2.3`/`HU-2.5`, `HU-2.4` y
-  `HU-2.8` (hoy solo validadas manualmente);
+Deuda conocida a resolver en paralelo o antes de seguir con Épica 3:
+
 - gate de UI por rol (`employee` vs `business_admin`) en la navegación del
-  panel — tiene más sentido diseñarlo junto con la primera pantalla real
-  que un `employee` vaya a usar (operar la cola).
+  panel — ahora que existe una primera pantalla real que un `employee`
+  puede usar (`HU-6.1`/`HU-3.8`, operar la cola), tiene sentido diseñarlo
+  junto con `HU-3.9`/`HU-3.10`/`HU-3.11`.
