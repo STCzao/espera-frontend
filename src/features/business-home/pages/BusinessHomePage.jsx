@@ -1,8 +1,14 @@
-import { Building2, CalendarClock, QrCode, Settings2, UsersRound } from 'lucide-react'
+import { Building2, CalendarClock, ListOrdered, QrCode, Settings2, UsersRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 
 const shortcuts = [
+  {
+    to: 'queue',
+    label: 'Cola',
+    description: 'Mirá el estado en vivo y llamá al siguiente turno.',
+    icon: ListOrdered,
+  },
   {
     to: 'profile',
     label: 'Perfil',

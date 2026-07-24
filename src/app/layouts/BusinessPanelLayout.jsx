@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Building2, CalendarClock, Home, QrCode, Settings2, UsersRound } from 'lucide-react'
+import { Building2, CalendarClock, Home, ListOrdered, QrCode, Settings2, UsersRound } from 'lucide-react'
 import { NavLink, Outlet, useParams } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { businessOnboardingApi } from '../../features/business-onboarding/api/businessOnboardingApi.js'
@@ -8,6 +8,7 @@ import { useCurrentBusinessStore } from '../../shared/business/currentBusinessSt
 
 const navItems = [
   { to: '.', label: 'Inicio', icon: Home, end: true },
+  { to: 'queue', label: 'Cola', icon: ListOrdered },
   { to: 'profile', label: 'Perfil', icon: Building2 },
   { to: 'hours', label: 'Horarios', icon: CalendarClock },
   { to: 'operations', label: 'Operacion', icon: Settings2 },
