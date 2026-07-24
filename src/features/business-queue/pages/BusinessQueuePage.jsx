@@ -5,6 +5,7 @@ import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { useQueueRoom } from '../../../shared/queue/useQueueRoom.js'
 import { businessQueueApi } from '../api/businessQueueApi.js'
+import { QueueTurnList } from '../components/QueueTurnList.jsx'
 
 const operationalStatusLabels = {
   normal: 'Normal',
@@ -23,13 +24,23 @@ export function BusinessQueuePage() {
     enabled: Boolean(activeQueueId),
   })
 
+  const listQuery = useQuery({
+    queryKey: ['queue-list', activeQueueId],
+    queryFn: () => businessQueueApi.getQueueList(activeQueueId),
+    enabled: Boolean(activeQueueId),
+  })
+
   useQueueRoom(activeQueueId, () => {
     queryClient.invalidateQueries({ queryKey: ['queue-status', activeQueueId] })
+    queryClient.invalidateQueries({ queryKey: ['queue-list', activeQueueId] })
   })
 
   const callNextMutation = useMutation({
     mutationFn: () => businessQueueApi.callNext(activeQueueId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['queue-status', activeQueueId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['queue-status', activeQueueId] })
+      queryClient.invalidateQueries({ queryKey: ['queue-list', activeQueueId] })
+    },
   })
 
   if (!activeQueueId) {
@@ -50,57 +61,76 @@ export function BusinessQueuePage() {
     <section>
       <PanelPageHeader crumb="Cola" description="Estado de la cola en tiempo real." title="Cola" />
 
-      <div className="relative max-w-2xl overflow-hidden rounded-lg border border-espera-border bg-white shadow-[0_18px_34px_-26px_rgba(51,0,95,0.45)]">
-        <div className="h-[3px] bg-gradient-to-r from-[#6a1ec2] via-espera-purple to-transparent" />
-        <div className="grid gap-6 p-6">
-          {statusQuery.isLoading && <p className="text-espera-text-muted">Cargando…</p>}
-          {statusQuery.isError && (
-            <p className="text-sm font-normal text-espera-danger" role="alert">
-              No pudimos cargar el estado de la cola.
-            </p>
-          )}
-
-          {data && (
-            <>
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <Stat label="Estado" value={operationalStatusLabels[data.operationalStatus] ?? data.operationalStatus} />
-                <Stat label="En espera" value={data.waitingCount} />
-                <Stat label="Llamados" value={data.calledCount} />
-                <Stat label="Ventanillas" value={data.activeServiceWindows} />
-              </div>
-
-              <p className="text-sm text-espera-text-muted">
-                {data.estimatedTotalWaitMinutes != null
-                  ? `Tiempo estimado de espera total: ${data.estimatedTotalWaitMinutes} min.`
-                  : 'Sin atención disponible: no hay ventanillas activas.'}
+      <div className="grid gap-6">
+        <div className="relative max-w-2xl overflow-hidden rounded-lg border border-espera-border bg-white shadow-[0_18px_34px_-26px_rgba(51,0,95,0.45)]">
+          <div className="h-[3px] bg-gradient-to-r from-[#6a1ec2] via-espera-purple to-transparent" />
+          <div className="grid gap-6 p-6">
+            {statusQuery.isLoading && <p className="text-espera-text-muted">Cargando…</p>}
+            {statusQuery.isError && (
+              <p className="text-sm font-normal text-espera-danger" role="alert">
+                No pudimos cargar el estado de la cola.
               </p>
+            )}
 
-              <div className="max-w-[220px]">
-                <FormButton
-                  disabled={callNextMutation.isPending || queueIsEmpty}
-                  icon={PhoneCall}
-                  isPending={callNextMutation.isPending}
-                  onClick={() => callNextMutation.mutate()}
-                  pendingLabel="Llamando…"
-                  type="button"
-                  variant="solid"
-                >
-                  {queueIsEmpty ? 'Cola vacía' : 'Siguiente'}
-                </FormButton>
-              </div>
+            {data && (
+              <>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                  <Stat label="Estado" value={operationalStatusLabels[data.operationalStatus] ?? data.operationalStatus} />
+                  <Stat label="En espera" value={data.waitingCount} />
+                  <Stat label="Llamados" value={data.calledCount} />
+                  <Stat label="Ventanillas" value={data.activeServiceWindows} />
+                </div>
 
-              {callNextMutation.isError && (
-                <p className="text-sm font-normal text-espera-danger" role="alert">
-                  {callNextMutation.error?.message ?? 'No pudimos llamar al siguiente turno.'}
+                <p className="text-sm text-espera-text-muted">
+                  {data.estimatedTotalWaitMinutes != null
+                    ? `Tiempo estimado de espera total: ${data.estimatedTotalWaitMinutes} min.`
+                    : 'Sin atención disponible: no hay ventanillas activas.'}
                 </p>
-              )}
-              {callNextMutation.isSuccess && (
-                <p className="text-sm font-normal text-espera-text-muted" role="status">
-                  Llamando al turno {callNextMutation.data.displayNumber}.
-                </p>
-              )}
-            </>
-          )}
+
+                <div className="max-w-[220px]">
+                  <FormButton
+                    disabled={callNextMutation.isPending || queueIsEmpty}
+                    icon={PhoneCall}
+                    isPending={callNextMutation.isPending}
+                    onClick={() => callNextMutation.mutate()}
+                    pendingLabel="Llamando…"
+                    type="button"
+                    variant="solid"
+                  >
+                    {queueIsEmpty ? 'Cola vacía' : 'Siguiente'}
+                  </FormButton>
+                </div>
+
+                {callNextMutation.isError && (
+                  <p className="text-sm font-normal text-espera-danger" role="alert">
+                    {callNextMutation.error?.message ?? 'No pudimos llamar al siguiente turno.'}
+                  </p>
+                )}
+                {callNextMutation.isSuccess && (
+                  <p className="text-sm font-normal text-espera-text-muted" role="status">
+                    Llamando al turno {callNextMutation.data.displayNumber}.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="relative max-w-2xl overflow-hidden rounded-lg border border-espera-border bg-white shadow-[0_18px_34px_-26px_rgba(51,0,95,0.45)]">
+          <div className="h-[3px] bg-gradient-to-r from-[#6a1ec2] via-espera-purple to-transparent" />
+          <div className="grid gap-4 p-6">
+            <span className="font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
+              Turnos activos
+            </span>
+
+            {listQuery.isLoading && <p className="text-espera-text-muted">Cargando…</p>}
+            {listQuery.isError && (
+              <p className="text-sm font-normal text-espera-danger" role="alert">
+                No pudimos cargar la lista de turnos.
+              </p>
+            )}
+            {listQuery.data && <QueueTurnList items={listQuery.data.items} />}
+          </div>
         </div>
       </div>
     </section>

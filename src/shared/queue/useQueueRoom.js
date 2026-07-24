@@ -16,7 +16,11 @@ export function useQueueRoom(queueId, onUpdate) {
       return undefined
     }
 
-    const socket = io(env.socketUrl, { transports: ['websocket'] })
+    // forceNew avoids socket.io-client's manager-sharing cache: without it,
+    // StrictMode's mount→cleanup→mount in dev tears down the first socket
+    // before it finishes connecting, and the second instance can silently
+    // reuse a half-torn-down manager instead of opening a fresh connection.
+    const socket = io(env.socketUrl, { forceNew: true, transports: ['websocket'] })
 
     socket.on('connect', () => {
       socket.emit('queue:join', { queueId })
