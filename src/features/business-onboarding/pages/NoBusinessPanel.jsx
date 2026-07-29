@@ -8,7 +8,7 @@ export function NoBusinessPanel() {
       Registralo para empezar a configurarlo; quedará pendiente de revisión hasta que lo aprobemos.
       <div className="mt-4">
         <Link
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#33005f] bg-gradient-to-br from-[#6a1ec2] to-[#33005f] px-4 text-sm font-semibold !text-white shadow-[0_8px_18px_-10px_rgba(80,0,151,0.6)] transition-all hover:brightness-110 focus:outline-none focus:ring-4 focus:ring-espera-purple-soft"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-espera-purple bg-espera-purple px-4 text-sm font-semibold !text-white transition-colors hover:bg-[#3d0074] focus:outline-none focus:ring-4 focus:ring-espera-purple-soft"
           to="/business/new"
         >
           Registrar tu negocio

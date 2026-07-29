@@ -65,8 +65,7 @@ export function BusinessHoursPage() {
         title="Horarios de atención"
       />
 
-      <div className="relative max-w-2xl overflow-hidden rounded-lg border border-espera-border bg-white shadow-[0_18px_34px_-26px_rgba(51,0,95,0.45)]">
-        <div className="h-[3px] bg-gradient-to-r from-[#6a1ec2] via-espera-purple to-transparent" />
+      <div className="max-w-2xl rounded border border-espera-border bg-white">
         <div className="p-6">
           <form className="grid gap-7" noValidate onSubmit={handleSubmit(onSubmit)}>
             <WeeklyHoursEditor control={control} errors={errors} register={register} />

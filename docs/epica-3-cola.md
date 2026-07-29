@@ -18,10 +18,10 @@ y HU-6.3 ya estaban cerradas en Épica 2 (`HU-2.5` y `HU-2.3`).
 
 - Estado: `parcial`.
 - Historias implementadas: `HU-6.1` (dashboard + llamar siguiente),
-  `HU-3.8` (lista de turnos en tiempo real).
-- Historias pendientes: `HU-3.9` (turno manual), `HU-3.10` (cancelar desde
-  panel), `HU-3.11` (marcar atendido), `HU-6.4` (historial), `HU-6.5`
-  (métricas).
+  `HU-3.8` (lista de turnos en tiempo real), `HU-3.9` (agregar turno
+  manual), `HU-3.10` (cancelar desde panel), `HU-3.11` (iniciar/finalizar
+  atención en dos etapas + gestión de ventanillas de servicio).
+- Historias pendientes: `HU-6.4` (historial), `HU-6.5` (métricas).
 - `HU-3.12` (jerarquía de prioridad) es puramente backend — el orden que
   devuelve `GET /queue/:queueId/turns` ya lo respeta, no requiere UI propia.
 
@@ -35,9 +35,12 @@ y HU-6.3 ya estaban cerradas en Épica 2 (`HU-2.5` y `HU-2.3`).
 GET  /api/queue/:queueId/status         queue:read
 GET  /api/queue/:queueId/turns          queue:read
 POST /api/queue/turns/call-next         queue:call_next
-POST /api/queue/:queueId/turns/manual   turn:create_manual   (pendiente de UI)
-POST /api/queue/:queueId/turns/:turnId/cancel  turn:cancel_any  (pendiente de UI)
-POST /api/queue/:queueId/turns/:turnId/attend  turn:attend      (pendiente de UI)
+POST /api/queue/:queueId/turns/manual   turn:create_manual
+POST /api/queue/:queueId/turns/:turnId/cancel  turn:cancel_any
+POST /api/queue/:queueId/turns/:turnId/attend  turn:attend  (called→attending→completed, ver HU-3.11)
+GET  /api/queue/:queueId/windows        queue:read
+POST /api/queue/:queueId/windows        queue:configure
+PATCH /api/queue/:queueId/windows/:windowId/toggle  queue:configure
 GET  /api/queue/:queueId/turns/history  queue:read            (pendiente de UI)
 GET  /api/queue/:queueId/metrics        queue:read            (pendiente de UI)
 ```
@@ -230,9 +233,19 @@ type QueueListResponse = {
     priority: 'arrived' | 'physical' | 'in_transit' | 'registered';
     status: 'waiting' | 'called';
     waitingMinutes: number;
+    estimatedWaitMinutes: number | null;
   }>;
 };
 ```
+
+`estimatedWaitMinutes` se agregó en un refinamiento posterior a la
+implementación inicial de esta HU: la lista solo mostraba cuánto llevaba
+esperando cada turno (`waitingMinutes`), no cuánto le faltaba. El backend
+lo calcula por posición dentro de los `waiting` (respetando el orden de
+prioridad ya aplicado a `items`), reusando `QueueWaitEstimateService` — el
+mismo servicio que ya alimentaba el estimado agregado del dashboard
+(`HU-6.1`). Es `null` para turnos `called` (ya en curso) y cuando no hay
+ventanillas activas.
 
 ### Reglas de presentación
 
@@ -241,9 +254,8 @@ type QueueListResponse = {
 
 ### Diferidos
 
-- Acciones sobre cada turno (cancelar, marcar atendido) — `HU-3.10`/`HU-3.11`,
-  siguientes historias.
-- Agregar turno manual desde esta pantalla — `HU-3.9`.
+- Ninguno — `HU-3.9`/`HU-3.10`/`HU-3.11` (agregar, cancelar, atender) ya
+  están implementadas, ver más abajo.
 
 ### Validación
 
@@ -254,3 +266,246 @@ type QueueListResponse = {
   documentado en `HU-6.1` — la lista no se refresca sola cuando se agrega un
   turno nuevo, por la misma causa (falta el `emitter` en
   `CreateManualTurnUseCase`), aunque sí lo hace ante cualquier otra acción.
+
+## HU-3.9 - Agregar turno manualmente
+
+Story points: `3`.
+
+Estado: `implementado`.
+
+### Objetivo de experiencia
+
+El empleado carga un turno para alguien sin la app (walk-in) escribiendo
+solo un nombre, sin salir de la pantalla de cola.
+
+### Pantallas / Rutas
+
+Misma ruta que `HU-6.1`/`HU-3.8`, formulario arriba de la lista de turnos.
+
+### Estados de UI
+
+- `error` (validación cliente): nombre vacío.
+- `error` (backend): por ejemplo negocio pausado/cerrado o no aprobado — el
+  backend rechaza turnos manuales en esos casos.
+- éxito: el formulario se limpia solo.
+
+### Integración frontend
+
+- `ManualTurnForm` remonta su propio subárbol vía un `key` incremental
+  después de un submit exitoso, en vez de llamar `reset()` de
+  react-hook-form. Se detectó en esta sesión que `reset()` no limpiaba el
+  valor del input en este proyecto (build con React Compiler vía
+  `reactCompilerPreset` en `vite.config.js`) — el mecanismo imperativo de
+  RHF para inputs no controlados no estaba actualizando el DOM de forma
+  confiable. Forzar un remount es más robusto porque no depende de esa
+  imperatividad: un componente nuevo arranca con `defaultValues` limpio
+  siempre.
+- Usa `mutateAsync` + `try/catch` en vez de los callbacks `onSuccess`/`onError`
+  de `mutate()`, para poder hacer `await` y decidir si limpiar el form solo
+  cuando la mutación efectivamente resolvió bien.
+
+### Contratos consumidos
+
+```text
+POST /api/queue/:queueId/turns/manual
+```
+
+### Datos enviados
+
+```ts
+type CreateManualTurnRequest = { guestName: string };
+```
+
+### Datos esperados
+
+```ts
+type CreateManualTurnResponse = {
+  turnId: string;
+  queueId: string;
+  displayNumber: string;
+  guestName: string;
+  position: number;
+};
+```
+
+### Diferidos
+
+- El turno nuevo no aparece solo en la lista de otras pestañas/dispositivos
+  mirando la misma cola — mismo bug de backend documentado en `HU-6.1`
+  (`CreateManualTurnUseCase` no emite `queue:update`). En la pestaña que
+  hizo el alta sí se ve, porque se invalida la query local al recibir la
+  respuesta del `POST`.
+
+### Validación
+
+- Validado manualmente contra el backend real: alta de turno manual,
+  aparece en `GET .../turns` con `priority: physical`, `status: waiting`.
+- Cypress: `cypress/e2e/business-queue-turn-actions.cy.js` — validación de
+  nombre vacío, alta exitosa con limpieza de formulario, error de backend.
+
+## HU-3.10 - Cancelar turno desde el panel
+
+Story points: `2`.
+
+Estado: `implementado`.
+
+### Objetivo de experiencia
+
+El empleado cancela cualquier turno activo (esperando o ya llamado) desde
+la lista, sin tener que preguntarle nada al cliente.
+
+### Estados de UI
+
+- botón de cancelar visible en toda fila, se deshabilita solo para esa fila
+  mientras la cancelación está en curso (no bloquea el resto de la lista).
+- `error`: mensaje inline con el motivo del backend (ej. turno que ya no
+  se puede cancelar porque cambió de estado entre que se cargó la lista y
+  se hizo click).
+
+### Integración frontend
+
+- `QueueTurnList` recibe `onCancel`/`onAttend`/`pendingTurnId` desde la
+  página — sigue siendo un componente presentacional, no sabe nada de
+  mutaciones ni de la API.
+- `pendingTurnId` se calcula combinando `cancelTurnMutation` y
+  `attendTurnMutation` (`variables` de la que esté `isPending`), para
+  deshabilitar el botón correcto sin necesitar estado local extra en la
+  lista.
+
+### Contratos consumidos
+
+```text
+POST /api/queue/:queueId/turns/:turnId/cancel
+```
+
+### Datos esperados
+
+```ts
+type CancelTurnByEmployeeResponse = { cancelled: true; turnId: string };
+```
+
+### Validación
+
+- Validado manualmente contra el backend real: turno en `waiting`
+  cancelado, desaparece de `GET .../turns`.
+- Cypress: `cypress/e2e/business-queue-turn-actions.cy.js`.
+
+## HU-3.11 - Marcar turno como atendido
+
+Story points: `1`.
+
+Estado: `implementado` (refinado — ver más abajo).
+
+### Objetivo de experiencia
+
+El empleado cierra el ciclo de un turno ya llamado, marcándolo atendido
+para que salga de la cola activa.
+
+### Refinamiento: estado intermedio `attending` + ventanillas de servicio
+
+El flujo original (`called` → `completed` en un solo paso) no distinguía
+"lo llamé" de "lo estoy atendiendo ahora mismo", lo que hacía imposible
+medir la duración real de atención o saber desde qué ventanilla se atendió
+a alguien. A pedido del negocio se amplió a un flujo de dos etapas:
+
+```
+waiting → called → attending → completed
+                              ↘ cancelled (en cualquier punto previo a completed)
+```
+
+El mismo endpoint `POST /api/queue/:queueId/turns/:turnId/attend` maneja
+ambas transiciones según el estado actual del turno:
+
+- `called → attending`: primera llamada, body opcional `{ serviceWindowId? }`.
+- `attending → completed`: segunda llamada, sin body.
+
+```ts
+type AttendTurnResponse = {
+  turnId: string;
+  status: "attending" | "completed";
+  startedAttentionAt?: string; // presente cuando status === "attending"
+  attendedAt?: string;         // presente cuando status === "completed"
+};
+```
+
+`GetQueueStatusUseCase` ahora también devuelve `attendingCount` junto a
+`waitingCount`/`calledCount`. El promedio de servicio usado para estimar
+tiempos de espera (`getAverageServiceMinutes`) se calcula con
+`attendedAt - startedAttentionAt` (duración real de atención, sin el
+tiempo de reacción del cliente) sobre una ventana móvil de 7 días.
+
+Además se agregó la entidad `ServiceWindow` (ventanilla de atención),
+para poder identificar desde qué puesto se atiende a cada turno y
+diferenciar tipos de ventanilla:
+
+```ts
+type ServiceWindowType = "cashier" | "customer_service" | "information" | "admin" | "technical";
+
+interface ServiceWindow {
+  id: string;
+  queueId: string;
+  name: string;
+  type: ServiceWindowType;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+```text
+GET  /api/queue/:queueId/windows
+POST /api/queue/:queueId/windows            body: { name, type? } (default "cashier")
+PATCH /api/queue/:queueId/windows/:windowId/toggle
+```
+
+Frontend: `ServiceWindowManager.jsx` (crear + activar/desactivar
+ventanillas) vive en la misma página de cola, a la derecha del listado de
+turnos. Al iniciar atención de un turno `called`, `QueueTurnList.jsx`
+ofrece un `<select>` con las ventanillas activas (opcional — se puede
+iniciar sin asignar ventanilla).
+
+> Nota histórica: el tipo de ventanilla se definió primero como
+> `"standard" | "priority" | "specialized"` y luego se corrigió a los
+> valores reales de uso (`cashier`/`customer_service`/`information`/
+> `admin`/`technical`) — si ves referencias a los valores viejos en
+> commits anteriores, están obsoletas.
+
+### Bug de backend encontrado durante la validación
+
+La migración `20260729000000_attending_state` creó la columna nueva como
+`started_attention_at` (snake_case) en SQL crudo, pero el campo en
+`schema.prisma` es `startedAttentionAt` sin `@map(...)` (Prisma espera la
+columna literalmente `"startedAttentionAt"`, igual que `calledAt`/
+`attendedAt`/`cancelledAt` en el mismo modelo). Esto rompía con 500 tanto
+`GET /queue/:queueId/status` como `GET /queue/:queueId/turns` en cuanto
+tocaban el modelo `Turn`. Se reportó y se corrigió con una migración que
+renombra la columna. Confirmado resuelto en local.
+
+### Estados de UI
+
+- Turnos `called` muestran un control "Iniciar atención" con `<select>`
+  opcional de ventanilla activa.
+- Turnos `attending` muestran un botón "Finalizar atención" (sin
+  selector).
+- El botón de cancelar (`X`) sigue disponible en cualquier estado previo a
+  `completed`.
+- Mismo patrón de `pendingTurnId` y error inline que `HU-3.10`.
+
+### Contratos consumidos
+
+```text
+POST /api/queue/:queueId/turns/:turnId/attend
+GET  /api/queue/:queueId/windows
+POST /api/queue/:queueId/windows
+PATCH /api/queue/:queueId/windows/:windowId/toggle
+```
+
+### Validación
+
+- Validado manualmente contra el backend real: ciclo completo turno manual
+  → cancelar uno → `call-next` sobre el otro → iniciar atención → finalizar
+  atención → lista queda vacía.
+- Cypress: `cypress/e2e/business-queue-turn-actions.cy.js` — cubre que el
+  botón de iniciar atención solo aparece en `called`, que el de finalizar
+  solo aparece en `attending`, selección de ventanilla, y errores de
+  backend en ambas transiciones.

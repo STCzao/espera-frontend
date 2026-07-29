@@ -1,7 +1,17 @@
 /// <reference types="cypress" />
 
 describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
+  function mockWindows() {
+    cy.intercept('GET', '**/queue/queue_1/windows', {
+      statusCode: 200,
+      body: {
+        windows: [{ id: 'w1', queueId: 'queue_1', name: 'Ventanilla 1', type: 'cashier', isActive: true }],
+      },
+    }).as('windows')
+  }
+
   function authenticateVisit({ statusOverrides, listOverrides, businessOverrides } = {}) {
+    mockWindows()
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
       body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
@@ -40,6 +50,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
         activeServiceWindows: 1,
         waitingCount: 2,
         calledCount: 0,
+        attendingCount: 0,
         estimatedTotalWaitMinutes: 10,
         ...statusOverrides,
       },
@@ -58,6 +69,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
             priority: 'registered',
             status: 'waiting',
             waitingMinutes: 5,
+            estimatedWaitMinutes: 5,
           },
           {
             turnId: 'turn_2',
@@ -67,6 +79,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
             priority: 'physical',
             status: 'waiting',
             waitingMinutes: 1,
+            estimatedWaitMinutes: 10,
           },
         ],
         ...listOverrides,
@@ -122,7 +135,8 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
 
     cy.contains('Juan García').should('be.visible')
     cy.contains('Cliente sin app').should('be.visible')
-    cy.contains(/esperando hace 5 min/i).should('be.visible')
+    cy.contains(/esperando hace 5 min · faltan ~5 min/i).should('be.visible')
+    cy.contains(/esperando hace 1 min · faltan ~10 min/i).should('be.visible')
   })
 
   it('deshabilita "Siguiente" y muestra "Cola vacía" cuando no hay nadie esperando', () => {
@@ -201,6 +215,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
     }).as('businessMe')
     cy.intercept('GET', '**/queue/queue_1/status', { statusCode: 500, body: { message: 'Internal server error.' } }).as('status')
     cy.intercept('GET', '**/queue/queue_1/turns', { statusCode: 500, body: { message: 'Internal server error.' } }).as('list')
+    mockWindows()
 
     cy.visit('/panel/business/cafe-espera/queue')
     cy.wait('@me')

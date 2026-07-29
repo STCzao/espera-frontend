@@ -124,11 +124,14 @@ Estado:
 - perfil, horarios, ventanillas, estado operativo, QR y empleados
   implementados end-to-end contra el backend real (Épica 2 completa, ver
   `docs/epica-2-gestion-negocios.md`);
-- cola: dashboard y lista de turnos implementados y con tiempo real vía
-  Socket.IO (`HU-6.1`/`HU-3.8`, ver `docs/epica-3-cola.md`); falta agregar
-  turno manual, cancelar y marcar atendido (`HU-3.9`/`HU-3.10`/`HU-3.11`);
-  hay un bug de backend conocido que rompe el refresco en vivo
-  específicamente al crear un turno nuevo (no al llamar/cancelar/atender);
+- cola: dashboard, lista, alta manual, cancelar, atender en dos etapas
+  (`called → attending → completed`) y gestión de ventanillas de servicio
+  (crear/activar/desactivar, tipos `cashier`/`customer_service`/
+  `information`/`admin`/`technical`) implementados con tiempo real vía
+  Socket.IO (`HU-6.1`, `HU-3.8` a `HU-3.11`, ver `docs/epica-3-cola.md`);
+  falta historial y métricas (`HU-6.4`/`HU-6.5`); hay un bug de backend
+  conocido que rompe el refresco en vivo específicamente al crear un turno
+  nuevo (no al llamar/cancelar/atender);
 - gate de UI por rol (`employee` vs `business_admin`) diferido: hoy ambos
   roles ven el mismo menú en el panel.
 
@@ -259,13 +262,21 @@ Cobertura automatizada:
   métricas + lista de turnos activos, "Cola vacía" deshabilitado sin
   turnos esperando, llamar al siguiente turno actualiza dashboard y lista,
   error de backend al llamar, error al cargar estado/lista.
-- 84 tests e2e en total, todos verdes (`accept-employee-invitation`,
+- Cypress e2e cubre `HU-3.9`/`HU-3.10`/`HU-3.11` en la misma ruta: validación
+  de nombre vacío, alta de turno manual con limpieza de formulario, error de
+  backend al agregar, el botón de "Iniciar atención" solo aparece en turnos
+  `called` y el de "Finalizar atención" solo en `attending`, selección de
+  ventanilla al iniciar atención, cancelar un turno lo saca de la lista,
+  iniciar/finalizar atención saca el turno o actualiza su estado, error de
+  backend en las tres acciones.
+- 94 tests e2e en total, todos verdes (`accept-employee-invitation`,
   `business-create`, `business-employees`, `business-hours`,
   `business-operations`, `business-profile`, `business-qr`,
-  `business-queue`, `google-login`, `login`, `logout`,
-  `password-recovery`, `refresh-token`, `register`, `verify-email`).
-- Sin cobertura e2e todavía: el resto de Épica 3 del lado panel (`HU-3.9`,
-  `HU-3.10`, `HU-3.11`, `HU-6.4`, `HU-6.5`), ver `docs/epica-3-cola.md`.
+  `business-queue`, `business-queue-turn-actions`, `google-login`, `login`,
+  `logout`, `password-recovery`, `refresh-token`, `register`,
+  `verify-email`).
+- Sin cobertura e2e todavía: `HU-6.4` (historial), `HU-6.5` (métricas), ver
+  `docs/epica-3-cola.md`.
 
 ## Avance actual
 
@@ -422,24 +433,56 @@ Cobertura automatizada:
   medio. Reportado al backend, sin resolver todavía. El resto de las
   acciones (llamar siguiente, cancelar, atender) sí emiten correctamente.
 - Cobertura e2e: `cypress/e2e/business-queue.cy.js`.
+- `HU-3.9`/`HU-3.10`/`HU-3.11` implementadas en frontend (agregar turno
+  manual, cancelar, iniciar/finalizar atención en dos etapas + gestión de
+  ventanillas de servicio), misma ruta y pantalla que `HU-3.8`.
+- Endpoints consumidos: `POST /api/queue/:queueId/turns/manual`,
+  `POST /api/queue/:queueId/turns/:turnId/cancel`,
+  `POST /api/queue/:queueId/turns/:turnId/attend` (maneja
+  `called→attending` y `attending→completed` según el estado actual),
+  `GET/POST /api/queue/:queueId/windows`,
+  `PATCH /api/queue/:queueId/windows/:windowId/toggle`.
+- Se detectó y corrigió un bug propio: `reset()` de react-hook-form no
+  limpiaba el input del formulario de turno manual después de un alta
+  exitosa (posible interacción con el React Compiler del proyecto,
+  `reactCompilerPreset` en `vite.config.js`). Se resolvió remontando el
+  formulario vía `key` en vez de depender de `reset()` — mismo patrón
+  reusado en el formulario de ventanillas — ver `HU-3.9` en
+  `docs/epica-3-cola.md`.
+- Refinamiento de producto: se sumó el estado intermedio `attending` (para
+  medir la duración real de atención) y la entidad `ServiceWindow`
+  (ventanillas identificables con tipo: `cashier`/`customer_service`/
+  `information`/`admin`/`technical`) — ver detalle en `HU-3.11` de
+  `docs/epica-3-cola.md`.
+- Se detectó y reportó un bug de backend durante la validación: la
+  migración de `attending` creó la columna `started_attention_at` en
+  snake_case, pero Prisma esperaba `startedAttentionAt` — rompía con 500
+  `GET /status` y `GET /turns`. Confirmado corregido en local.
+- Se extendió el layout de la pantalla de cola a ancho completo (antes
+  limitado a `max-w-2xl`): dashboard arriba a todo el ancho, y grid de dos
+  columnas (turnos activos / ventanillas) debajo.
+- Validado manualmente contra el backend real: ciclo completo turno manual
+  → cancelar uno → llamar al otro → iniciar atención (con ventanilla) →
+  finalizar atención → lista vacía.
+- Cobertura e2e: `cypress/e2e/business-queue-turn-actions.cy.js`.
 
 ## Próximo trabajo
 
 Con `HU-2.1` a `HU-2.8` cerradas, la Épica 2 queda completa en su alcance
 web. Épica 3 (Cola) está completa del lado backend; del lado panel se
-implementaron `HU-6.1` y `HU-3.8`. Sigue: `HU-3.9` (agregar turno manual),
-`HU-3.10` (cancelar desde panel), `HU-3.11` (marcar atendido) — las tres
-comparten la lista de `HU-3.8` — y luego `HU-6.4` (historial) y `HU-6.5`
-(métricas). `HU-3.1`/`HU-3.3`/`HU-3.4`/`HU-3.5`/`HU-3.6` no aplican a este
-repo (cliente final: mobile o entrada QR pública).
+implementaron `HU-6.1`, `HU-3.8`, `HU-3.9`, `HU-3.10` y `HU-3.11` — el
+panel ya permite operar la cola de punta a punta (ver estado, llamar,
+agregar manual, cancelar, iniciar/finalizar atención con ventanilla
+asignada). Sigue: `HU-6.4` (historial) y `HU-6.5` (métricas).
+`HU-3.1`/`HU-3.3`/`HU-3.4`/`HU-3.5`/`HU-3.6` no aplican a este repo
+(cliente final: mobile o entrada QR pública).
 
 Bloqueante externo a resolver antes de considerar cerrada la experiencia de
 tiempo real: el bug de backend de arriba (creación de turno sin emitir
-`queue:update`).
+`queue:update`) — afecta tanto a `HU-3.1` (app) como a `HU-3.9` (manual).
 
 Deuda conocida a resolver en paralelo o antes de seguir con Épica 3:
 
 - gate de UI por rol (`employee` vs `business_admin`) en la navegación del
-  panel — ahora que existe una primera pantalla real que un `employee`
-  puede usar (`HU-6.1`/`HU-3.8`, operar la cola), tiene sentido diseñarlo
-  junto con `HU-3.9`/`HU-3.10`/`HU-3.11`.
+  panel — ahora que existe una pantalla real que un `employee` puede usar
+  (operar la cola completa), tiene sentido diseñarlo ahora.

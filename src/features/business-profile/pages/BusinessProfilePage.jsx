@@ -81,8 +81,7 @@ export function BusinessProfilePage() {
         title="Perfil del negocio"
       />
 
-      <div className="relative max-w-2xl overflow-hidden rounded-lg border border-espera-border bg-white shadow-[0_18px_34px_-26px_rgba(51,0,95,0.45)]">
-        <div className="h-[3px] bg-gradient-to-r from-[#6a1ec2] via-espera-purple to-transparent" />
+      <div className="max-w-2xl rounded border border-espera-border bg-white">
         <div className="p-6">
           <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
             Datos generales

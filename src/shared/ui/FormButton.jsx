@@ -3,8 +3,8 @@ import { Loader2 } from 'lucide-react'
 const variantClasses = {
   // Matches the auth screens (login/register/business-new): white ground, purple label.
   outline: 'border border-espera-border bg-white text-espera-purple hover:bg-espera-purple-soft',
-  // Panel primary actions: violet fill carries the accent instead of resting on it.
-  solid: 'border border-[#33005f] bg-gradient-to-br from-[#6a1ec2] to-[#33005f] text-white shadow-[0_8px_18px_-10px_rgba(80,0,151,0.6)] hover:brightness-110',
+  // Panel primary actions: flat purple fill, no gradient or glow.
+  solid: 'border border-espera-purple bg-espera-purple text-white hover:bg-[#3d0074]',
 }
 
 export function FormButton({ children, icon: Icon, isPending, pendingLabel, type = 'submit', variant = 'outline', ...props }) {
