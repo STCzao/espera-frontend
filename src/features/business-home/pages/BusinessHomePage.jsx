@@ -71,11 +71,11 @@ export function BusinessHomePage() {
 
           return (
             <Link
-              className="flex items-start gap-3 rounded-2xl border border-espera-border bg-white p-4 shadow-[0_10px_24px_-18px_rgba(51,0,95,0.4)] transition-transform hover:-translate-y-0.5"
+              className="flex items-start gap-3 rounded border border-espera-border bg-white p-4 transition-colors hover:bg-espera-purple-soft/25"
               key={item.to}
               to={item.to}
             >
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-[#6a1ec2] to-[#33005f] text-white">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded bg-espera-purple text-white">
                 <Icon size={20} aria-hidden="true" />
               </span>
               <span>
