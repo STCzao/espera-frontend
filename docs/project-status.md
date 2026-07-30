@@ -15,21 +15,22 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `Épica 1 y 2 cerradas (alcance web)`; `Épica 3 - Cola` en progreso
-  (alcance panel).
+- Estado: `Épica 1, 2 y 3 cerradas (alcance web/panel)`.
 - Épicas: `Épica 1 - Autenticación y Onboarding` y `Épica 2 - Gestión de
-  Negocios` cerradas en su alcance web. `Épica 3 - Cola` completa del lado
-  backend (12 historias, tiempo real vía Socket.IO); del lado panel se
-  implementaron `HU-6.1` y `HU-3.8`, ver `docs/epica-3-cola.md`.
+  Negocios` cerradas en su alcance web. `Épica 3 - Cola` completa tanto del
+  lado backend (12 historias, tiempo real vía Socket.IO) como del lado
+  panel (`HU-6.1`, `HU-3.8` a `HU-3.11`, `HU-6.4`, `HU-6.5`), ver
+  `docs/epica-3-cola.md`.
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
   `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
   (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
-  `HU-2.6`, `HU-2.8`, `HU-6.1` (dashboard cola), `HU-3.8` (lista de turnos).
+  `HU-2.6`, `HU-2.8`, `HU-6.1` (dashboard cola), `HU-3.8` a `HU-3.11`
+  (lista, turno manual, cancelar, atención en dos etapas + ventanillas),
+  `HU-6.4` (historial), `HU-6.5` (métricas).
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
 - Historias diferidas transversales: mobile completa, deep links
-  definitivos, métricas operativas (`HU-6.5`), notificaciones push
-  end-to-end, gate de UI por rol `employee` en el panel (ver `HU-2.8` en
-  `docs/epica-2-gestion-negocios.md`).
+  definitivos, notificaciones push end-to-end, gate de UI por rol
+  `employee` en el panel (ver `HU-2.8` en `docs/epica-2-gestion-negocios.md`).
 
 ## Stack actual
 
