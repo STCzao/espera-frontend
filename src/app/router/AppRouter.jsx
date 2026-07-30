@@ -15,6 +15,7 @@ const BusinessCreatePage = lazy(() => import('../../features/business-onboarding
 const NoBusinessPanel = lazy(() => import('../../features/business-onboarding/pages/NoBusinessPanel.jsx').then((module) => ({ default: module.NoBusinessPanel })))
 const BusinessHomePage = lazy(() => import('../../features/business-home/pages/BusinessHomePage.jsx').then((module) => ({ default: module.BusinessHomePage })))
 const BusinessQueuePage = lazy(() => import('../../features/business-queue/pages/BusinessQueuePage.jsx').then((module) => ({ default: module.BusinessQueuePage })))
+const BusinessQueueHistoryPage = lazy(() => import('../../features/business-queue/pages/BusinessQueueHistoryPage.jsx').then((module) => ({ default: module.BusinessQueueHistoryPage })))
 const BusinessProfilePage = lazy(() => import('../../features/business-profile/pages/BusinessProfilePage.jsx').then((module) => ({ default: module.BusinessProfilePage })))
 const BusinessHoursPage = lazy(() => import('../../features/business-hours/pages/BusinessHoursPage.jsx').then((module) => ({ default: module.BusinessHoursPage })))
 const BusinessOperationsPage = lazy(() => import('../../features/business-operations/pages/BusinessOperationsPage.jsx').then((module) => ({ default: module.BusinessOperationsPage })))
@@ -46,6 +47,7 @@ export function AppRouter() {
           <Route path="/panel/business/:businessSlug" element={<BusinessPanelLayout />}>
             <Route index element={<BusinessHomePage />} />
             <Route path="queue" element={<BusinessQueuePage />} />
+            <Route path="queue/history" element={<BusinessQueueHistoryPage />} />
             <Route path="profile" element={<BusinessProfilePage />} />
             <Route path="hours" element={<BusinessHoursPage />} />
             <Route path="operations" element={<BusinessOperationsPage />} />

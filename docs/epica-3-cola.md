@@ -16,12 +16,13 @@ y HU-6.3 ya estaban cerradas en Épica 2 (`HU-2.5` y `HU-2.3`).
 
 ## Estado general
 
-- Estado: `parcial`.
+- Estado: `completo` (alcance panel).
 - Historias implementadas: `HU-6.1` (dashboard + llamar siguiente),
   `HU-3.8` (lista de turnos en tiempo real), `HU-3.9` (agregar turno
   manual), `HU-3.10` (cancelar desde panel), `HU-3.11` (iniciar/finalizar
-  atención en dos etapas + gestión de ventanillas de servicio).
-- Historias pendientes: `HU-6.4` (historial), `HU-6.5` (métricas).
+  atención en dos etapas + gestión de ventanillas de servicio), `HU-6.4`
+  (historial de turnos completados por día), `HU-6.5` (métricas
+  comparativas día vs. día anterior).
 - `HU-3.12` (jerarquía de prioridad) es puramente backend — el orden que
   devuelve `GET /queue/:queueId/turns` ya lo respeta, no requiere UI propia.
 
@@ -509,3 +510,99 @@ PATCH /api/queue/:queueId/windows/:windowId/toggle
   botón de iniciar atención solo aparece en `called`, que el de finalizar
   solo aparece en `attending`, selección de ventanilla, y errores de
   backend en ambas transiciones.
+
+## HU-6.4 - Historial de turnos / HU-6.5 - Métricas de la cola
+
+Story points: `2` + `2`.
+
+Estado: `implementado`.
+
+### Objetivo de experiencia
+
+El dueño/empleado consulta, por día, qué turnos se completaron y cómo
+rindió la cola (cuántos se cancelaron, tiempo promedio de atención, hora
+pico), comparado contra el día anterior.
+
+### Pantallas / Rutas
+
+- `/panel/business/:businessSlug/queue/history` — nueva pantalla
+  "Historial", con nav item propio en el panel (después de "Cola") y acceso
+  rápido en Inicio.
+- Selector de fecha (`<input type="date">`, tope en el día de hoy) que
+  dispara ambas queries (métricas + historial) para la fecha elegida.
+
+### Integración frontend
+
+- `businessQueueApi.getMetrics(queueId, date)` → `GET /queue/:queueId/metrics?date=YYYY-MM-DD`.
+- `businessQueueApi.getTurnHistory(queueId, date)` → `GET /queue/:queueId/turns/history?date=YYYY-MM-DD`.
+- `date` es opcional en el backend (default: hoy UTC), pero el frontend
+  siempre lo manda explícito para que quede consistente con lo que el
+  selector muestra.
+- `QueueMetricsSummary.jsx`: tabla comparativa fecha seleccionada vs. día
+  anterior (completados, cancelados, total, tasa de cancelación, promedio
+  de atención, hora pico).
+- `QueueHistoryTable.jsx`: tabla de turnos `completed` de ese día (turno,
+  persona, origen, hora de llamado, hora de atendido, minutos de espera).
+
+### Contratos consumidos
+
+```text
+GET /api/queue/:queueId/metrics?date=YYYY-MM-DD
+GET /api/queue/:queueId/turns/history?date=YYYY-MM-DD
+```
+
+### Datos esperados
+
+```ts
+interface DayMetrics {
+  completedCount: number;
+  cancelledCount: number;
+  totalCount: number;
+  cancellationRate: number; // porcentaje, ej. 20 = 20%
+  avgServiceMinutes: number | null;
+  peakHour: number | null; // hora UTC 0-23
+}
+
+interface GetQueueMetricsResponse {
+  date: string; // YYYY-MM-DD
+  today: DayMetrics;    // corresponde al `date` pedido, no necesariamente "hoy" real
+  yesterday: DayMetrics; // `date` - 1 día
+}
+
+type TurnHistoryItem = {
+  turnId: string;
+  displayNumber: string;
+  customerName: string | null;
+  guestName: string | null;
+  source: "app" | "manual" | "qr" | "web";
+  priority: string; // ver nota de bug abajo
+  createdAt: string;
+  calledAt: string;
+  attendedAt: string;
+  waitMinutes: number; // createdAt → calledAt, no hasta attendedAt
+};
+```
+
+El historial solo incluye turnos con `status: completed` de ese día — los
+cancelados no aparecen en la tabla (sí se cuentan en las métricas, vía
+`cancelledCount`).
+
+### Bug de backend encontrado (no bloqueante, manejado defensivamente)
+
+`GetTurnHistoryUseCase`/`PostgresTurnRepo.findHistoryByQueue` normaliza
+`priority` con `.toLowerCase().replace("_", "-")`, convirtiendo
+`IN_TRANSIT` → `"in-transit"` (guion), mientras que el resto del backend
+(dominio `TurnPriority`, `GetQueueListUseCase`, etc.) usa `"in_transit"`
+(guion bajo). El frontend normaliza el guion a guion bajo antes de buscar
+la etiqueta (`QueueHistoryTable.jsx`, función `priorityLabel`), así que no
+rompe nada, pero sería bueno que el backend lo alinee al resto del dominio.
+
+### Validación
+
+- Cypress: `cypress/e2e/business-queue-history.cy.js` — cubre la
+  comparativa de métricas, la tabla de historial, cambio de fecha (vuelve a
+  pedir ambos endpoints), estado vacío ("no hubo turnos completados este
+  día") y errores de backend en ambos endpoints.
+- No validado todavía contra el backend real con datos de un día completo
+  (pendiente: correr el ciclo completo de turnos y confirmar métricas /
+  historial con datos reales, no solo mocks).
