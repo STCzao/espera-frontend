@@ -128,10 +128,12 @@ Estado:
   (`called → attending → completed`) y gestión de ventanillas de servicio
   (crear/activar/desactivar, tipos `cashier`/`customer_service`/
   `information`/`admin`/`technical`) implementados con tiempo real vía
-  Socket.IO (`HU-6.1`, `HU-3.8` a `HU-3.11`, ver `docs/epica-3-cola.md`);
-  falta historial y métricas (`HU-6.4`/`HU-6.5`); hay un bug de backend
-  conocido que rompe el refresco en vivo específicamente al crear un turno
-  nuevo (no al llamar/cancelar/atender);
+  Socket.IO (`HU-6.1`, `HU-3.8` a `HU-3.11`), más historial de turnos
+  completados y métricas comparativas por día (`HU-6.4`/`HU-6.5`, pantalla
+  nueva "Historial") — ver `docs/epica-3-cola.md`. Épica 3 queda completa
+  en su alcance panel; hay un bug de backend conocido que rompe el
+  refresco en vivo específicamente al crear un turno nuevo (no al
+  llamar/cancelar/atender);
 - gate de UI por rol (`employee` vs `business_admin`) diferido: hoy ambos
   roles ven el mismo menú en el panel.
 
@@ -269,14 +271,17 @@ Cobertura automatizada:
   ventanilla al iniciar atención, cancelar un turno lo saca de la lista,
   iniciar/finalizar atención saca el turno o actualiza su estado, error de
   backend en las tres acciones.
-- 94 tests e2e en total, todos verdes (`accept-employee-invitation`,
+- Cypress e2e cubre `HU-6.4`/`HU-6.5` en
+  `/panel/business/:businessSlug/queue/history`: comparativa de métricas
+  (hoy vs. día anterior), tabla de turnos completados, cambio de fecha
+  (vuelve a pedir ambos endpoints), estado vacío sin turnos completados,
+  error de backend en métricas e historial.
+- 97 tests e2e en total, todos verdes (`accept-employee-invitation`,
   `business-create`, `business-employees`, `business-hours`,
   `business-operations`, `business-profile`, `business-qr`,
-  `business-queue`, `business-queue-turn-actions`, `google-login`, `login`,
-  `logout`, `password-recovery`, `refresh-token`, `register`,
-  `verify-email`).
-- Sin cobertura e2e todavía: `HU-6.4` (historial), `HU-6.5` (métricas), ver
-  `docs/epica-3-cola.md`.
+  `business-queue`, `business-queue-turn-actions`, `business-queue-history`,
+  `google-login`, `login`, `logout`, `password-recovery`, `refresh-token`,
+  `register`, `verify-email`).
 
 ## Avance actual
 
@@ -469,11 +474,11 @@ Cobertura automatizada:
 ## Próximo trabajo
 
 Con `HU-2.1` a `HU-2.8` cerradas, la Épica 2 queda completa en su alcance
-web. Épica 3 (Cola) está completa del lado backend; del lado panel se
-implementaron `HU-6.1`, `HU-3.8`, `HU-3.9`, `HU-3.10` y `HU-3.11` — el
-panel ya permite operar la cola de punta a punta (ver estado, llamar,
-agregar manual, cancelar, iniciar/finalizar atención con ventanilla
-asignada). Sigue: `HU-6.4` (historial) y `HU-6.5` (métricas).
+web. Épica 3 (Cola) está completa también del lado panel: se
+implementaron `HU-6.1`, `HU-3.8` a `HU-3.11`, y ahora `HU-6.4`/`HU-6.5`
+(historial de turnos completados + métricas comparativas por día, pantalla
+nueva "Historial") — el panel ya permite operar la cola de punta a punta y
+revisar cómo rindió cada día.
 `HU-3.1`/`HU-3.3`/`HU-3.4`/`HU-3.5`/`HU-3.6` no aplican a este repo
 (cliente final: mobile o entrada QR pública).
 

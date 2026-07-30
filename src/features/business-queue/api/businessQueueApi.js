@@ -31,4 +31,10 @@ export const businessQueueApi = {
   toggleServiceWindow(queueId, windowId) {
     return httpClient.patch(`/queue/${queueId}/windows/${windowId}/toggle`)
   },
+  getTurnHistory(queueId, date) {
+    return httpClient.get(`/queue/${queueId}/turns/history${date ? `?date=${date}` : ''}`)
+  },
+  getMetrics(queueId, date) {
+    return httpClient.get(`/queue/${queueId}/metrics${date ? `?date=${date}` : ''}`)
+  },
 }
