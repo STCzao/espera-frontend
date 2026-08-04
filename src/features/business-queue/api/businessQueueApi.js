@@ -31,6 +31,15 @@ export const businessQueueApi = {
   toggleServiceWindow(queueId, windowId) {
     return httpClient.patch(`/queue/${queueId}/windows/${windowId}/toggle`)
   },
+  editServiceWindow(queueId, windowId, changes) {
+    return httpClient.patch(`/queue/${queueId}/windows/${windowId}`, changes)
+  },
+  deleteServiceWindow(queueId, windowId) {
+    return httpClient.delete(`/queue/${queueId}/windows/${windowId}`)
+  },
+  redirectTurn(queueId, turnId, targetServiceWindowId) {
+    return httpClient.post(`/queue/${queueId}/turns/${turnId}/redirect`, { targetServiceWindowId })
+  },
   getTurnHistory(queueId, date) {
     return httpClient.get(`/queue/${queueId}/turns/history${date ? `?date=${date}` : ''}`)
   },

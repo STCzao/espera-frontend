@@ -277,12 +277,19 @@ Cobertura automatizada:
   (hoy vs. día anterior), tabla de turnos completados, cambio de fecha
   (vuelve a pedir ambos endpoints), estado vacío sin turnos completados,
   error de backend en métricas e historial.
-- 97 tests e2e en total, todos verdes (`accept-employee-invitation`,
+- Cypress e2e cubre el refinamiento de ventanillas (ocupación, CRUD
+  completo, derivación) en `business-queue-window-crud.cy.js` y
+  `business-queue-windows.cy.js`: derivar un turno `attending` a otra
+  ventanilla, editar/eliminar ventanillas, confirmación al desactivar/
+  eliminar una ventanilla ocupada, y que los códigos de error del backend
+  (`code`) se traduzcan a español vía `src/shared/api/apiError.js`.
+- 107 tests e2e en total, todos verdes (`accept-employee-invitation`,
   `business-create`, `business-employees`, `business-hours`,
   `business-operations`, `business-profile`, `business-qr`,
   `business-queue`, `business-queue-turn-actions`, `business-queue-history`,
-  `google-login`, `login`, `logout`, `password-recovery`, `refresh-token`,
-  `register`, `verify-email`).
+  `business-queue-windows`, `business-queue-window-crud`, `google-login`,
+  `login`, `logout`, `password-recovery`, `refresh-token`, `register`,
+  `verify-email`).
 
 ## Avance actual
 

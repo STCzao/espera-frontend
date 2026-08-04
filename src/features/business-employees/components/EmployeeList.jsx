@@ -22,7 +22,7 @@ export function EmployeeList({ employees = [], onRevoke, revokingUserId }) {
             aria-label={`Revocar acceso de ${employee.email}`}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-espera-border text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
             disabled={revokingUserId === employee.userId}
-            onClick={() => onRevoke(employee.userId)}
+            onClick={() => onRevoke(employee)}
             type="button"
           >
             <Trash2 aria-hidden="true" size={16} />

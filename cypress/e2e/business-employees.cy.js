@@ -126,9 +126,29 @@ describe('HU-2.8 - Invitar y gestionar empleados', () => {
     }).as('employeesAfterRevoke')
 
     cy.get('button[aria-label="Revocar acceso de ana@local.com"]').click()
+    cy.contains('button', /^revocar acceso$/i).click()
 
     cy.wait('@revoke')
     cy.wait('@employeesAfterRevoke')
     cy.contains(/todavía no invitaste a ningún empleado/i).should('be.visible')
+  })
+
+  it('pide confirmación antes de revocar y no revoca si se descarta', () => {
+    authenticateVisit({
+      businessId: 'biz_1',
+      employees: [
+        { userId: 'emp_1', email: 'ana@local.com', firstName: 'Ana', lastName: 'García', status: 'active' },
+      ],
+    })
+
+    cy.intercept('DELETE', '**/business/biz_1/employees/emp_1').as('revoke')
+
+    cy.get('button[aria-label="Revocar acceso de ana@local.com"]').click()
+    cy.contains('¿Revocar el acceso de este empleado?').should('be.visible')
+    cy.contains('button', /^cancelar$/i).click()
+
+    cy.contains('¿Revocar el acceso de este empleado?').should('not.exist')
+    cy.get('@revoke.all').should('have.length', 0)
+    cy.contains('ana@local.com').should('be.visible')
   })
 })

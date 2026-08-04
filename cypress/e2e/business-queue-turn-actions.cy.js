@@ -141,6 +141,20 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     cy.get('button[aria-label="Cancelar turno A-002"]').should('exist')
   })
 
+  it('pide confirmación antes de cancelar y no cancela si se descarta', () => {
+    authenticateVisit()
+
+    cy.intercept('POST', '**/queue/queue_1/turns/turn_waiting/cancel').as('cancel')
+
+    cy.get('button[aria-label="Cancelar turno A-001"]').click()
+    cy.contains('¿Cancelar este turno?').should('be.visible')
+    cy.get('[role="alertdialog"]').contains('button', /^cancelar$/i).click()
+
+    cy.contains('¿Cancelar este turno?').should('not.exist')
+    cy.get('@cancel.all').should('have.length', 0)
+    cy.contains('Cliente Esperando').should('be.visible')
+  })
+
   it('cancela un turno en espera y lo saca de la lista', () => {
     authenticateVisit()
 
@@ -168,6 +182,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     })
 
     cy.get('button[aria-label="Cancelar turno A-001"]').click()
+    cy.contains('button', /^cancelar turno$/i).click()
 
     cy.wait('@cancel')
     cy.contains('Cliente Esperando').should('not.exist')
@@ -182,6 +197,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     }).as('cancel')
 
     cy.get('button[aria-label="Cancelar turno A-001"]').click()
+    cy.contains('button', /^cancelar turno$/i).click()
 
     cy.wait('@cancel')
     cy.contains(/this turn cannot be cancelled/i).should('be.visible')

@@ -131,7 +131,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
 
     cy.contains('h1', /^cola$/i).should('be.visible')
     cy.contains('Normal').should('be.visible')
-    cy.contains(/tiempo estimado de espera total: 10 min/i).should('be.visible')
+    cy.contains(/tiempo estimado de espera: 10 min/i).should('be.visible')
 
     cy.contains('Juan García').should('be.visible')
     cy.contains('Cliente sin app').should('be.visible')
@@ -167,11 +167,11 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
       },
     })
 
-    cy.contains('button', /^siguiente$/i).click()
+    cy.contains('button', /^llamar siguiente$/i).click()
 
     cy.wait('@callNext')
     cy.contains(/llamando al turno a-001/i).should('be.visible')
-    cy.contains(/tiempo estimado de espera total: 5 min/i).should('be.visible')
+    cy.contains(/tiempo estimado de espera: 5 min/i).should('be.visible')
   })
 
   it('muestra error de backend al llamar al siguiente turno', () => {
@@ -182,7 +182,7 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
       body: { message: 'The queue is empty.' },
     }).as('callNext')
 
-    cy.contains('button', /^siguiente$/i).click()
+    cy.contains('button', /^llamar siguiente$/i).click()
 
     cy.wait('@callNext')
     cy.contains(/the queue is empty/i).should('be.visible')

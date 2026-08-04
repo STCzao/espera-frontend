@@ -1,6 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
@@ -12,6 +14,7 @@ import { inviteEmployeeSchema } from '../model/businessEmployeesSchemas.js'
 export function BusinessEmployeesPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
   const queryClient = useQueryClient()
+  const [employeeToRevoke, setEmployeeToRevoke] = useState(null)
 
   const employeesQuery = useQuery({
     queryKey: ['business-employees', businessId],
@@ -33,7 +36,10 @@ export function BusinessEmployeesPage() {
 
   const revokeMutation = useMutation({
     mutationFn: (userId) => businessEmployeesApi.revoke(businessId, userId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['business-employees', businessId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-employees', businessId] })
+      setEmployeeToRevoke(null)
+    },
   })
 
   function onSubmit(values) {
@@ -53,7 +59,7 @@ export function BusinessEmployeesPage() {
       />
 
       <div className="grid gap-6">
-        <div className="max-w-2xl rounded border border-espera-border bg-white">
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
           <div className="p-6">
             <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
               Invitar empleado
@@ -90,7 +96,7 @@ export function BusinessEmployeesPage() {
           </div>
         </div>
 
-        <div className="max-w-2xl rounded border border-espera-border bg-white">
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
           <div className="p-6">
             <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
               Empleados activos
@@ -104,13 +110,27 @@ export function BusinessEmployeesPage() {
             {employeesQuery.data && (
               <EmployeeList
                 employees={employeesQuery.data.employees}
-                onRevoke={(userId) => revokeMutation.mutate(userId)}
+                onRevoke={setEmployeeToRevoke}
                 revokingUserId={revokeMutation.isPending ? revokeMutation.variables : null}
               />
             )}
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        confirmLabel="Revocar acceso"
+        description={
+          employeeToRevoke
+            ? `${employeeToRevoke.email} va a perder el acceso al panel de inmediato.`
+            : ''
+        }
+        isConfirming={revokeMutation.isPending}
+        onCancel={() => setEmployeeToRevoke(null)}
+        onConfirm={() => employeeToRevoke && revokeMutation.mutate(employeeToRevoke.userId)}
+        open={Boolean(employeeToRevoke)}
+        title="¿Revocar el acceso de este empleado?"
+      />
     </section>
   )
 }
