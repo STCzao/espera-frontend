@@ -10,9 +10,11 @@ empleado/dueño sobre la cola. El resto de las historias de Épica 3
 corresponden a mobile o a la entrada QR pública (`ResolveQrPage`), no a este
 repo.
 
-De Épica 6 (Panel del Negocio) también se cubre acá la parte que depende de
-la cola: HU-6.1 (dashboard), HU-6.4 (historial) y HU-6.5 (métricas). HU-6.2
-y HU-6.3 ya estaban cerradas en Épica 2 (`HU-2.5` y `HU-2.3`).
+Tres historias de Épica 6 (Panel del Negocio) comparten pantalla con la cola
+y su detalle técnico completo vive acá: `HU-6.1` (dashboard), `HU-6.4`
+(historial) y `HU-6.5` (métricas). El resumen de Épica 6 como unidad —las 6
+historias, incluida `HU-6.6`, UX mobile del panel— está en
+`docs/epica-6-panel-del-negocio.md`.
 
 ## Estado general
 
