@@ -17,7 +17,7 @@
   --color-espera-purple-strong: #500097;
   --color-espera-purple-soft: #f2e8f3;
   --color-espera-danger: #b4235f;
-  --font-sans: "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
@@ -41,7 +41,7 @@
   --danger: #b4235f;
   --shadow: 0 16px 40px rgba(80, 0, 151, 0.1);
   --radius: 8px;
-  --font: "Geist Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
   color: var(--text);
@@ -97,10 +97,10 @@ a {
 .panel-layout__sidebar {
   display: flex;
   flex-direction: column;
-  gap: 28px;
-  padding: 24px;
+  gap: 24px;
+  padding: 20px 16px;
   border-right: 1px solid var(--border);
-  background: linear-gradient(175deg, var(--surface), #f7f4fb 88%);
+  background: var(--surface);
 }
 
 .panel-layout__nav {
@@ -108,33 +108,48 @@ a {
   gap: 6px;
 }
 
+.panel-layout__nav-section {
+  display: contents;
+}
+
+.panel-layout__nav-group-label {
+  margin: 10px 0 -2px;
+  padding: 0 12px;
+  font: 700 10px/1.4 var(--font-mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 .panel-layout__nav a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   color: var(--text-muted);
   text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
   transition: background-color 150ms ease, color 150ms ease;
 }
 
 .panel-layout__nav a:hover {
-  background: var(--accent-soft);
+  background: var(--surface-muted);
+  color: var(--text);
 }
 
 .panel-layout__nav a.active {
-  background: linear-gradient(90deg, var(--accent-soft), transparent);
+  background: var(--accent-soft);
   color: var(--accent-strong);
   font-weight: 650;
-  box-shadow: inset 2.5px 0 0 var(--accent-strong);
 }
 
 .panel-layout__nav-item--disabled {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   color: var(--text-muted);
   opacity: 0.5;
@@ -143,10 +158,57 @@ a {
 
 .panel-layout__main {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.panel-layout__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel-layout__topbar-business {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.panel-layout__user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-layout__user-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.panel-layout__content {
+  flex: 1;
+  min-width: 0;
   padding: 32px;
-  background:
-    radial-gradient(720px 320px at 100% -10%, rgba(106, 30, 194, 0.06), transparent 65%),
-    var(--bg);
 }
 
 .page-header {
@@ -406,6 +468,52 @@ a {
   }
 }
 
+/* Sidebar-as-drawer chrome (close button, backdrop, mobile trigger) only
+   does anything below the 860px breakpoint — see there for the actual
+   off-canvas behavior. These are the always-present element styles. */
+.panel-layout__sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-layout__drawer-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.panel-layout__drawer-close:hover {
+  background: var(--surface-muted);
+}
+
+.panel-layout__backdrop {
+  display: none;
+}
+
+.panel-layout__mobile-topbar {
+  display: none;
+}
+
+.panel-layout__menu-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
 @media (max-width: 860px) {
   :root {
     --radius: 14px;
@@ -415,65 +523,58 @@ a {
     grid-template-columns: 1fr;
   }
 
-  /* Sidebar collapses to a slim fixed top bar: just the brand mark and
-     logout survive in flow here, nav and business-name are repositioned
-     or hidden below so the bottom tab bar owns navigation on mobile. */
+  .panel-layout__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgba(20, 0, 40, 0.45);
+  }
+
+  /* Sidebar becomes an off-canvas drawer, triggered by the mobile topbar's
+     menu button, instead of a persistent bottom tab bar. */
   .panel-layout__sidebar {
-    flex-direction: row;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: min(84vw, 300px);
+    border-right: 1px solid var(--border);
+    box-shadow: 12px 0 32px rgba(20, 0, 40, 0.18);
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+  }
+
+  .panel-layout__sidebar[data-open='true'] {
+    transform: translateX(0);
+  }
+
+  .panel-layout__drawer-close {
+    display: inline-flex;
+  }
+
+  .panel-layout__topbar {
+    display: none;
+  }
+
+  .panel-layout__mobile-topbar {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 20;
     padding: 10px 16px;
-    gap: 12px;
-    border-right: 0;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
 
-  .panel-layout__business-name {
-    display: none;
+  .panel-layout__content {
+    padding: 76px 16px calc(32px + env(safe-area-inset-bottom));
   }
+}
 
-  .panel-layout__logout {
-    min-height: 40px;
-    padding: 0 12px;
-  }
-
-  .panel-layout__logout-label {
-    display: none;
-  }
-
-  .panel-layout__nav {
-    position: fixed;
-    inset: auto 0 0 0;
-    z-index: 20;
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    padding: 8px 4px calc(20px + env(safe-area-inset-bottom));
-    box-shadow: 0 -12px 28px rgba(20, 0, 40, 0.08);
-  }
-
-  .panel-layout__nav a,
-  .panel-layout__nav-item--disabled {
-    flex-direction: column;
-    justify-content: center;
-    gap: 3px;
-    padding: 6px 2px;
-    border-radius: 10px;
-    font-size: 10.5px;
-    text-align: center;
-  }
-
-  .panel-layout__nav a.active {
-    box-shadow: none;
-    background: var(--accent-soft);
-  }
-
-  .panel-layout__main {
-    padding: 76px 16px calc(100px + env(safe-area-inset-bottom));
+@media (prefers-reduced-motion: reduce) {
+  .panel-layout__sidebar {
+    transition: none;
   }
 }

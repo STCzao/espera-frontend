@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessQueueApi } from '../api/businessQueueApi.js'
 import { QueueHistoryTable } from '../components/QueueHistoryTable.jsx'
@@ -52,7 +53,7 @@ export function BusinessQueueHistoryPage() {
             Fecha
           </label>
           <input
-            className="h-10 rounded border border-espera-border bg-white px-3 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-10 rounded-lg border border-espera-border bg-white px-3 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             id="history-date"
             max={todayISO()}
             onChange={(event) => setDate(event.target.value)}
@@ -61,8 +62,8 @@ export function BusinessQueueHistoryPage() {
           />
         </div>
 
-        <div className="rounded border border-espera-border bg-white">
-          {metricsQuery.isLoading && <p className="p-5 text-espera-text-muted">Cargando…</p>}
+        <div className="rounded-lg border border-espera-border bg-white">
+          {metricsQuery.isLoading && <MetricsTableSkeleton />}
           {metricsQuery.isError && (
             <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
               No pudimos cargar las métricas.
@@ -71,13 +72,13 @@ export function BusinessQueueHistoryPage() {
           {metricsQuery.data && <QueueMetricsSummary date={date} metrics={metricsQuery.data} />}
         </div>
 
-        <div className="rounded border border-espera-border bg-white">
+        <div className="rounded-lg border border-espera-border bg-white">
           <div className="border-b border-espera-border bg-espera-purple-soft/15 px-5 py-3">
             <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-espera-text-muted">
               Turnos completados
             </span>
           </div>
-          {historyQuery.isLoading && <p className="p-5 text-espera-text-muted">Cargando…</p>}
+          {historyQuery.isLoading && <HistoryRowsSkeleton />}
           {historyQuery.isError && (
             <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
               No pudimos cargar el historial.
@@ -87,5 +88,35 @@ export function BusinessQueueHistoryPage() {
         </div>
       </div>
     </section>
+  )
+}
+
+function MetricsTableSkeleton() {
+  return (
+    <div className="p-5">
+      {[0, 1, 2, 3, 4, 5].map((index) => (
+        <div className="flex items-center justify-between gap-4 border-t border-espera-border py-2.5 first:border-t-0" key={index}>
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function HistoryRowsSkeleton() {
+  return (
+    <div className="p-5">
+      {[0, 1, 2].map((index) => (
+        <div className="flex items-center gap-4 border-t border-espera-border py-3 first:border-t-0" key={index}>
+          <Skeleton className="h-4 w-14" />
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-1.5 h-3 w-24" />
+          </div>
+          <Skeleton className="h-4 w-16" />
+        </div>
+      ))}
+    </div>
   )
 }

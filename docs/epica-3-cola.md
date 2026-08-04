@@ -511,6 +511,90 @@ PATCH /api/queue/:queueId/windows/:windowId/toggle
   solo aparece en `attending`, selección de ventanilla, y errores de
   backend en ambas transiciones.
 
+## Refinamiento: CRUD de ventanillas, ocupación y derivación entre ventanillas
+
+Estado: `implementado`.
+
+Ampliación del backend sobre `ServiceWindow` y el flujo de atención, sin HU
+propia en el backlog — documentado acá por ser una extensión directa de
+`HU-3.11`.
+
+### Qué cambió
+
+- **CRUD completo de ventanillas**: además de crear/activar/desactivar, ahora
+  se puede **editar** (`PATCH /:windowId`, nombre/tipo, no toca `isActive`) y
+  **eliminar** (`DELETE /:windowId`) una ventanilla desde la tab
+  "Ventanillas" (`ServiceWindowManager.jsx`).
+- **Ocupación validada**: antes se podía asignar dos turnos a la misma
+  ventanilla sin aviso. Ahora:
+  - Iniciar atención (`attend`) en una ventanilla ya ocupada → `409
+    SERVICE_WINDOW_OCCUPIED`. El `<select>` de ventanilla en `called`
+    (`StartAttentionControl`) marca como `disabled` las opciones ocupadas
+    (con sufijo " (ocupada)"), usando `currentTurn` de `GET
+    /:queueId/windows`.
+  - Desactivar o eliminar una ventanilla ocupada → `409
+    SERVICE_WINDOW_IN_USE`. El diálogo de confirmación ya avisa si la
+    ventanilla tiene alguien `currentTurn` antes de intentarlo.
+- **Derivar un turno a otra ventanilla** (flujo nuevo): en `attending`, junto
+  a "Finalizar" aparece un control "Derivar" (`RedirectControl` en
+  `QueueTurnList.jsx`) con `<select>` de ventanillas activas (excluyendo la
+  actual) + botón de confirmación. Llama a `POST
+  /:queueId/turns/:turnId/redirect` con `{ targetServiceWindowId }`. A
+  diferencia de `attend`, **no valida ocupación del destino** — el turno
+  queda `redirected` ("En camino a {ventanilla}") hasta que el empleado
+  destino lo retoma con el mismo botón "Atender" que usa `called` (ahí sí se
+  valida ocupación).
+- **Nuevo estado `redirected`**: se suma a `TurnStatus` en todos los mapas de
+  labels/colores (`QueueTurnList`). Badge celeste (`bg-sky-50 text-sky-700`),
+  distinto de los usados por `waiting`/`called`/`attending`.
+- **`redirectedCount`** sumado a la fila de mini-stats de la tab "En vivo"
+  (quedó en 5 columnas: en espera, llamados, atendiendo, derivados,
+  ventanillas).
+- **`activeServiceWindows` corregido**: ya no usa el contador legado del
+  negocio (`HU-2.3`), refleja la cuenta real de `service_windows` activas —
+  si el número mostrado en el dashboard cambió, es el fix esperado, no un
+  bug.
+
+### Traducción de errores del backend (código → español)
+
+El backend ahora manda `code` en **todos** los `AppError` funcionales de
+`queue`/`business` (antes solo `auth` lo hacía). En vez de tocar cada
+pantalla que muestra `error.message`, el mapeo vive en un solo lugar:
+`src/shared/api/apiError.js` — `ApiError` resuelve `.message` al texto en
+español si conoce el `code`, y cae al mensaje crudo del backend si no lo
+conoce. Ningún componente necesitó cambios para beneficiarse de esto; todos
+ya leían `error?.message ?? 'fallback'`.
+
+```js
+// src/shared/api/apiError.js
+const ERROR_CODE_MESSAGES = {
+  QUEUE_NOT_FOUND: 'La cola no existe.',
+  // ...resto de los códigos, ver el archivo
+}
+```
+
+### Contratos consumidos (nuevos/ampliados)
+
+```text
+PATCH  /api/queue/:queueId/windows/:windowId          queue:configure
+DELETE /api/queue/:queueId/windows/:windowId          queue:configure
+POST   /api/queue/:queueId/turns/:turnId/redirect     turn:attend
+```
+
+### Diferidos
+
+- `GET /:queueId/turns/my-turn` (estado propio del cliente final) no aplica
+  a este repo — es de mobile/QR pública, no del panel de negocio.
+
+### Validación
+
+- Cypress: `cypress/e2e/business-queue-window-crud.cy.js` — derivar un turno
+  (éxito + error `REDIRECT_SAME_WINDOW` traducido), editar ventanilla,
+  eliminar ventanilla libre, error `SERVICE_WINDOW_IN_USE` traducido al
+  eliminar una ocupada.
+- No validado todavía contra el backend real (solo mocks) — pendiente correr
+  el flujo completo con datos reales antes de cerrar esta refinamiento.
+
 ## HU-6.4 - Historial de turnos / HU-6.5 - Métricas de la cola
 
 Story points: `2` + `2`.

@@ -1,10 +1,42 @@
+// Backend functional error codes → Spanish text. Covers `queue` and
+// `business` module AppErrors (see docs/epica-3-cola.md in espera-back).
+// Unmapped/missing codes fall back to the raw backend message.
+const ERROR_CODE_MESSAGES = {
+  QUEUE_NOT_FOUND: 'La cola no existe.',
+  QUEUE_NOT_ACTIVE: 'La cola está inactiva.',
+  QUEUE_EMPTY: 'No hay turnos en espera.',
+  QUEUE_NOT_ACCEPTING_TURNS: 'La cola no está aceptando turnos nuevos.',
+  BUSINESS_NOT_FOUND: 'El negocio no existe.',
+  BUSINESS_NOT_ACCEPTING_CUSTOMERS: 'El negocio todavía no está aprobado.',
+  BUSINESS_OPERATIONAL_STATUS_BLOCKED: 'El negocio está pausado o cerrado.',
+  CUSTOMER_HAS_ACTIVE_TURN: 'Ya tenés un turno activo en otro negocio.',
+  TURN_NOT_FOUND: 'El turno no existe.',
+  TURN_NOT_OWNED: 'Ese turno no te pertenece.',
+  TURN_NOT_CANCELLABLE: 'Este turno ya no se puede cancelar.',
+  TURN_INVALID_STATUS_FOR_ATTEND: 'El turno no está en un estado válido para esta acción.',
+  SERVICE_WINDOW_NOT_FOUND: 'La ventanilla no existe.',
+  SERVICE_WINDOW_OCCUPIED: 'Esa ventanilla ya está atendiendo a otra persona.',
+  SERVICE_WINDOW_IN_USE: 'La ventanilla está atendiendo a alguien ahora mismo.',
+  REDIRECT_SAME_WINDOW: 'El turno ya está en esa ventanilla.',
+  // Resto de `business`, encontrados al auditar el backend (no vinieron en
+  // el contrato original, pero ya existen y usan el mismo mecanismo).
+  INVALID_CATEGORY: 'La categoría seleccionada no es válida.',
+  OWNER_NOT_FOUND: 'El usuario no existe.',
+  QR_CODE_NOT_FOUND: 'El código QR no existe o venció.',
+  EMPLOYEE_NOT_FOUND: 'El empleado no existe.',
+  SUBSCRIPTION_NOT_FOUND: 'La suscripción no existe.',
+}
+
 export class ApiError extends Error {
   constructor({ message, status, code, details }) {
-    super(message)
+    super(ERROR_CODE_MESSAGES[code] ?? message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.details = details
+    // The original backend text, kept around in case something needs it
+    // (logging, etc.) — everything user-facing should keep reading `.message`.
+    this.rawMessage = message
   }
 }
 

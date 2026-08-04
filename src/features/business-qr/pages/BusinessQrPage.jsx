@@ -66,7 +66,7 @@ export function BusinessQrPage() {
         title="QR del negocio"
       />
 
-      <div className="max-w-2xl rounded border border-espera-border bg-white">
+      <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
         <div className="grid gap-5 p-6">
           {qrQuery.isError && (
             <p className="text-sm font-normal text-espera-danger" role="alert">

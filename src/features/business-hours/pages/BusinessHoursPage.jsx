@@ -65,7 +65,7 @@ export function BusinessHoursPage() {
         title="Horarios de atención"
       />
 
-      <div className="max-w-2xl rounded border border-espera-border bg-white">
+      <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
         <div className="p-6">
           <form className="grid gap-7" noValidate onSubmit={handleSubmit(onSubmit)}>
             <WeeklyHoursEditor control={control} errors={errors} register={register} />
