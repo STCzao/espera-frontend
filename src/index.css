@@ -57,6 +57,14 @@
   box-sizing: border-box;
 }
 
+/* Belt-and-suspenders: individual tables/lists already manage their own
+   overflow-x-auto where genuinely needed (HU-6.6) — this just guarantees a
+   stray element can never force the whole page to scroll/shift sideways. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
 }
@@ -563,13 +571,18 @@ a {
     position: fixed;
     inset: 0 0 auto 0;
     z-index: 20;
-    padding: 10px 16px;
+    padding: 10px calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left));
     background: var(--surface);
     border-bottom: 1px solid var(--border);
   }
 
+  /* Fixed 16px left/right padding alone left a lopsided gutter in landscape
+     on notched phones — the notch's safe-area-inset only grows one side, so
+     it must be added on top of the base padding rather than assumed away
+     (HU-6.6, criterion 3: queue and button both usable in landscape). */
   .panel-layout__content {
-    padding: 76px 16px calc(32px + env(safe-area-inset-bottom));
+    padding: 76px calc(16px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom))
+      calc(16px + env(safe-area-inset-left));
   }
 }
 

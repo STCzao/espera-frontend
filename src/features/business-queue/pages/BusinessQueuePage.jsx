@@ -158,6 +158,7 @@ export function BusinessQueuePage() {
                             isPending={callNextMutation.isPending}
                             onClick={() => callNextMutation.mutate()}
                             pendingLabel="Llamando…"
+                            size="lg"
                             type="button"
                             variant="solid"
                           >

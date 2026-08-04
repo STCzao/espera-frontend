@@ -9,10 +9,27 @@ const variantClasses = {
   secondary: 'border border-transparent bg-espera-purple-soft text-espera-purple hover:brightness-95',
 }
 
-export function FormButton({ children, icon: Icon, isPending, pendingLabel, type = 'submit', variant = 'outline', ...props }) {
+// `lg` meets the 64px minimum touch target for primary actions on mobile
+// (HU-6.6) — use it for a screen's single most important action, not every
+// button, or it stops meaning anything.
+const sizeClasses = {
+  default: 'min-h-12',
+  lg: 'min-h-16',
+}
+
+export function FormButton({
+  children,
+  icon: Icon,
+  isPending,
+  pendingLabel,
+  size = 'default',
+  type = 'submit',
+  variant = 'outline',
+  ...props
+}) {
   return (
     <button
-      className={`inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70 ${variantClasses[variant]}`}
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70 ${sizeClasses[size]} ${variantClasses[variant]}`}
       disabled={isPending}
       type={type}
       {...props}

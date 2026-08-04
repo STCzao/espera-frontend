@@ -35,7 +35,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onRedirect, pend
 
         return (
           <li
-            className={`flex items-center gap-3.5 border-t border-espera-border px-5 py-3 transition-colors duration-1000 first:border-t-0 ${
+            className={`flex flex-wrap items-center gap-3.5 border-t border-espera-border px-5 py-3 transition-colors duration-1000 first:border-t-0 ${
               highlightedIds.has(item.turnId) ? 'bg-espera-purple-soft/50' : ''
             }`}
             key={item.turnId}
@@ -69,7 +69,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onRedirect, pend
               {statusLabels[item.status] ?? item.status}
             </span>
 
-            <div className="flex shrink-0 items-center gap-1">
+            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
               {item.status === 'called' && (
                 <StartAttentionControl
                   displayNumber={item.displayNumber}
@@ -180,7 +180,7 @@ function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, win
       {activeWindows.length > 0 && (
         <select
           aria-label={`Ventanilla para ${displayNumber}`}
-          className="h-8 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="h-8 w-24 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           disabled={isPending}
           onChange={(event) => setWindowId(event.target.value)}
           value={windowId}
@@ -219,7 +219,7 @@ function RedirectControl({ currentWindowId, displayNumber, isPending, onRedirect
     <span className="inline-flex items-center gap-1">
       <select
         aria-label={`Derivar a ${displayNumber} a otra ventanilla`}
-        className="h-8 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+        className="h-8 w-24 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
         disabled={isPending}
         onChange={(event) => setWindowId(event.target.value)}
         value={windowId}
