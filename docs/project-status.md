@@ -15,18 +15,20 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `Épica 1, 2 y 3 cerradas (alcance web/panel)`.
+- Estado: `Épica 1, 2, 3 y 6 cerradas (alcance web/panel)`.
 - Épicas: `Épica 1 - Autenticación y Onboarding` y `Épica 2 - Gestión de
   Negocios` cerradas en su alcance web. `Épica 3 - Cola` completa tanto del
   lado backend (12 historias, tiempo real vía Socket.IO) como del lado
-  panel (`HU-6.1`, `HU-3.8` a `HU-3.11`, `HU-6.4`, `HU-6.5`), ver
-  `docs/epica-3-cola.md`.
+  panel (`HU-3.8` a `HU-3.11`), ver `docs/epica-3-cola.md`. `Épica 6 -
+  Panel del Negocio` completa (6/6 historias: `HU-6.1`, `HU-6.2`, `HU-6.3`,
+  `HU-6.4`, `HU-6.5`, `HU-6.6`), ver `docs/epica-6-panel-del-negocio.md`.
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
   `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
   (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
   `HU-2.6`, `HU-2.8`, `HU-6.1` (dashboard cola), `HU-3.8` a `HU-3.11`
   (lista, turno manual, cancelar, atención en dos etapas + ventanillas),
-  `HU-6.4` (historial), `HU-6.5` (métricas).
+  `HU-6.4` (historial), `HU-6.5` (métricas), `HU-6.6` (UX mobile del
+  panel).
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
 - Historias diferidas transversales: mobile completa, deep links
   definitivos, notificaciones push end-to-end, gate de UI por rol
@@ -115,7 +117,8 @@ Responsabilidades:
 - estado operativo (`HU-2.5`);
 - QR (`HU-2.4`);
 - empleados (`HU-2.8`);
-- cola: dashboard en vivo + lista de turnos (`HU-6.1`/`HU-3.8`).
+- cola: dashboard en vivo + lista de turnos (`HU-6.1`/`HU-3.8`);
+- UX mobile del panel de cola e historial (`HU-6.6`).
 
 Estado:
 
@@ -135,6 +138,9 @@ Estado:
   en su alcance panel; hay un bug de backend conocido que rompe el
   refresco en vivo específicamente al crear un turno nuevo (no al
   llamar/cancelar/atender);
+- las pantallas de cola e historial se adaptan a mobile sin scroll
+  horizontal (`HU-6.6`) — ver `docs/epica-6-panel-del-negocio.md`. Épica 6
+  queda completa en su alcance panel;
 - gate de UI por rol (`employee` vs `business_admin`) diferido: hoy ambos
   roles ven el mismo menú en el panel.
 
@@ -478,15 +484,37 @@ Cobertura automatizada:
   → cancelar uno → llamar al otro → iniciar atención (con ventanilla) →
   finalizar atención → lista vacía.
 - Cobertura e2e: `cypress/e2e/business-queue-turn-actions.cy.js`.
+- `HU-6.6` implementada en frontend para operar el panel desde el celular.
+- Mismas rutas que `HU-6.1` y `HU-6.4`/`HU-6.5`
+  (`/panel/business/:businessSlug/queue` y `.../queue/history`); no agrega
+  pantallas propias, ajusta el layout responsive de ambas.
+- No consume contratos nuevos.
+- `FormButton` suma `size="lg"` (64px) para el botón "Llamar siguiente";
+  `useQueueRoom` refresca también en cada reconexión del socket y al volver
+  la pestaña a estar visible; los `<select>` de derivar/iniciar atención
+  pasaron a tener ancho fijo (antes se autoajustaban al texto de la opción
+  más larga y forzaban scroll horizontal de página completa); las tablas de
+  historial y métricas se reemplazan por listas tipo tarjeta por debajo de
+  `sm`; las tarjetas de Historial suman `min-w-0` para cortar la
+  propagación del tamaño mínimo automático de CSS Grid; el padding mobile
+  del layout del panel ahora suma `env(safe-area-inset-left/right)`.
+- Ver detalle completo en `HU-6.6` de `docs/epica-6-panel-del-negocio.md`.
+- Sin cobertura e2e todavía: Cypress no pudo levantar en este entorno de
+  desarrollo durante la sesión de implementación (no relacionado al código);
+  validado con Chrome headless controlado directo por CDP y captura de
+  pantalla.
 
 ## Próximo trabajo
 
 Con `HU-2.1` a `HU-2.8` cerradas, la Épica 2 queda completa en su alcance
 web. Épica 3 (Cola) está completa también del lado panel: se
-implementaron `HU-6.1`, `HU-3.8` a `HU-3.11`, y ahora `HU-6.4`/`HU-6.5`
-(historial de turnos completados + métricas comparativas por día, pantalla
-nueva "Historial") — el panel ya permite operar la cola de punta a punta y
-revisar cómo rindió cada día.
+implementaron `HU-3.8` a `HU-3.11` — el panel ya permite operar la cola de
+punta a punta. Épica 6 (Panel del Negocio) queda completa: `HU-6.1`
+(dashboard), `HU-6.2`/`HU-6.3` (cerradas junto con `HU-2.5`/`HU-2.3`),
+`HU-6.4`/`HU-6.5` (historial + métricas comparativas por día, pantalla
+"Historial") y `HU-6.6` (UX mobile: botón principal ≥64px, sin scroll
+horizontal en portrait/landscape, refresco automático al volver de pantalla
+apagada) — ver `docs/epica-6-panel-del-negocio.md`.
 `HU-3.1`/`HU-3.3`/`HU-3.4`/`HU-3.5`/`HU-3.6` no aplican a este repo
 (cliente final: mobile o entrada QR pública).
 
