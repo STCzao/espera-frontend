@@ -26,9 +26,15 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
       },
     }).as('businessMe')
 
+    cy.intercept('GET', '**/business/biz_1/queues', {
+      statusCode: 200,
+      body: [{ id: 'queue_1', businessId: 'biz_1', name: 'Caja principal', prefix: 'A', isActive: true }],
+    }).as('queues')
+
     cy.visit('/panel/business/cafe-espera/operations')
     cy.wait('@me')
     cy.wait('@businessMe')
+    cy.wait('@queues')
   }
 
   function serviceWindowsForm() {
@@ -132,5 +138,43 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
 
     cy.wait('@updateStatus')
     cy.contains(/internal server error/i).should('be.visible')
+  })
+
+  it('lista las colas del negocio y crea una adicional', () => {
+    authenticateVisit()
+
+    cy.contains('Caja principal').should('be.visible')
+    cy.contains('Prefijo A').should('be.visible')
+
+    cy.intercept('POST', '**/business/biz_1/queues', (request) => {
+      expect(request.body).to.deep.equal({ name: 'Turnos VIP', prefix: 'B' })
+      request.reply({
+        statusCode: 201,
+        body: { id: 'queue_2', businessId: 'biz_1', name: 'Turnos VIP', prefix: 'B', isActive: true },
+      })
+    }).as('createQueue')
+
+    cy.get('input[name="name"]').type('Turnos VIP')
+    cy.get('input[name="prefix"]').type('b')
+    cy.contains('button', /crear cola/i).click()
+
+    cy.wait('@createQueue')
+    cy.contains('Cola creada.').should('be.visible')
+  })
+
+  it('traduce el error cuando se alcanza el límite de colas del plan', () => {
+    authenticateVisit()
+
+    cy.intercept('POST', '**/business/biz_1/queues', {
+      statusCode: 403,
+      body: { message: 'Your plan allows up to 1 queue(s) per business.', code: 'PLAN_QUEUE_LIMIT_REACHED' },
+    }).as('createQueue')
+
+    cy.get('input[name="name"]').type('Turnos VIP')
+    cy.get('input[name="prefix"]').type('B')
+    cy.contains('button', /crear cola/i).click()
+
+    cy.wait('@createQueue')
+    cy.contains('Tu plan no permite crear más colas para este negocio.').should('be.visible')
   })
 })
