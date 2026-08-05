@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoadingScreen } from '../../shared/ui/LoadingScreen.jsx'
 import { AuthLayout } from '../layouts/AuthLayout.jsx'
+import { BackofficePanelLayout } from '../layouts/BackofficePanelLayout.jsx'
 import { BusinessPanelLayout } from '../layouts/BusinessPanelLayout.jsx'
 import { PublicLayout } from '../layouts/PublicLayout.jsx'
 
@@ -23,6 +24,7 @@ const BusinessQrPage = lazy(() => import('../../features/business-qr/pages/Busin
 const ResolveQrPage = lazy(() => import('../../features/business-qr/pages/ResolveQrPage.jsx').then((module) => ({ default: module.ResolveQrPage })))
 const BusinessEmployeesPage = lazy(() => import('../../features/business-employees/pages/BusinessEmployeesPage.jsx').then((module) => ({ default: module.BusinessEmployeesPage })))
 const AcceptEmployeeInvitationPage = lazy(() => import('../../features/business-employees/pages/AcceptEmployeeInvitationPage.jsx').then((module) => ({ default: module.AcceptEmployeeInvitationPage })))
+const BackofficeHomePage = lazy(() => import('../../features/backoffice/pages/BackofficeHomePage.jsx').then((module) => ({ default: module.BackofficeHomePage })))
 
 export function AppRouter() {
   return (
@@ -53,6 +55,9 @@ export function AppRouter() {
             <Route path="operations" element={<BusinessOperationsPage />} />
             <Route path="qr" element={<BusinessQrPage />} />
             <Route path="employees" element={<BusinessEmployeesPage />} />
+          </Route>
+          <Route path="/backoffice" element={<BackofficePanelLayout />}>
+            <Route index element={<BackofficeHomePage />} />
           </Route>
         </Route>
 

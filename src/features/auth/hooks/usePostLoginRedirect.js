@@ -10,11 +10,11 @@ export function usePostLoginRedirect() {
 
   return async function redirectAfterLogin() {
     // Shares the AuthLayout session query key so /auth/me isn't fetched twice on redirect.
-    const [, businesses] = await Promise.all([
+    const [user, businesses] = await Promise.all([
       queryClient.fetchQuery({ queryKey: sessionQueryKey, queryFn: fetchSessionUser }),
       resolveOwnedBusinesses(),
     ])
 
-    navigate(location.state?.from?.pathname ?? resolvePostLoginPath(businesses), { replace: true })
+    navigate(location.state?.from?.pathname ?? resolvePostLoginPath(businesses, user), { replace: true })
   }
 }

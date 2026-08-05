@@ -86,6 +86,29 @@ describe('HU-1.3 - Login con email y password', () => {
     cy.url().should('include', '/panel/business/cafe-espera')
   })
 
+  it('redirige al Backoffice cuando el usuario es super_admin', () => {
+    cy.intercept('POST', '**/auth/login', {
+      statusCode: 200,
+      body: { accessToken: 'access-token-123', refreshToken: 'refresh-token-123' },
+    }).as('login')
+
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: { user: { id: 'admin_1', email: 'admin@espera.com', role: 'super_admin' } },
+    }).as('me')
+
+    cy.intercept('GET', '**/business/me', { statusCode: 200, body: { businesses: [] } }).as('myBusinesses')
+
+    cy.get('#email').type('admin@espera.com')
+    cy.get('#password').type('Password1')
+    cy.contains('button', /ingresar/i).click()
+
+    cy.wait('@login')
+    cy.wait('@me')
+    cy.wait('@myBusinesses')
+    cy.url().should('include', '/backoffice')
+  })
+
   it('redirige a /panel si falla la consulta de negocios propios', () => {
     cy.intercept('POST', '**/auth/login', {
       statusCode: 200,
