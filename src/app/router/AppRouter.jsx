@@ -28,6 +28,7 @@ const BackofficeHomePage = lazy(() => import('../../features/backoffice/pages/Ba
 const BackofficeApprovalsPage = lazy(() => import('../../features/backoffice/pages/BackofficeApprovalsPage.jsx').then((module) => ({ default: module.BackofficeApprovalsPage })))
 const BackofficeBusinessesPage = lazy(() => import('../../features/backoffice/pages/BackofficeBusinessesPage.jsx').then((module) => ({ default: module.BackofficeBusinessesPage })))
 const BackofficeSubscriptionsPage = lazy(() => import('../../features/backoffice/pages/BackofficeSubscriptionsPage.jsx').then((module) => ({ default: module.BackofficeSubscriptionsPage })))
+const BackofficeReportsPage = lazy(() => import('../../features/backoffice/pages/BackofficeReportsPage.jsx').then((module) => ({ default: module.BackofficeReportsPage })))
 
 export function AppRouter() {
   return (
@@ -64,6 +65,7 @@ export function AppRouter() {
             <Route path="approvals" element={<BackofficeApprovalsPage />} />
             <Route path="businesses" element={<BackofficeBusinessesPage />} />
             <Route path="subscriptions" element={<BackofficeSubscriptionsPage />} />
+            <Route path="reports" element={<BackofficeReportsPage />} />
           </Route>
         </Route>
 

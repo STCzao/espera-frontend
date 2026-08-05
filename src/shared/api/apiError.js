@@ -39,6 +39,11 @@ const ERROR_CODE_MESSAGES = {
   SUBSCRIPTION_CANNOT_BE_ACTIVATED: 'Solo se puede activar una suscripción pendiente o en prueba.',
   SUBSCRIPTION_ALREADY_CANCELLED: 'Esa suscripción ya está cancelada o vencida.',
   SUBSCRIPTION_DOWNGRADE_BLOCKED: 'No se puede bajar a ese plan: la organización tiene más negocios de los que permite.',
+  // Backoffice — reportes (HU-8.6).
+  REPORT_NOT_FOUND: 'El reporte no existe.',
+  REPORT_NOT_PENDING: 'Ese reporte ya fue revisado.',
+  USER_NOT_FOUND: 'El usuario no existe.',
+  USER_ALREADY_BLOCKED: 'Ese usuario ya está bloqueado.',
 }
 
 export class ApiError extends Error {

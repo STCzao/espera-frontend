@@ -50,4 +50,23 @@ export const backofficeApi = {
   changeSubscriptionPlan(organizationId, plan) {
     return httpClient.patch(`/organizations/${organizationId}/subscription/plan`, { plan })
   },
+  listReports(params = {}) {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value != null && value !== '') {
+        query.set(key, value)
+      }
+    }
+    const queryString = query.toString()
+    return httpClient.get(`/reports${queryString ? `?${queryString}` : ''}`)
+  },
+  resolveReport(reportId, note) {
+    return httpClient.patch(`/reports/${reportId}/resolve`, note ? { note } : undefined)
+  },
+  dismissReport(reportId, note) {
+    return httpClient.patch(`/reports/${reportId}/dismiss`, { note })
+  },
+  suspendReport(reportId, note) {
+    return httpClient.patch(`/reports/${reportId}/suspend`, note ? { note } : undefined)
+  },
 }
