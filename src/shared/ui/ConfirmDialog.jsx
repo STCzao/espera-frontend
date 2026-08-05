@@ -3,6 +3,8 @@ import { Loader2 } from 'lucide-react'
 
 export function ConfirmDialog({
   cancelLabel = 'Cancelar',
+  children,
+  confirmDisabled = false,
   confirmLabel = 'Confirmar',
   description,
   isConfirming = false,
@@ -53,6 +55,7 @@ export function ConfirmDialog({
         <p className="mt-2 text-sm text-espera-text-muted" id="confirm-dialog-description">
           {description}
         </p>
+        {children && <div className="mt-4">{children}</div>}
         <div className="mt-6 flex justify-end gap-3">
           <button
             className="inline-flex min-h-10 items-center justify-center rounded-lg border border-espera-border bg-white px-4 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
@@ -64,7 +67,7 @@ export function ConfirmDialog({
           </button>
           <button
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-espera-danger px-4 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isConfirming}
+            disabled={isConfirming || confirmDisabled}
             onClick={onConfirm}
             ref={confirmButtonRef}
             type="button"

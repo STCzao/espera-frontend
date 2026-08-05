@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, Menu, X } from 'lucide-react'
+import { CircleCheckBig, LayoutDashboard, Menu, X } from 'lucide-react'
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { useSessionStore } from '../../shared/auth/sessionStore.js'
 
-const navItems = [{ to: '.', label: 'Inicio', icon: LayoutDashboard, end: true }]
+const navItems = [
+  { to: '.', label: 'Inicio', icon: LayoutDashboard, end: true },
+  { to: 'approvals', label: 'Aprobaciones', icon: CircleCheckBig },
+]
 
 export function BackofficePanelLayout() {
   const role = useSessionStore((state) => state.user?.role)
