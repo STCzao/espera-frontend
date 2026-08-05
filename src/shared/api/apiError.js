@@ -44,6 +44,11 @@ const ERROR_CODE_MESSAGES = {
   REPORT_NOT_PENDING: 'Ese reporte ya fue revisado.',
   USER_NOT_FOUND: 'El usuario no existe.',
   USER_ALREADY_BLOCKED: 'Ese usuario ya está bloqueado.',
+  // Bugfix — una Subscription vencida/cancelada bloquea operar (reconciliación
+  // perezosa trial→expired). Afecta pantallas ya implementadas: "Aprobar" en
+  // HU-8.3 (Backoffice) y el alta de negocio (business-onboarding).
+  SUBSCRIPTION_NOT_ACTIVE: 'La suscripción de esa organización está vencida o cancelada.',
+  SUBSCRIPTION_INACTIVE: 'Tu suscripción está vencida o cancelada — no podés crear un negocio nuevo.',
 }
 
 export class ApiError extends Error {

@@ -111,4 +111,36 @@ describe('HU-8.2/8.3 - Aprobaciones pendientes (Backoffice)', () => {
     cy.contains('button', /^aprobar$/i).should('be.enabled').click()
     cy.wait('@approveBusiness')
   })
+
+  it('traduce el error cuando la suscripción de la organización está vencida o cancelada', () => {
+    mockCategories()
+    cy.intercept('GET', '**/business/pending', {
+      statusCode: 200,
+      body: {
+        businesses: [
+          { id: 'biz_1', name: 'Cafe Espera', slug: 'cafe-espera', categoryId: 'cat_1', createdAt: '2026-08-01T10:00:00.000Z' },
+        ],
+      },
+    }).as('pendingBusinesses')
+    cy.intercept('GET', '**/business/biz_1/review', {
+      statusCode: 200,
+      body: { business: { id: 'biz_1', name: 'Cafe Espera' }, organization: { id: 'org_1', name: 'Café Espera SRL' }, alerts: [] },
+    }).as('businessReview')
+    cy.intercept('PATCH', '**/business/biz_1/approve', {
+      statusCode: 409,
+      body: { message: 'Subscription is not active.', code: 'SUBSCRIPTION_NOT_ACTIVE' },
+    }).as('approveBusiness')
+
+    cy.visit('/backoffice/approvals')
+    cy.wait('@me')
+    cy.contains('button', /negocios/i).click()
+    cy.wait('@pendingBusinesses')
+
+    cy.contains('button', /revisar/i).click()
+    cy.wait('@businessReview')
+    cy.contains('button', /^aprobar$/i).click()
+    cy.wait('@approveBusiness')
+
+    cy.contains('vencida o cancelada').should('be.visible')
+  })
 })
