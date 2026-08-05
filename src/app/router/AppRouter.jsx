@@ -25,6 +25,7 @@ const ResolveQrPage = lazy(() => import('../../features/business-qr/pages/Resolv
 const BusinessEmployeesPage = lazy(() => import('../../features/business-employees/pages/BusinessEmployeesPage.jsx').then((module) => ({ default: module.BusinessEmployeesPage })))
 const AcceptEmployeeInvitationPage = lazy(() => import('../../features/business-employees/pages/AcceptEmployeeInvitationPage.jsx').then((module) => ({ default: module.AcceptEmployeeInvitationPage })))
 const BackofficeHomePage = lazy(() => import('../../features/backoffice/pages/BackofficeHomePage.jsx').then((module) => ({ default: module.BackofficeHomePage })))
+const BackofficeApprovalsPage = lazy(() => import('../../features/backoffice/pages/BackofficeApprovalsPage.jsx').then((module) => ({ default: module.BackofficeApprovalsPage })))
 
 export function AppRouter() {
   return (
@@ -58,6 +59,7 @@ export function AppRouter() {
           </Route>
           <Route path="/backoffice" element={<BackofficePanelLayout />}>
             <Route index element={<BackofficeHomePage />} />
+            <Route path="approvals" element={<BackofficeApprovalsPage />} />
           </Route>
         </Route>
 

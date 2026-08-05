@@ -25,6 +25,15 @@ const ERROR_CODE_MESSAGES = {
   QR_CODE_NOT_FOUND: 'El código QR no existe o venció.',
   EMPLOYEE_NOT_FOUND: 'El empleado no existe.',
   SUBSCRIPTION_NOT_FOUND: 'La suscripción no existe.',
+  // Backoffice — aprobación en dos niveles (Épica 8, HU-8.2/8.3/8.7).
+  ORGANIZATION_NOT_FOUND: 'La organización no existe.',
+  ORGANIZATION_ALREADY_APPROVED: 'Esa organización ya estaba aprobada.',
+  ORGANIZATION_NOT_PENDING: 'Esa organización ya no está pendiente.',
+  ORGANIZATION_NOT_APPROVED: 'La organización de este negocio todavía no está aprobada.',
+  ORGANIZATION_OWNERSHIP_REQUIRED: 'No tenés permisos sobre esa organización.',
+  BUSINESS_ALREADY_APPROVED: 'Ese negocio ya estaba aprobado.',
+  BUSINESS_NOT_PENDING: 'Ese negocio ya no está pendiente.',
+  APPROVAL_NOTE_REQUIRED: 'Hay alertas de coherencia sin resolver — agregá una nota para aprobar de todas formas.',
 }
 
 export class ApiError extends Error {

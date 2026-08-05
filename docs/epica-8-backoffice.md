@@ -15,14 +15,12 @@ Contrato y reglas de negocio completos del lado backend:
 ## Estado general
 
 - Estado: `en progreso`.
-- Historias implementadas: ninguna todavía completa — esta rama
-  (`feature/h-8.1-backoffice-access`) cubre la base de acceso (login
-  reusado + redirección por rol + layout/ruta protegida) que el resto de la
-  épica necesita.
-- Historias pendientes: `HU-8.2`/`HU-8.3` (aprobar/rechazar organizaciones y
-  negocios pendientes), `HU-8.4` (suspender/reactivar negocio), `HU-8.5`
-  (métricas globales), `HU-8.6` (reportes), `HU-8.7` (alerta de coherencia,
-  integrada en la vista de revisión de `HU-8.3`).
+- Historias implementadas: `HU-8.1` (acceso), `HU-8.2`/`HU-8.3` (listar y
+  aprobar/rechazar organizaciones y negocios pendientes), `HU-8.7` (alerta
+  de coherencia — integrada en la vista de revisión de `HU-8.3`, no es
+  pantalla aparte).
+- Historias pendientes: `HU-8.4` (suspender/reactivar negocio), `HU-8.5`
+  (métricas globales), `HU-8.6` (reportes).
 
 ## Superficies involucradas
 
@@ -84,3 +82,82 @@ No pude correr la suite en este entorno (Cypress no levanta su binario de
 Electron acá — `bad option: --smoke-test` incluso tras reinstalar el cache,
 en Bash y PowerShell, con y sin sandbox); verificado por lint + build +
 lectura de código.
+
+## HU-8.2 - Ver organizaciones y negocios pendientes / HU-8.3 - Aprobar o rechazar
+
+Estado: `implementado`.
+
+### Objetivo de experiencia
+
+El equipo Espera entra a "Aprobaciones" y ve dos listas separadas —
+organizaciones y negocios pendientes— porque son dos niveles de aprobación
+independientes (ver `docs/epica-2-5-cuentas-organizaciones.md` del backend,
+sección "Refinamiento — Aprobación comercial en dos niveles": aprobar una
+`Organization` no aprueba ningún `Business` bajo ella). Puede aprobar o
+rechazar cada una; rechazar exige escribir un motivo.
+
+### Pantallas / Rutas
+
+```text
+/backoffice/approvals   (BackofficeApprovalsPage, tabs "Organizaciones" / "Negocios")
+```
+
+### Contratos backend usados
+
+```text
+GET   /api/organizations/pending
+PATCH /api/organizations/:organizationId/approve
+PATCH /api/organizations/:organizationId/reject   body: { reason }
+GET   /api/business/pending
+GET   /api/business/:businessId/review             → { business, organization, alerts } (HU-8.7)
+PATCH /api/business/:businessId/approve             body: { note? }
+PATCH /api/business/:businessId/reject              body: { reason }
+```
+
+### Decisiones de implementación
+
+**HU-8.7 se integró acá en vez de en una pantalla aparte.** El backend ya
+tenía `GET /business/:businessId/review` (alertas `CATEGORY_MISMATCH` /
+`MISSING_LEGAL_ID`) y `ApproveBusinessUseCase` ya exige `note` cuando hay
+alertas (`400 APPROVAL_NOTE_REQUIRED`) — construir la fila de "Negocios
+pendientes" sin esto hubiera significado un approve que falla sin
+explicación la primera vez que hay una alerta real. Cada fila de negocio
+tiene un botón "Revisar" que expande un panel inline (fetch lazy de
+`/review`, solo al expandir — no N+1 en la carga inicial de la lista) con
+el nombre/CUIT de la Organization y las alertas. El campo de nota queda
+opcional salvo que haya alertas, en cuyo caso el botón "Aprobar" queda
+deshabilitado hasta que se escribe algo (`requiresNote` en
+`BusinessReviewPanel`, `PendingBusinessesPanel.jsx`).
+
+**Organizaciones no tienen ese mismo paso de revisión** — no hay alertas de
+coherencia a nivel Organization (HU-8.7 es específica de la revisión de
+`Business`), así que su fila es más simple: nombre, CUIT (o "Sin CUIT
+cargado") y los dos botones directo, sin expandir nada.
+
+**`ConfirmDialog` ganó `children` y `confirmDisabled`** (antes solo
+título/descripción/botones) — se reusa para el flujo de rechazo de ambas
+listas en vez de construir un modal nuevo: `children` renderiza el
+`<textarea>` del motivo, y `confirmDisabled` bloquea "Rechazar" hasta que
+haya texto. Cambio retrocompatible — el resto de los usos existentes de
+`ConfirmDialog` (cancelar turno, desactivar/eliminar ventanilla, revocar
+empleado) no pasan estas props y siguen igual.
+
+**Categoría del negocio se resuelve con el hook ya existente**
+(`useBusinessCategories`, mismo que usa el alta de negocio) — no se agregó
+un endpoint nuevo para esto.
+
+**Nuevos códigos de error mapeados** en `apiError.js`:
+`ORGANIZATION_NOT_FOUND/ALREADY_APPROVED/NOT_PENDING/NOT_APPROVED`,
+`ORGANIZATION_OWNERSHIP_REQUIRED`, `BUSINESS_ALREADY_APPROVED`,
+`BUSINESS_NOT_PENDING`, `APPROVAL_NOTE_REQUIRED`.
+
+### Cobertura
+
+- `cypress/e2e/backoffice-approvals.cy.js` — listar y aprobar una
+  organización, rechazar pidiendo motivo (botón deshabilitado sin texto),
+  listar negocios con categoría resuelta, expandir revisión y ver la
+  alerta de `MISSING_LEGAL_ID`, aprobar bloqueado hasta cargar la nota.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress que
+`HU-8.1` — el binario de Electron no arranca acá); verificado por lint +
+build + lectura de código.
