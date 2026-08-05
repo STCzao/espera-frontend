@@ -1,0 +1,131 @@
+/// <reference types="cypress" />
+
+function mockSuperAdminSession() {
+  cy.intercept('GET', '**/auth/me', {
+    statusCode: 200,
+    body: { user: { id: 'admin_1', email: 'admin@espera.com', role: 'super_admin' } },
+  }).as('me')
+}
+
+function metricsResponse() {
+  return {
+    totalActiveBusinesses: 12,
+    totalRegisteredUsers: 340,
+    turnsToday: 58,
+    turnsThisWeek: 401,
+    range: {
+      fromDate: '2026-05-08',
+      toDate: '2026-08-06',
+      totalTurns: 401,
+      cancelledTurns: 37,
+      cancellationRate: 12.4,
+      businesses: {
+        items: [
+          {
+            businessId: 'biz_1',
+            businessName: 'Cafe Espera',
+            organizationId: 'org_1',
+            status: 'approved',
+            categoryId: 'cat_1',
+            subscriptionPlan: 'basic',
+            subscriptionStatus: 'trial',
+            turnCount: 80,
+          },
+        ],
+        page: 1,
+        pageSize: 50,
+        total: 1,
+      },
+      topCategories: [],
+    },
+  }
+}
+
+describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propia)', () => {
+  beforeEach(() => {
+    mockSuperAdminSession()
+    cy.intercept('GET', '**/business/platform/metrics*', { statusCode: 200, body: metricsResponse() }).as('metrics')
+  })
+
+  it('lista organizaciones agrupadas por negocio y expande su suscripción', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'basic', status: 'trial', trialEndsAt: '2026-09-01T00:00:00.000Z' },
+    }).as('getSubscription')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@metrics')
+
+    cy.contains('Cafe Espera').should('be.visible')
+    cy.contains('Basic · Prueba').should('be.visible')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+    cy.contains('prueba hasta').should('be.visible')
+  })
+
+  it('activa una suscripción en prueba', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'basic', status: 'trial', trialEndsAt: '2026-09-01T00:00:00.000Z' },
+    }).as('getSubscription')
+    cy.intercept('PATCH', '**/organizations/org_1/subscription/activate', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'basic', status: 'active' },
+    }).as('activateSubscription')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@metrics')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+
+    cy.contains('button', /^activar$/i).click()
+    cy.wait('@activateSubscription')
+  })
+
+  it('cancela una suscripción pidiendo motivo', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'pro', status: 'active' },
+    }).as('getSubscription')
+    cy.intercept('PATCH', '**/organizations/org_1/subscription/cancel', (request) => {
+      expect(request.body).to.deep.equal({ reason: 'Cliente pidió baja' })
+      request.reply({ statusCode: 200, body: { id: 'sub_1', organizationId: 'org_1', plan: 'pro', status: 'cancelled' } })
+    }).as('cancelSubscription')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@metrics')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+
+    cy.contains('button', /cancelar suscripción/i).click()
+    cy.get('[role="alertdialog"]').contains('button', /cancelar suscripción/i).should('be.disabled')
+    cy.get('[role="alertdialog"] textarea').type('Cliente pidió baja')
+    cy.get('[role="alertdialog"]').contains('button', /cancelar suscripción/i).click()
+    cy.wait('@cancelSubscription')
+  })
+
+  it('cambia el plan de una suscripción', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'basic', status: 'active' },
+    }).as('getSubscription')
+    cy.intercept('PATCH', '**/organizations/org_1/subscription/plan', (request) => {
+      expect(request.body).to.deep.equal({ plan: 'premium' })
+      request.reply({ statusCode: 200, body: { id: 'sub_1', organizationId: 'org_1', plan: 'premium', status: 'active' } })
+    }).as('changePlan')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@metrics')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+
+    cy.contains('button', /confirmar cambio de plan/i).should('be.disabled')
+    cy.contains('option', 'Cambiar plan a…').parent('select').select('premium')
+    cy.contains('button', /confirmar cambio de plan/i).should('be.enabled').click()
+    cy.wait('@changePlan')
+  })
+})

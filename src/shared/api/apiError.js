@@ -34,6 +34,11 @@ const ERROR_CODE_MESSAGES = {
   BUSINESS_ALREADY_APPROVED: 'Ese negocio ya estaba aprobado.',
   BUSINESS_NOT_PENDING: 'Ese negocio ya no está pendiente.',
   APPROVAL_NOTE_REQUIRED: 'Hay alertas de coherencia sin resolver — agregá una nota para aprobar de todas formas.',
+  BUSINESS_CANNOT_BE_SUSPENDED: 'Solo se pueden suspender negocios aprobados.',
+  BUSINESS_NOT_SUSPENDED: 'Ese negocio no está suspendido.',
+  SUBSCRIPTION_CANNOT_BE_ACTIVATED: 'Solo se puede activar una suscripción pendiente o en prueba.',
+  SUBSCRIPTION_ALREADY_CANCELLED: 'Esa suscripción ya está cancelada o vencida.',
+  SUBSCRIPTION_DOWNGRADE_BLOCKED: 'No se puede bajar a ese plan: la organización tiene más negocios de los que permite.',
 }
 
 export class ApiError extends Error {
