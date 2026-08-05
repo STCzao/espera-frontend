@@ -433,3 +433,38 @@ según `reportedType`, así que vale la pena que el botón no sea ambiguo.
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.
+
+## Bugfix — Vencimiento de Subscription bloquea operar (2026-08-08, backend)
+
+Rama frontend: `bugfix/subscription-lifecycle-enforcement`.
+
+El backend agregó reconciliación perezosa `trial → expired` (nada mueve el
+estado automáticamente sin scheduler — se resuelve al leer) y, con eso
+resuelto, bloqueó aprobar un `Business` cuya `Organization` tiene
+`Subscription` `cancelled`/`expired` (ver "Bugfix — La Subscription
+vencida/cancelada ahora bloquea operar" en
+`docs/epica-2-5-cuentas-organizaciones.md` del backend). No agrega ninguna
+pantalla nueva ni cambia ninguna forma de respuesta — `subscriptionStatus`
+ya se mostraba como texto libre vía `subscriptionStatusLabels` (que ya
+incluía `expired`) tanto en "Negocios" como en "Suscripciones", así que
+ambas pantallas reflejan el estado reconciliado sin tocar código.
+
+**Único cambio real: mapear el error nuevo.** `ApproveBusinessUseCase`
+(usado por la acción "Aprobar" de `HU-8.3`, ya implementada) ahora puede
+devolver `409 SUBSCRIPTION_NOT_ACTIVE` — sin mapearlo, un intento de
+aprobar un negocio de una cuenta vencida mostraba el mensaje crudo en
+inglés del backend en vez de traducido. También se mapeó
+`SUBSCRIPTION_INACTIVE` (`403`, bloquea *crear* un negocio nuevo,
+`EnsureBusinessCreationAllowedUseCase`) aunque esa pantalla
+(`BusinessCreatePage`, Épica 1/2) no forma parte de esta épica — se
+incluye acá porque salió del mismo PR de backend y usa el mismo mecanismo
+de traducción centralizado (`apiError.js`).
+
+### Cobertura
+
+- `cypress/e2e/backoffice-approvals.cy.js` — caso nuevo: aprobar un negocio
+  cuya organización tiene la suscripción vencida muestra el mensaje
+  traducido en vez del texto crudo del backend.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
