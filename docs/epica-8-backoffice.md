@@ -14,18 +14,17 @@ Contrato y reglas de negocio completos del lado backend:
 
 ## Estado general
 
-- Estado: `en progreso`.
+- Estado: `completa` — 7/7 historias implementadas.
 - Historias implementadas: `HU-8.1` (acceso), `HU-8.2`/`HU-8.3` (listar y
   aprobar/rechazar organizaciones y negocios pendientes), `HU-8.7` (alerta
   de coherencia — integrada en la vista de revisión de `HU-8.3`, no es
   pantalla aparte), `HU-8.4`/`HU-8.5` (suspender/reactivar negocio +
   dashboard de métricas globales — misma rama, pantallas separadas, ver
-  nota de alcance en `HU-8.4`/`HU-8.5` más abajo), gestión manual de
-  suscripciones (bugfix, no una HU del backlog — pantalla propia
-  "Suscripciones", ver sección dedicada al final).
-- Historias pendientes: `HU-8.6` (reportes).
-- Sidebar del Backoffice tiene 4 ítems: Inicio, Aprobaciones, Negocios,
-  Suscripciones.
+  nota de alcance en `HU-8.4`/`HU-8.5` más abajo), `HU-8.6` (reportes),
+  gestión manual de suscripciones (bugfix, no una HU del backlog — pantalla
+  propia "Suscripciones", ver sección dedicada más abajo).
+- Sidebar del Backoffice tiene 5 ítems: Inicio, Aprobaciones, Negocios,
+  Suscripciones, Reportes.
 
 ## Superficies involucradas
 
@@ -357,6 +356,80 @@ duplicar la gestión.
 - `cypress/e2e/backoffice-subscriptions.cy.js` — listar agrupado por
   organización, expandir y activar una suscripción en prueba, cancelar
   pidiendo motivo, cambiar de plan.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## HU-8.6 - Ver y gestionar reportes
+
+Estado: `implementado`. Última historia de la épica — la cierra.
+
+### Objetivo de experiencia
+
+El equipo Espera entra a "Reportes" (quinto ítem del sidebar) y ve todos
+los reportes de usuarios y negocios, filtrables por estado y tipo. Por cada
+reporte pendiente puede resolverlo sin más acción, descartarlo (con nota
+obligatoria) o suspender directamente a quien fue reportado.
+
+### Pantallas / Rutas
+
+```text
+/backoffice/reports   (BackofficeReportsPage)
+```
+
+### Contratos backend usados
+
+```text
+GET   /api/reports?status=&reportedType=            → Report[] (sin envolver)
+PATCH /api/reports/:reportId/resolve   body: { note? }
+PATCH /api/reports/:reportId/dismiss   body: { note }   (obligatoria)
+PATCH /api/reports/:reportId/suspend   body: { note? }  → delega en SuspendBusinessUseCase o BlockUserUseCase
+```
+
+`POST /api/reports` (crear un reporte) es de cara al usuario final, no al
+Backoffice — no tiene pantalla en esta épica; el backend ya lo expone para
+cuando exista un flujo de "reportar" en el panel de negocio o la app de
+clientes.
+
+### Decisiones de implementación
+
+**No hay forma de resolver el nombre de un usuario reportado.** `Report`
+solo guarda `reportedId` — para `reportedType: "business"` se resuelve el
+nombre reusando `GET /business/:businessId/review` (ya existía, HU-8.7,
+sin restricción de estado del negocio) al expandir el detalle de la fila.
+Para `reportedType: "user"` **no existe ningún endpoint de lectura de
+usuario** en el backend (`auth.routes.ts` no expone ningún `GET`) — se
+muestra el `reportedId` crudo con una nota explícita de la limitación en
+vez de fingir que se resolvió. Mismo criterio que las limitaciones ya
+documentadas en Negocios/Suscripciones: se señala, no se disimula.
+
+**Acciones de revisión solo visibles si `status === "pending"`** — un
+reporte ya resuelto/descartado/suspendido muestra su `internalNote` y
+`reviewedAt` en modo lectura, sin botones (coincide con la regla del
+backend: solo se puede revisar una vez, `409 REPORT_NOT_PENDING` si se
+reintenta).
+
+**Un solo `ConfirmDialog` reusado para las tres acciones** (`action` en
+estado local: `'resolve' | 'dismiss' | 'suspend'`), con el texto de
+nota "(obligatoria)"/"(opcional)" cambiando según la acción y
+`confirmDisabled` activo solo para `dismiss` — mismo patrón que ya se usó
+en Aprobaciones/Negocios/Suscripciones para no repetir tres modales
+casi idénticos.
+
+**El texto del botón "Suspender" indica a quién**, ej. "Suspender negocio"
+o "Suspender usuario" — la acción real (`SuspendReportedUseCase`) es
+irreversible desde acá y delega en `SuspendBusinessUseCase`/`BlockUserUseCase`
+según `reportedType`, así que vale la pena que el botón no sea ambiguo.
+
+**Nuevos códigos de error mapeados**: `REPORT_NOT_FOUND`, `REPORT_NOT_PENDING`,
+`USER_NOT_FOUND`, `USER_ALREADY_BLOCKED`.
+
+### Cobertura
+
+- `cypress/e2e/backoffice-reports.cy.js` — listar y expandir el detalle de
+  un negocio reportado, resolver, descartar exigiendo nota, suspender el
+  negocio reportado, un reporte de usuario muestra el id sin resolver
+  nombre, filtrar por estado.
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.

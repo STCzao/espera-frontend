@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Building2, CircleCheckBig, CreditCard, LayoutDashboard, Menu, X } from 'lucide-react'
+import { Building2, CircleCheckBig, CreditCard, Flag, LayoutDashboard, Menu, X } from 'lucide-react'
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { useSessionStore } from '../../shared/auth/sessionStore.js'
@@ -9,6 +9,7 @@ const navItems = [
   { to: 'approvals', label: 'Aprobaciones', icon: CircleCheckBig },
   { to: 'businesses', label: 'Negocios', icon: Building2 },
   { to: 'subscriptions', label: 'Suscripciones', icon: CreditCard },
+  { to: 'reports', label: 'Reportes', icon: Flag },
 ]
 
 export function BackofficePanelLayout() {
