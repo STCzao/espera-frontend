@@ -15,20 +15,24 @@ mezclarse mentalmente:
 
 ## Estado general
 
-- Estado: `Épica 1, 2, 3 y 6 cerradas (alcance web/panel)`.
+- Estado: `Épica 1, 2, 3 y 6 cerradas (alcance web/panel)`; `Épica 8` en
+  progreso.
 - Épicas: `Épica 1 - Autenticación y Onboarding` y `Épica 2 - Gestión de
   Negocios` cerradas en su alcance web. `Épica 3 - Cola` completa tanto del
   lado backend (12 historias, tiempo real vía Socket.IO) como del lado
   panel (`HU-3.8` a `HU-3.11`), ver `docs/epica-3-cola.md`. `Épica 6 -
   Panel del Negocio` completa (6/6 historias: `HU-6.1`, `HU-6.2`, `HU-6.3`,
   `HU-6.4`, `HU-6.5`, `HU-6.6`), ver `docs/epica-6-panel-del-negocio.md`.
+  `Épica 8 - Backoffice` en progreso (`HU-8.1` — acceso: login reusado +
+  redirección por rol + layout `/backoffice` — implementada; `HU-8.2` a
+  `HU-8.7` pendientes), ver `docs/epica-8-backoffice.md`.
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
   `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
   (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
   `HU-2.6`, `HU-2.8`, `HU-6.1` (dashboard cola), `HU-3.8` a `HU-3.11`
   (lista, turno manual, cancelar, atención en dos etapas + ventanillas),
   `HU-6.4` (historial), `HU-6.5` (métricas), `HU-6.6` (UX mobile del
-  panel).
+  panel), `HU-8.1` (acceso al Backoffice).
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
 - Historias diferidas transversales: mobile completa, deep links
   definitivos, notificaciones push end-to-end, gate de UI por rol

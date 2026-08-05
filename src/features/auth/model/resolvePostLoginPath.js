@@ -11,7 +11,13 @@ export async function resolveOwnedBusinesses() {
   }
 }
 
-export function resolvePostLoginPath(businesses) {
+export function resolvePostLoginPath(businesses, user) {
+  // super_admin accounts operate the Backoffice, never the business panel —
+  // they're created via a one-off script (no business ownership involved).
+  if (user?.role === 'super_admin') {
+    return '/backoffice'
+  }
+
   // A user can own more than one business; selection between them is deferred,
   // so the first one found is used as the redirect target for now.
   return businesses[0]?.slug ? `/panel/business/${businesses[0].slug}` : '/panel'
