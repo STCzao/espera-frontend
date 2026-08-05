@@ -49,6 +49,10 @@ const ERROR_CODE_MESSAGES = {
   // HU-8.3 (Backoffice) y el alta de negocio (business-onboarding).
   SUBSCRIPTION_NOT_ACTIVE: 'La suscripción de esa organización está vencida o cancelada.',
   SUBSCRIPTION_INACTIVE: 'Tu suscripción está vencida o cancelada — no podés crear un negocio nuevo.',
+  // Colas adicionales por plan.
+  BUSINESS_OWNERSHIP_REQUIRED: 'No tenés permisos sobre este negocio.',
+  PLAN_QUEUE_LIMIT_REACHED: 'Tu plan no permite crear más colas para este negocio.',
+  QUEUE_PREFIX_ALREADY_IN_USE: 'Ese prefijo ya lo usa otra cola de este negocio.',
 }
 
 export class ApiError extends Error {

@@ -1,6 +1,7 @@
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { OperationalStatusControl } from '../components/OperationalStatusControl.jsx'
+import { QueuesControl } from '../components/QueuesControl.jsx'
 import { ServiceWindowsControl } from '../components/ServiceWindowsControl.jsx'
 
 export function BusinessOperationsPage() {
@@ -30,6 +31,12 @@ export function BusinessOperationsPage() {
         <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
           <div className="p-6">
             <OperationalStatusControl businessId={businessId} operationalStatus={operationalStatus} />
+          </div>
+        </div>
+
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+          <div className="p-6">
+            <QueuesControl businessId={businessId} />
           </div>
         </div>
       </div>

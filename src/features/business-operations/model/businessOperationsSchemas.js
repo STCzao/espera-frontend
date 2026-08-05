@@ -8,6 +8,16 @@ export const serviceWindowsSchema = z.object({
     .max(50, 'No puede superar 50.'),
 })
 
+export const createQueueSchema = z.object({
+  name: z.string().trim().min(1, 'Ingresá un nombre.').max(100, 'Máximo 100 caracteres.'),
+  prefix: z
+    .string()
+    .trim()
+    .min(1, 'Ingresá un prefijo.')
+    .max(3, 'Máximo 3 letras.')
+    .regex(/^[A-Za-z]+$/, 'Solo letras, sin números ni símbolos.'),
+})
+
 export const operationalStatusSchema = z.object({
   operationalStatus: z.enum(['normal', 'delayed', 'paused', 'closed'], {
     required_error: 'Seleccioná un estado.',

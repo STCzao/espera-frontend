@@ -692,3 +692,56 @@ rompe nada, pero sería bueno que el backend lo alinee al resto del dominio.
 - No validado todavía contra el backend real con datos de un día completo
   (pendiente: correr el ciclo completo de turnos y confirmar métricas /
   historial con datos reales, no solo mocks).
+
+## Refinamiento — Colas adicionales por plan (bugfix backend, 2026-08-08)
+
+Rama: `feature/additional-queue-creation`.
+
+El backend conectó `EnsureQueueCreationAllowedUseCase` (existía desde
+Épica 2.5 pero nunca se llamaba desde ningún lado) a un endpoint real —
+hasta ahora no había forma de crear una segunda `Queue` para un `Business`,
+aunque la grilla de planes (`PLAN_LIMITS`) prometía varias desde el plan
+Pro. Ver "Refinamiento — Crear colas adicionales" en
+`docs/epica-3-cola.md` del backend.
+
+### Pantalla / Ubicación
+
+No es una pantalla nueva — se sumó como una tercera card en
+`/panel/business/:businessSlug/operations` (`QueuesControl.jsx`), junto a
+"Ventanillas activas" y "Estado operativo", que ya eran configuración de
+negocio de baja frecuencia de uso. No justifica su propia entrada de
+sidebar.
+
+### Contrato backend usado
+
+```text
+GET  /api/business/:businessId/queues                  queue:read
+POST /api/business/:businessId/queues   body: { name, prefix }   queue:configure
+```
+
+### Decisiones de implementación
+
+**Alcance deliberadamente acotado a "crear/listar", no a "operar
+multi-cola".** El panel de Cola/Historial (`useCurrentBusinessStore.activeQueueId`,
+`BusinessQueuePage`, `businessQueueApi`) sigue asumiendo una sola cola por
+negocio — cambiar eso es un cambio de arquitectura bastante más grande
+(selector de cola activa, historial por cola, etc.) que el propio bugfix
+del backend no pedía: solo conectó la creación al límite del plan. Crear
+una segunda cola hoy la deja creada y lista en la base, pero el panel de
+Cola/Historial va a seguir operando la primera (`activeQueueId`) hasta que
+se aborde esa migración como su propio trabajo.
+
+**`prefix` se normaliza a mayúsculas en el frontend antes de enviarlo** —
+el backend igual lo normaliza, pero mandar ya en mayúsculas evita el viaje
+de ida y vuelta si el usuario escribe en minúscula.
+
+**Nuevos códigos de error mapeados**: `BUSINESS_OWNERSHIP_REQUIRED`,
+`PLAN_QUEUE_LIMIT_REACHED`, `QUEUE_PREFIX_ALREADY_IN_USE`.
+
+### Cobertura
+
+- `cypress/e2e/business-operations.cy.js` — casos nuevos: listar colas
+  existentes, crear una adicional, traducir el error de límite de plan.
+
+No pude correr la suite en este entorno (Cypress no levanta su binario de
+Electron acá); verificado por lint + build + lectura de código.
