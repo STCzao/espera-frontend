@@ -1,13 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
+import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessOperationsApi } from '../api/businessOperationsApi.js'
 import { createQueueSchema } from '../model/businessOperationsSchemas.js'
 
 export function QueuesControl({ businessId }) {
+  const canOperate = useBusinessCanOperate()
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
   const queryClient = useQueryClient()
 
   const queuesQuery = useQuery({
@@ -88,27 +93,33 @@ export function QueuesControl({ businessId }) {
         </ul>
       )}
 
-      <form className="flex flex-wrap items-end gap-4 border-t border-espera-border pt-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <div className="w-56">
-          <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
+      {canOperate ? (
+        <form className="flex flex-wrap items-end gap-4 border-t border-espera-border pt-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <div className="w-56">
+            <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
+          </div>
+          <div className="w-28">
+            <FormField
+              error={errors.prefix?.message}
+              label="Prefijo"
+              maxLength={3}
+              placeholder="ej. B"
+              registration={register('prefix')}
+            />
+          </div>
+          <div className="w-40">
+            <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
+              Crear cola
+            </FormButton>
+          </div>
+        </form>
+      ) : (
+        <div className="border-t border-espera-border pt-4">
+          <BusinessNotOperatingNotice status={businessStatus} />
         </div>
-        <div className="w-28">
-          <FormField
-            error={errors.prefix?.message}
-            label="Prefijo"
-            maxLength={3}
-            placeholder="ej. B"
-            registration={register('prefix')}
-          />
-        </div>
-        <div className="w-40">
-          <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
-            Crear cola
-          </FormButton>
-        </div>
-      </form>
+      )}
 
-      {createMutation.isError && (
+      {canOperate && createMutation.isError && (
         <p className="text-sm font-normal text-espera-danger" role="alert">
           {createMutation.error?.message ?? 'No pudimos crear la cola. Intentá nuevamente.'}
         </p>

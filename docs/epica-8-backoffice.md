@@ -216,34 +216,22 @@ dedicada en el sidebar en vez de un panel anidado.
 ### Contratos backend usados
 
 ```text
-GET   /api/business/platform/metrics?fromDate=&toDate=&organizationId=&categoryId=&status=&subscriptionPlan=&subscriptionStatus=&sortBy=&sortDir=&page=&pageSize=
+GET   /api/business/platform/metrics?fromDate=&toDate=   (solo stats + topBusinesses/topCategories, ver nota más abajo)
+GET   /api/business?organizationId=&categoryId=&status=&subscriptionPlan=&subscriptionStatus=&sortBy=&sortDir=&page=&pageSize=
 PATCH /api/business/:businessId/suspend       body: { reason }
 PATCH /api/business/:businessId/reactivate
 ```
 
 ### Decisiones de implementación
 
-**Dos queries independientes contra el mismo endpoint**, no una sola
-compartida. `PlatformStatsHeader` pide `getPlatformMetrics({ pageSize: 1 })`
-(sin filtros, rango default de 7 días) solo para los 4 números de arriba y
-"rubros con más demanda" — esos campos son "siempre relativos a hoy", no al
-rango que el admin elija en la tabla (así lo aclara el backend). Separarlas
-evita que cambiar un filtro de la tabla haga bailar los números de arriba, y
-evita tener que levantar el estado de filtros hasta un padre común.
-
-**Filtro de fecha por defecto: últimos 90 días, no el default del backend
-(7 días).** Limitación real y no resuelta del contrato: `GetPlatformMetricsUseCase`
-arma la lista de negocios a partir de `getTurnCountsByBusiness(fromDate, toDate)`
-— **un negocio con cero turnos en el rango elegido no aparece en la lista,
-sin importar los demás filtros.** No hay forma de listar negocios "todos",
-solo "negocios con actividad en este rango". 90 días reduce el problema
-(cualquier negocio con algo de actividad reciente aparece) pero no lo
-elimina — un negocio nuevo sin turnos, o uno inactivo hace meses, simplemente
-no se puede suspender/reactivar desde acá todavía. Documentado acá en vez de
-resuelto porque el fix real es de backend (un endpoint de listado de
-negocios independiente de `Turn`) y está fuera del alcance de esta rama —
-candidato a un prompt de backend aparte si se vuelve un problema real de
-uso.
+**Dos endpoints distintos, no uno**: `PlatformStatsHeader` usa
+`getPlatformMetrics()` (stats + rubros/negocios con más demanda, siempre
+relativos a "hoy" o al rango elegido, nunca depende de filtros de negocio) y
+`BusinessMetricsTable` usa `listBusinesses()` contra `GET /business` (el
+directorio real, filtrable/ordenable/paginado, sin depender de `Turn`). Ver
+"Bugfix — separación del listado de negocios de las métricas" más abajo
+para el porqué — originalmente eran un solo endpoint y tenían un defecto de
+diseño real, no solo una limitación de fechas.
 
 **Sin filtro por `organizationId`.** El endpoint lo soporta, pero no hay
 ningún selector/autocomplete de organizaciones en el Backoffice todavía (no
@@ -320,15 +308,15 @@ PATCH /api/organizations/:organizationId/subscription/plan      body: { plan }
 **Sin endpoint de "listar organizaciones", así que se agrupa la misma
 fuente que usa "Negocios".** No existe un `GET /organizations` genérico
 (solo `/pending`), así que `SubscriptionsList` pide
-`getPlatformMetrics({ pageSize: 50, sortBy: 'businessName' })` — la misma
-fuente que HU-8.5 — y agrupa las filas (por `businessName`) en el cliente
-por `organizationId` (`groupByOrganization` en `SubscriptionsList.jsx`),
-mostrando una fila por Organization con los nombres de sus negocios. Hereda
-la misma limitación ya documentada en "Negocios": una organización cuyos
-negocios no tuvieron turnos en los últimos 90 días, o si hay más de 50
-negocios en total, no aparece en esta lista tampoco — mismo candidato a
-prompt de backend aparte (un listado de organizaciones independiente de
-`Turn`).
+`listBusinesses({ pageSize: 50, sortBy: 'businessName' })` (`GET /business`
+— ver "Bugfix — separación del listado de negocios de las métricas" más
+abajo) y agrupa las filas en el cliente por `organizationId`
+(`groupByOrganization` en `SubscriptionsList.jsx`), mostrando una fila por
+Organization con los nombres de sus negocios. Con el directorio real ya no
+depende de actividad de turnos ni de un rango de fechas — el único límite
+que queda es el máximo de 50 negocios por página, sin paginar todavía en
+esta vista (agrupar por organización a través de páginas complicaría la
+UI más de lo que vale por ahora).
 
 **Cada fila expande (lazy) el mismo `SubscriptionPanel`** que ya existía —
 no se reescribió, solo se movió de "colgar de una fila de Negocios" a
@@ -465,6 +453,67 @@ de traducción centralizado (`apiError.js`).
 - `cypress/e2e/backoffice-approvals.cy.js` — caso nuevo: aprobar un negocio
   cuya organización tiene la suscripción vencida muestra el mensaje
   traducido en vez del texto crudo del backend.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## Bugfix — separación del listado de negocios de las métricas (2026-08-06, backend)
+
+Rama frontend: `bugfix/business-status-guards` (mismo commit que el fix de
+`business.status`, ver más abajo — dos bugfixes de backend distintos
+resueltos en la misma rama frontend porque llegaron juntos).
+
+Este era exactamente el pedido que le habíamos hecho a backend al construir
+`HU-8.4`/`HU-8.5` (ver la limitación de "90 días" que documentaba esta
+misma sección antes de este bugfix): `GET /business/platform/metrics`
+mezclaba dos responsabilidades — listar/gestionar negocios (no debería
+depender de actividad reciente) y métricas agregadas de la plataforma (sí
+depende, correctamente, de un rango de fechas). Un negocio sin turnos en el
+rango elegido desaparecía del listado sin importar los demás filtros —
+justo los negocios que más hace falta encontrar para suspender/reactivar
+(nuevo sin actividad, inactivo hace tiempo, suspendido desde hace rato).
+
+### Qué cambió
+
+`GET /business/platform/metrics` volvió a su shape simple: sin filtros de
+negocio, `range.topBusinesses` (top 5 fijo por turnos) en vez de
+`range.businesses` paginado. `GET /business` (nuevo) es el directorio real
+— mismos filtros que tenía el endpoint viejo (`organizationId`,
+`categoryId`, `status`, `subscriptionPlan`, `subscriptionStatus`, orden,
+paginación), pero consultando `Business` directo, sin pasar por `Turn` —
+un negocio aparece tenga o no actividad. `sortBy` cambió de
+`turnCount`/`businessName` a `businessName`/`createdAt` (ya no hay
+`turnCount` por fila, ese dato es exclusivo de `topBusinesses` ahora).
+
+### Impacto en el frontend
+
+- `backofficeApi.js`: `getPlatformMetrics()` perdió sus params de
+  filtro/orden/paginación; `listBusinesses()` (nuevo) pega contra
+  `GET /business`.
+- `BusinessMetricsTable.jsx` ("Negocios"): pasa a usar `listBusinesses()`.
+  Se sacaron los filtros de fecha (`Desde`/`Hasta`, ya no aplican) y la
+  columna de turnos por fila se reemplazó por la fecha de alta
+  (`business.createdAt`). El resto (filtros de estado/categoría/plan/estado
+  de suscripción, suspender/reactivar) sigue igual.
+- `PlatformStatsHeader.jsx` ("Inicio"): ahora también muestra "Negocios más
+  activos" (`range.topBusinesses`) al lado de "Rubros con más demanda" —
+  antes ese dato ni se pedía porque `PlatformStatsHeader` llamaba
+  `getPlatformMetrics({ pageSize: 1 })` solo para minimizar el payload del
+  shape viejo; con el shape nuevo, `topBusinesses` viaja siempre y es gratis
+  mostrarlo.
+- `SubscriptionsList.jsx` ("Suscripciones"): pasa a agrupar por
+  organización sobre `listBusinesses()` en vez de `getPlatformMetrics()` —
+  ver nota en la sección de Suscripciones más arriba.
+- Se eliminó `src/features/backoffice/utils/dateRange.js` (`daysAgoISO`) —
+  quedó sin usar en ningún lado tras sacar los filtros de fecha de
+  "Negocios" y "Suscripciones".
+
+### Cobertura
+
+- `cypress/e2e/backoffice-metrics.cy.js`, `backoffice-businesses.cy.js`,
+  `backoffice-subscriptions.cy.js` — actualizados contra el nuevo contrato
+  (`GET /business` en vez de `range.businesses`, `topBusinesses` en el
+  dashboard).
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.

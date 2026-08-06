@@ -5,7 +5,6 @@ import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
-import { daysAgoISO } from '../utils/dateRange.js'
 
 const statusLabels = {
   pending: 'Pendiente',
@@ -38,14 +37,16 @@ const emptyFilters = {
   subscriptionStatus: '',
 }
 
+function formatDate(isoDate) {
+  return new Date(isoDate).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
 export function BusinessMetricsTable() {
   const categoriesQuery = useBusinessCategories()
   const categoryNameById = new Map((categoriesQuery.data ?? []).map((category) => [category.id, category.name]))
 
-  const [fromDate, setFromDate] = useState(() => daysAgoISO(90))
-  const [toDate, setToDate] = useState(() => daysAgoISO(0))
   const [filters, setFilters] = useState(emptyFilters)
-  const [sortBy, setSortBy] = useState('turnCount')
+  const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState('desc')
   const [page, setPage] = useState(1)
   const [businessToSuspend, setBusinessToSuspend] = useState(null)
@@ -53,11 +54,11 @@ export function BusinessMetricsTable() {
 
   const queryClient = useQueryClient()
 
-  const queryParams = { fromDate, toDate, ...filters, sortBy, sortDir, page, pageSize: 10 }
+  const queryParams = { ...filters, sortBy, sortDir, page, pageSize: 20 }
 
-  const metricsQuery = useQuery({
-    queryKey: ['backoffice-platform-metrics', queryParams],
-    queryFn: () => backofficeApi.getPlatformMetrics(queryParams),
+  const businessesQuery = useQuery({
+    queryKey: ['backoffice-businesses', queryParams],
+    queryFn: () => backofficeApi.listBusinesses(queryParams),
   })
 
   function updateFilter(key, value) {
@@ -66,7 +67,7 @@ export function BusinessMetricsTable() {
   }
 
   function invalidate() {
-    queryClient.invalidateQueries({ queryKey: ['backoffice-platform-metrics'] })
+    queryClient.invalidateQueries({ queryKey: ['backoffice-businesses'] })
   }
 
   const reactivateMutation = useMutation({
@@ -83,36 +84,12 @@ export function BusinessMetricsTable() {
     },
   })
 
-  const businesses = metricsQuery.data?.range.businesses
+  const businesses = businessesQuery.data
   const totalPages = businesses ? Math.max(1, Math.ceil(businesses.total / businesses.pageSize)) : 1
 
   return (
     <div className="rounded-lg border border-espera-border bg-white">
       <div className="flex flex-wrap items-end gap-3 border-b border-espera-border p-4">
-        <FilterField label="Desde">
-          <input
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
-            max={toDate}
-            onChange={(event) => {
-              setPage(1)
-              setFromDate(event.target.value)
-            }}
-            type="date"
-            value={fromDate}
-          />
-        </FilterField>
-        <FilterField label="Hasta">
-          <input
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
-            max={daysAgoISO(0)}
-            onChange={(event) => {
-              setPage(1)
-              setToDate(event.target.value)
-            }}
-            type="date"
-            value={toDate}
-          />
-        </FilterField>
         <FilterField label="Estado">
           <select
             className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
@@ -178,7 +155,7 @@ export function BusinessMetricsTable() {
             }}
             value={sortBy}
           >
-            <option value="turnCount">Turnos</option>
+            <option value="createdAt">Fecha de alta</option>
             <option value="businessName">Nombre</option>
           </select>
         </FilterField>
@@ -194,7 +171,7 @@ export function BusinessMetricsTable() {
         </button>
       </div>
 
-      {metricsQuery.isLoading && (
+      {businessesQuery.isLoading && (
         <ul>
           {[0, 1, 2].map((index) => (
             <li className="flex items-center gap-3.5 border-t border-espera-border px-5 py-3 first:border-t-0" key={index}>
@@ -207,16 +184,14 @@ export function BusinessMetricsTable() {
         </ul>
       )}
 
-      {metricsQuery.isError && (
+      {businessesQuery.isError && (
         <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
           No pudimos cargar los negocios.
         </p>
       )}
 
       {businesses && businesses.items.length === 0 && (
-        <p className="px-5 py-6 text-sm text-espera-text-muted">
-          Ningún negocio coincide con estos filtros en el rango de fechas elegido.
-        </p>
+        <p className="px-5 py-6 text-sm text-espera-text-muted">Ningún negocio coincide con estos filtros.</p>
       )}
 
       {businesses && businesses.items.length > 0 && (
@@ -239,7 +214,7 @@ export function BusinessMetricsTable() {
                     {business.subscriptionStatus &&
                       ` (${subscriptionStatusLabels[business.subscriptionStatus] ?? business.subscriptionStatus})`}
                     {' · '}
-                    {business.turnCount} turnos en el rango
+                    alta {formatDate(business.createdAt)}
                   </p>
                 </div>
                 <span

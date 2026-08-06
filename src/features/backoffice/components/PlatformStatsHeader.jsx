@@ -9,7 +9,7 @@ import { backofficeApi } from '../api/backofficeApi.js'
 export function PlatformStatsHeader() {
   const statsQuery = useQuery({
     queryKey: ['backoffice-platform-stats'],
-    queryFn: () => backofficeApi.getPlatformMetrics({ pageSize: 1 }),
+    queryFn: () => backofficeApi.getPlatformMetrics(),
   })
 
   if (statsQuery.isLoading) {
@@ -44,23 +44,43 @@ export function PlatformStatsHeader() {
         <Stat label="Turnos esta semana" value={data.turnsThisWeek} />
       </dl>
 
-      {data.range.topCategories.length > 0 && (
-        <div className="mt-4 rounded-lg border border-espera-border bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">
-            Rubros con más demanda ({data.range.fromDate} a {data.range.toDate})
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-2">
-            {data.range.topCategories.map((category) => (
-              <li
-                className="rounded-full bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
-                key={category.categoryId}
-              >
-                {category.categoryName} · {category.turnCount} turnos
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {data.range.topBusinesses.length > 0 && (
+          <div className="rounded-lg border border-espera-border bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">
+              Negocios más activos ({data.range.fromDate} a {data.range.toDate})
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {data.range.topBusinesses.map((business) => (
+                <li
+                  className="rounded-full bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
+                  key={business.businessId}
+                >
+                  {business.businessName} · {business.turnCount} turnos
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {data.range.topCategories.length > 0 && (
+          <div className="rounded-lg border border-espera-border bg-white p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">
+              Rubros con más demanda ({data.range.fromDate} a {data.range.toDate})
+            </p>
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {data.range.topCategories.map((category) => (
+                <li
+                  className="rounded-full bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
+                  key={category.categoryId}
+                >
+                  {category.categoryName} · {category.turnCount} turnos
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </>
   )
 }

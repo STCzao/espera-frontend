@@ -2,8 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessHoursApi } from '../api/businessHoursApi.js'
 import { NonWorkingDaysEditor } from '../components/NonWorkingDaysEditor.jsx'
@@ -17,6 +19,8 @@ const defaultValues = {
 
 export function BusinessHoursPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
+  const canOperate = useBusinessCanOperate()
   const queryClient = useQueryClient()
 
   const hoursQuery = useQuery({
@@ -87,11 +91,15 @@ export function BusinessHoursPage() {
               </p>
             )}
 
-            <div className="max-w-[220px]">
-              <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
-                Guardar cambios
-              </FormButton>
-            </div>
+            {canOperate ? (
+              <div className="max-w-[220px]">
+                <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
+                  Guardar cambios
+                </FormButton>
+              </div>
+            ) : (
+              <BusinessNotOperatingNotice status={businessStatus} />
+            )}
           </form>
         </div>
       </div>

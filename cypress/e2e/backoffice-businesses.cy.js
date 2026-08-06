@@ -14,38 +14,24 @@ function mockCategories() {
   }).as('categories')
 }
 
-function metricsResponse(overrides = {}) {
+function businessesResponse(overrides = {}) {
   return {
-    totalActiveBusinesses: 12,
-    totalRegisteredUsers: 340,
-    turnsToday: 58,
-    turnsThisWeek: 401,
-    range: {
-      fromDate: '2026-05-08',
-      toDate: '2026-08-06',
-      totalTurns: 401,
-      cancelledTurns: 37,
-      cancellationRate: 12.4,
-      businesses: {
-        items: [
-          {
-            businessId: 'biz_1',
-            businessName: 'Cafe Espera',
-            organizationId: 'org_1',
-            status: 'approved',
-            categoryId: 'cat_1',
-            subscriptionPlan: 'pro',
-            subscriptionStatus: 'active',
-            turnCount: 80,
-          },
-        ],
-        page: 1,
-        pageSize: 10,
-        total: 1,
+    items: [
+      {
+        businessId: 'biz_1',
+        businessName: 'Cafe Espera',
+        organizationId: 'org_1',
+        status: 'approved',
+        categoryId: 'cat_1',
+        subscriptionPlan: 'pro',
+        subscriptionStatus: 'active',
+        createdAt: '2026-01-15T00:00:00.000Z',
       },
-      topCategories: [{ categoryId: 'cat_1', categoryName: 'Cafetería', turnCount: 210 }],
-      ...overrides,
-    },
+    ],
+    page: 1,
+    pageSize: 20,
+    total: 1,
+    ...overrides,
   }
 }
 
@@ -56,19 +42,19 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('lista los negocios con su categoría, plan y estado', () => {
-    cy.intercept('GET', '**/business/platform/metrics*', { statusCode: 200, body: metricsResponse() }).as('metrics')
+    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
 
     cy.contains('Cafe Espera').should('be.visible')
-    cy.contains('80 turnos en el rango').should('be.visible')
+    cy.contains('alta 15/01/2026').should('be.visible')
     cy.contains('button', /^suspender$/i).should('be.visible')
   })
 
   it('suspende un negocio aprobado pidiendo motivo', () => {
-    cy.intercept('GET', '**/business/platform/metrics*', { statusCode: 200, body: metricsResponse() }).as('metrics')
+    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
     cy.intercept('PATCH', '**/business/biz_1/suspend', (request) => {
       expect(request.body).to.deep.equal({ reason: 'Fraude reportado' })
       request.reply({ statusCode: 200, body: { id: 'biz_1', status: 'suspended' } })
@@ -76,7 +62,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
 
     cy.contains('button', /^suspender$/i).click()
     cy.get('[role="alertdialog"]').should('be.visible')
@@ -87,26 +73,21 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('reactiva un negocio suspendido', () => {
-    cy.intercept('GET', '**/business/platform/metrics*', {
+    cy.intercept('GET', '**/business?*', {
       statusCode: 200,
-      body: metricsResponse({
-        businesses: {
-          items: [
-            {
-              businessId: 'biz_2',
-              businessName: 'Barbería Norte',
-              organizationId: 'org_2',
-              status: 'suspended',
-              categoryId: 'cat_1',
-              turnCount: 3,
-            },
-          ],
-          page: 1,
-          pageSize: 10,
-          total: 1,
-        },
+      body: businessesResponse({
+        items: [
+          {
+            businessId: 'biz_2',
+            businessName: 'Barbería Norte',
+            organizationId: 'org_2',
+            status: 'suspended',
+            categoryId: 'cat_1',
+            createdAt: '2026-02-01T00:00:00.000Z',
+          },
+        ],
       }),
-    }).as('metrics')
+    }).as('businesses')
     cy.intercept('PATCH', '**/business/biz_2/reactivate', {
       statusCode: 200,
       body: { id: 'biz_2', status: 'approved' },
@@ -114,7 +95,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
 
     cy.contains('Barbería Norte').should('be.visible')
     cy.contains('button', /^reactivar$/i).click()
@@ -122,19 +103,19 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('cambiar el filtro de estado dispara una nueva consulta con el filtro aplicado', () => {
-    cy.intercept('GET', '**/business/platform/metrics*', { statusCode: 200, body: metricsResponse() }).as('metrics')
+    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
 
-    cy.intercept('GET', '**/business/platform/metrics*', (request) => {
+    cy.intercept('GET', '**/business?*', (request) => {
       expect(request.query.status).to.equal('suspended')
-      request.reply({ statusCode: 200, body: metricsResponse({ businesses: { items: [], page: 1, pageSize: 10, total: 0 } }) })
-    }).as('filteredMetrics')
+      request.reply({ statusCode: 200, body: businessesResponse({ items: [], total: 0 }) })
+    }).as('filteredBusinesses')
 
     cy.contains('label', 'Estado').find('select').select('suspended')
-    cy.wait('@filteredMetrics')
+    cy.wait('@filteredBusinesses')
     cy.contains('Ningún negocio coincide con estos filtros').should('be.visible')
   })
 })

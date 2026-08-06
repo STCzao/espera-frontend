@@ -53,6 +53,11 @@ const ERROR_CODE_MESSAGES = {
   BUSINESS_OWNERSHIP_REQUIRED: 'No tenés permisos sobre este negocio.',
   PLAN_QUEUE_LIMIT_REACHED: 'Tu plan no permite crear más colas para este negocio.',
   QUEUE_PREFIX_ALREADY_IN_USE: 'Ese prefijo ya lo usa otra cola de este negocio.',
+  // Bugfix — business.status faltante en flujos del panel. La UI ya evita
+  // disparar estas acciones cuando el negocio no está approved (ver
+  // useBusinessCanOperate), pero se mapean igual como resguardo.
+  BUSINESS_NOT_OPERATING: 'Este negocio no está operando actualmente.',
+  BUSINESS_SUSPENDED_USE_REACTIVATE: 'Este negocio está suspendido — hay que reactivarlo, no volver a aprobarlo.',
 }
 
 export class ApiError extends Error {

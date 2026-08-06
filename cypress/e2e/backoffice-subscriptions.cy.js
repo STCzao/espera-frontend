@@ -7,44 +7,30 @@ function mockSuperAdminSession() {
   }).as('me')
 }
 
-function metricsResponse() {
+function businessesResponse() {
   return {
-    totalActiveBusinesses: 12,
-    totalRegisteredUsers: 340,
-    turnsToday: 58,
-    turnsThisWeek: 401,
-    range: {
-      fromDate: '2026-05-08',
-      toDate: '2026-08-06',
-      totalTurns: 401,
-      cancelledTurns: 37,
-      cancellationRate: 12.4,
-      businesses: {
-        items: [
-          {
-            businessId: 'biz_1',
-            businessName: 'Cafe Espera',
-            organizationId: 'org_1',
-            status: 'approved',
-            categoryId: 'cat_1',
-            subscriptionPlan: 'basic',
-            subscriptionStatus: 'trial',
-            turnCount: 80,
-          },
-        ],
-        page: 1,
-        pageSize: 50,
-        total: 1,
+    items: [
+      {
+        businessId: 'biz_1',
+        businessName: 'Cafe Espera',
+        organizationId: 'org_1',
+        status: 'approved',
+        categoryId: 'cat_1',
+        subscriptionPlan: 'basic',
+        subscriptionStatus: 'trial',
+        createdAt: '2026-01-15T00:00:00.000Z',
       },
-      topCategories: [],
-    },
+    ],
+    page: 1,
+    pageSize: 50,
+    total: 1,
   }
 }
 
 describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propia)', () => {
   beforeEach(() => {
     mockSuperAdminSession()
-    cy.intercept('GET', '**/business/platform/metrics*', { statusCode: 200, body: metricsResponse() }).as('metrics')
+    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
   })
 
   it('lista organizaciones agrupadas por negocio y expande su suscripción', () => {
@@ -55,7 +41,7 @@ describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propi
 
     cy.visit('/backoffice/subscriptions')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
 
     cy.contains('Cafe Espera').should('be.visible')
     cy.contains('Basic · Prueba').should('be.visible')
@@ -76,7 +62,7 @@ describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propi
 
     cy.visit('/backoffice/subscriptions')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
     cy.contains('button', /gestionar/i).click()
     cy.wait('@getSubscription')
 
@@ -96,7 +82,7 @@ describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propi
 
     cy.visit('/backoffice/subscriptions')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
     cy.contains('button', /gestionar/i).click()
     cy.wait('@getSubscription')
 
@@ -119,7 +105,7 @@ describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propi
 
     cy.visit('/backoffice/subscriptions')
     cy.wait('@me')
-    cy.wait('@metrics')
+    cy.wait('@businesses')
     cy.contains('button', /gestionar/i).click()
     cy.wait('@getSubscription')
 

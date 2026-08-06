@@ -2,10 +2,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessEmployeesApi } from '../api/businessEmployeesApi.js'
 import { EmployeeList } from '../components/EmployeeList.jsx'
@@ -13,6 +15,8 @@ import { inviteEmployeeSchema } from '../model/businessEmployeesSchemas.js'
 
 export function BusinessEmployeesPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
+  const canOperate = useBusinessCanOperate()
   const queryClient = useQueryClient()
   const [employeeToRevoke, setEmployeeToRevoke] = useState(null)
 
@@ -65,33 +69,39 @@ export function BusinessEmployeesPage() {
               Invitar empleado
             </span>
 
-            <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-              <div className="w-72">
-                <FormField
-                  autoComplete="email"
-                  error={errors.email?.message}
-                  label="Email"
-                  registration={register('email')}
-                  type="email"
-                />
-              </div>
-              <div className="w-44">
-                <FormButton isPending={inviteMutation.isPending} pendingLabel="Enviando…" variant="solid">
-                  Invitar
-                </FormButton>
-              </div>
-            </form>
+            {!canOperate ? (
+              <BusinessNotOperatingNotice status={businessStatus} />
+            ) : (
+              <>
+                <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+                  <div className="w-72">
+                    <FormField
+                      autoComplete="email"
+                      error={errors.email?.message}
+                      label="Email"
+                      registration={register('email')}
+                      type="email"
+                    />
+                  </div>
+                  <div className="w-44">
+                    <FormButton isPending={inviteMutation.isPending} pendingLabel="Enviando…" variant="solid">
+                      Invitar
+                    </FormButton>
+                  </div>
+                </form>
 
-            {inviteMutation.isError && (
-              <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
-                {inviteMutation.error?.message ?? 'No pudimos enviar la invitación. Intentá nuevamente.'}
-              </p>
-            )}
-            {inviteMutation.isSuccess && (
-              <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">
-                Invitación enviada a {inviteMutation.data.email}. Vence el{' '}
-                {new Date(inviteMutation.data.expiresAt).toLocaleDateString('es-AR')}.
-              </p>
+                {inviteMutation.isError && (
+                  <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
+                    {inviteMutation.error?.message ?? 'No pudimos enviar la invitación. Intentá nuevamente.'}
+                  </p>
+                )}
+                {inviteMutation.isSuccess && (
+                  <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">
+                    Invitación enviada a {inviteMutation.data.email}. Vence el{' '}
+                    {new Date(inviteMutation.data.expiresAt).toLocaleDateString('es-AR')}.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
