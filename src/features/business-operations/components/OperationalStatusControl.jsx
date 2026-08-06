@@ -2,9 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessOperationsApi } from '../api/businessOperationsApi.js'
 import { operationalStatusSchema } from '../model/businessOperationsSchemas.js'
@@ -18,6 +20,8 @@ const statusLabels = {
 }
 
 export function OperationalStatusControl({ businessId, operationalStatus }) {
+  const canOperate = useBusinessCanOperate()
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
   // `values` (not `defaultValues` + reset() in an effect) keeps the form in
   // sync with the store without a StrictMode double-effect race: in dev,
   // React invokes effects twice, and a reset() firing after the user already
@@ -58,30 +62,34 @@ export function OperationalStatusControl({ businessId, operationalStatus }) {
         </p>
       </div>
 
-      <form className="grid max-w-sm gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <FormSelect error={errors.operationalStatus?.message} label="Estado" registration={register('operationalStatus')}>
-          {operationalStatuses.map((status) => (
-            <option key={status} value={status}>
-              {statusLabels[status]}
-            </option>
-          ))}
-        </FormSelect>
+      {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
 
-        <FormField
-          description="Se guarda como referencia interna, por ejemplo el motivo de un cierre anticipado."
-          error={errors.reason?.message}
-          label="Motivo (opcional)"
-          registration={register('reason')}
-        />
+      {canOperate && (
+        <form className="grid max-w-sm gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <FormSelect error={errors.operationalStatus?.message} label="Estado" registration={register('operationalStatus')}>
+            {operationalStatuses.map((status) => (
+              <option key={status} value={status}>
+                {statusLabels[status]}
+              </option>
+            ))}
+          </FormSelect>
 
-        <div className="w-40">
-          <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
-            Guardar
-          </FormButton>
-        </div>
-      </form>
+          <FormField
+            description="Se guarda como referencia interna, por ejemplo el motivo de un cierre anticipado."
+            error={errors.reason?.message}
+            label="Motivo (opcional)"
+            registration={register('reason')}
+          />
 
-      {updateMutation.isError && (
+          <div className="w-40">
+            <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
+              Guardar
+            </FormButton>
+          </div>
+        </form>
+      )}
+
+      {canOperate && updateMutation.isError && (
         <p className="text-sm font-normal text-espera-danger" role="alert">
           {updateMutation.error?.message ?? 'No pudimos actualizar el estado. Intentá nuevamente.'}
         </p>

@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 import { Download, RefreshCw } from 'lucide-react'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessQrApi } from '../api/businessQrApi.js'
 import { QrPreview } from '../components/QrPreview.jsx'
@@ -14,12 +16,14 @@ const statusLabels = {
 
 export function BusinessQrPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
+  const canOperate = useBusinessCanOperate()
   const queryClient = useQueryClient()
 
   const qrQuery = useQuery({
     queryKey: ['business-qr', businessId],
     queryFn: () => businessQrApi.getQr(businessId),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId) && canOperate,
   })
 
   const pngQuery = useQuery({
@@ -54,7 +58,7 @@ export function BusinessQrPage() {
     link.click()
   }
 
-  if (!businessId || qrQuery.isLoading) {
+  if (!businessId || (canOperate && qrQuery.isLoading)) {
     return <p className="text-espera-text-muted">Cargando…</p>
   }
 
@@ -68,13 +72,15 @@ export function BusinessQrPage() {
 
       <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
         <div className="grid gap-5 p-6">
-          {qrQuery.isError && (
+          {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
+
+          {canOperate && qrQuery.isError && (
             <p className="text-sm font-normal text-espera-danger" role="alert">
               No pudimos cargar el QR de tu negocio.
             </p>
           )}
 
-          {qrQuery.data && (
+          {canOperate && qrQuery.data && (
             <>
               <div className="flex flex-wrap items-start gap-6">
                 <QrPreview imageUrl={imageUrl} isLoading={pngQuery.isLoading} />

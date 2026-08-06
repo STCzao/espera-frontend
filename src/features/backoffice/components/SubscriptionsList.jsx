@@ -3,7 +3,6 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
-import { daysAgoISO } from '../utils/dateRange.js'
 import { SubscriptionPanel } from './SubscriptionPanel.jsx'
 
 const planLabels = { basic: 'Basic', pro: 'Pro', premium: 'Premium' }
@@ -16,9 +15,9 @@ const subscriptionStatusLabels = {
   cancelled: 'Cancelada',
 }
 
-// Groups the (business-level) platform metrics rows by organization — there
-// is no "list organizations" endpoint, so this reuses the same data source
-// as Negocios (HU-8.4/8.5) but presents it one row per Organization instead
+// Groups the (business-level) directory rows by organization — there is no
+// "list organizations" endpoint, so this reuses the same data source as
+// Negocios (GET /business) but presents it one row per Organization instead
 // of one row per Business, since a Subscription belongs to the Organization.
 function groupByOrganization(items) {
   const byOrganization = new Map()
@@ -41,22 +40,16 @@ function groupByOrganization(items) {
 export function SubscriptionsList() {
   const [expandedOrganizationId, setExpandedOrganizationId] = useState(null)
 
-  // 90 días + el máximo de 50 negocios por página reduce (sin eliminar) la
-  // misma limitación de origen que ya documentamos en Negocios: un negocio
-  // sin turnos en el rango, o si hay más de 50, no aparece acá tampoco.
-  const metricsQuery = useQuery({
+  // Máximo de 50 negocios por página del directorio — si la plataforma
+  // supera eso, esta vista no muestra el resto todavía (mismo límite que
+  // "Negocios", sin paginar acá porque agrupar por organización a través de
+  // páginas complicaría la vista más de lo que vale por ahora).
+  const businessesQuery = useQuery({
     queryKey: ['backoffice-subscriptions-source'],
-    queryFn: () =>
-      backofficeApi.getPlatformMetrics({
-        fromDate: daysAgoISO(90),
-        toDate: daysAgoISO(0),
-        sortBy: 'businessName',
-        sortDir: 'asc',
-        pageSize: 50,
-      }),
+    queryFn: () => backofficeApi.listBusinesses({ sortBy: 'businessName', sortDir: 'asc', pageSize: 50 }),
   })
 
-  if (metricsQuery.isLoading) {
+  if (businessesQuery.isLoading) {
     return (
       <div className="rounded-lg border border-espera-border bg-white">
         <ul>
@@ -73,7 +66,7 @@ export function SubscriptionsList() {
     )
   }
 
-  if (metricsQuery.isError) {
+  if (businessesQuery.isError) {
     return (
       <div className="rounded-lg border border-espera-border bg-white p-5">
         <p className="text-sm font-normal text-espera-danger" role="alert">
@@ -83,14 +76,12 @@ export function SubscriptionsList() {
     )
   }
 
-  const organizations = groupByOrganization(metricsQuery.data.range.businesses.items)
+  const organizations = groupByOrganization(businessesQuery.data.items)
 
   if (organizations.length === 0) {
     return (
       <div className="rounded-lg border border-espera-border bg-white p-5">
-        <p className="text-sm text-espera-text-muted">
-          No hay organizaciones con actividad en los últimos 90 días para mostrar acá.
-        </p>
+        <p className="text-sm text-espera-text-muted">Todavía no hay negocios dados de alta.</p>
       </div>
     )
   }

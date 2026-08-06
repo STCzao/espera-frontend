@@ -1,13 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
+import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessOperationsApi } from '../api/businessOperationsApi.js'
 import { serviceWindowsSchema } from '../model/businessOperationsSchemas.js'
 
 export function ServiceWindowsControl({ activeServiceWindows, businessId }) {
+  const canOperate = useBusinessCanOperate()
+  const businessStatus = useCurrentBusinessStore((state) => state.status)
   const {
     formState: { errors },
     handleSubmit,
@@ -39,26 +43,30 @@ export function ServiceWindowsControl({ activeServiceWindows, businessId }) {
         </p>
       </div>
 
-      <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-        <div className="w-32">
-          <FormField
-            error={errors.activeServiceWindows?.message}
-            label="Cantidad"
-            max={50}
-            min={0}
-            registration={register('activeServiceWindows', { valueAsNumber: true })}
-            type="number"
-          />
-        </div>
+      {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
 
-        <div className="w-40">
-          <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
-            Guardar
-          </FormButton>
-        </div>
-      </form>
+      {canOperate && (
+        <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+          <div className="w-32">
+            <FormField
+              error={errors.activeServiceWindows?.message}
+              label="Cantidad"
+              max={50}
+              min={0}
+              registration={register('activeServiceWindows', { valueAsNumber: true })}
+              type="number"
+            />
+          </div>
 
-      {updateMutation.isError && (
+          <div className="w-40">
+            <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
+              Guardar
+            </FormButton>
+          </div>
+        </form>
+      )}
+
+      {canOperate && updateMutation.isError && (
         <p className="text-sm font-normal text-espera-danger" role="alert">
           {updateMutation.error?.message ?? 'No pudimos guardar las ventanillas activas. Intentá nuevamente.'}
         </p>

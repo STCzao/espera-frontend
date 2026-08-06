@@ -164,12 +164,20 @@ export function BusinessPanelLayout() {
             <div className="business-alert business-alert--warning" role="status">
               <span className="business-alert__led" aria-hidden="true" />
               <strong>Tu negocio está pendiente de revisión.</strong>{' '}
-              Podés completar su configuración, pero todavía no estará disponible públicamente.
+              Podés corregir el perfil mientras esperás, pero invitar empleados, el QR, horarios, ventanillas,
+              estado operativo y crear colas quedan disponibles recién cuando se apruebe.
             </div>
           )}
           {approvalStatus === 'rejected' && (
             <div className="business-alert business-alert--danger" role="alert">
-              <strong>Este negocio fue rechazado.</strong> Revisá los datos cargados o contactá a soporte.
+              <strong>Este negocio fue rechazado.</strong> Corregí los datos del perfil y volvé a solicitar la
+              aprobación, o contactá a soporte.
+            </div>
+          )}
+          {approvalStatus === 'suspended' && (
+            <div className="business-alert business-alert--danger" role="alert">
+              <strong>Este negocio está suspendido.</strong> No puede operar ni recibir turnos nuevos hasta que el
+              equipo de Espera lo reactive.
             </div>
           )}
           <Outlet />
