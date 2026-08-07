@@ -9,6 +9,7 @@ export const useCurrentBusinessStore = create((set) => ({
   operationalStatus: null,
   activeServiceWindows: null,
   activeQueueId: null,
+  plan: null,
   setCurrentBusiness(business) {
     set({
       businessId: business?.id ?? null,
@@ -19,6 +20,7 @@ export const useCurrentBusinessStore = create((set) => ({
       operationalStatus: business?.operationalStatus ?? null,
       activeServiceWindows: business?.activeServiceWindows ?? null,
       activeQueueId: business?.activeQueueId ?? null,
+      plan: business?.plan ?? null,
     })
   },
   clearCurrentBusiness() {
@@ -31,6 +33,7 @@ export const useCurrentBusinessStore = create((set) => ({
       operationalStatus: null,
       activeServiceWindows: null,
       activeQueueId: null,
+      plan: null,
     })
   },
 }))

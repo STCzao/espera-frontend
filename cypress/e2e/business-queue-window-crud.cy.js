@@ -187,4 +187,27 @@ describe('CRUD de ventanillas y traducción de códigos de error', () => {
     cy.wait('@delete')
     cy.contains('La ventanilla está atendiendo a alguien ahora mismo.').should('be.visible')
   })
+
+  it('muestra el texto en español cuando se alcanza el límite de ventanillas del plan', () => {
+    cy.contains('button', /^ventanillas$/i).click()
+
+    cy.intercept('POST', '**/queue/queue_1/windows', {
+      statusCode: 403,
+      body: { message: 'Your plan allows up to 1 service window(s) per queue.', code: 'PLAN_SERVICE_WINDOW_LIMIT_REACHED' },
+    }).as('createWindow')
+
+    cy.get('input[name="name"]').type('Ventanilla extra')
+    cy.contains('button', /agregar ventanilla/i).click()
+
+    cy.wait('@createWindow')
+    cy.contains('Tu plan no permite crear más ventanillas en esta cola.').should('be.visible')
+  })
+
+  it('avisa cuando la cola ya tiene más ventanillas de las que el plan permite', () => {
+    // El fixture base (plan basic, 2 ventanillas) ya está por encima del
+    // límite (1) — mismo caso real encontrado en la base de datos local.
+    cy.contains('button', /^ventanillas$/i).click()
+
+    cy.contains('Tenés 2 ventanillas en esta cola, pero tu plan permite hasta 1.').should('be.visible')
+  })
 })

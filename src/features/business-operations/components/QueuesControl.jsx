@@ -4,15 +4,19 @@ import { useForm } from 'react-hook-form'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
+import { PlanLimitExceededNotice } from '../../../shared/ui/PlanLimitExceededNotice.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
+import { getPlanLimit } from '../../../shared/business/planLimits.js'
 import { businessOperationsApi } from '../api/businessOperationsApi.js'
 import { createQueueSchema } from '../model/businessOperationsSchemas.js'
 
 export function QueuesControl({ businessId }) {
   const canOperate = useBusinessCanOperate()
   const businessStatus = useCurrentBusinessStore((state) => state.status)
+  const plan = useCurrentBusinessStore((state) => state.plan)
+  const maxQueuesPerBusiness = getPlanLimit(plan).maxQueuesPerBusiness
   const queryClient = useQueryClient()
 
   const queuesQuery = useQuery({
@@ -68,6 +72,10 @@ export function QueuesControl({ businessId }) {
         <p className="text-sm font-normal text-espera-danger" role="alert">
           No pudimos cargar las colas.
         </p>
+      )}
+
+      {queuesQuery.data && queuesQuery.data.length > maxQueuesPerBusiness && (
+        <PlanLimitExceededNotice count={queuesQuery.data.length} label="colas" limit={maxQueuesPerBusiness} />
       )}
 
       {queuesQuery.data && (
