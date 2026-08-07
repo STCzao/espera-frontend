@@ -6,6 +6,9 @@ import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
+import { PlanLimitExceededNotice } from '../../../shared/ui/PlanLimitExceededNotice.jsx'
+import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
+import { getPlanLimit } from '../../../shared/business/planLimits.js'
 import { businessQueueApi } from '../api/businessQueueApi.js'
 import { serviceWindowSchema } from '../model/businessQueueSchemas.js'
 
@@ -63,6 +66,9 @@ export function ServiceWindowManager({ queueId }) {
   })
 
   const windows = windowsQuery.data?.windows ?? []
+  const plan = useCurrentBusinessStore((state) => state.plan)
+  const maxServiceWindowsPerQueue = getPlanLimit(plan).maxServiceWindowsPerQueue
+  const isOverPlanLimit = windows.length > maxServiceWindowsPerQueue
 
   return (
     <div className="grid gap-4">
@@ -74,6 +80,10 @@ export function ServiceWindowManager({ queueId }) {
           {windows.length} configuradas · {windows.filter((window) => window.isActive).length} activas
         </span>
       </div>
+
+      {isOverPlanLimit && (
+        <PlanLimitExceededNotice count={windows.length} label="ventanillas en esta cola" limit={maxServiceWindowsPerQueue} />
+      )}
 
       {windowsQuery.isError && (
         <p className="text-sm font-normal text-espera-danger" role="alert">

@@ -745,3 +745,73 @@ de ida y vuelta si el usuario escribe en minúscula.
 
 No pude correr la suite en este entorno (Cypress no levanta su binario de
 Electron acá); verificado por lint + build + lectura de código.
+
+## Bugfix — límite de ventanillas por fila según el plan (2026-08-07, backend)
+
+Rama frontend: `bugfix/service-window-plan-limit`.
+
+El backend sumó un tercer eje a `PLAN_LIMITS` — ventanillas por `Queue`
+(Basic 1, Pro 3, Premium 20, tope duro incluso en el plan "sin límite" real
+por las dudas). Nuevo `403 PLAN_SERVICE_WINDOW_LIMIT_REACHED`, en dos
+lugares: el CRUD real de ventanillas (`POST /queue/:queueId/windows` →
+`ServiceWindowManager.jsx`, tab "Ventanillas" de Cola) y el contador legado
+(`PUT /business/:businessId/service-windows` → `ServiceWindowsControl.jsx`,
+en "Operación") — el backend cerró ahí un bypass real: antes ese segundo
+camino no tenía límite relacionado al plan y podía esquivar el del CRUD
+real.
+
+**Único cambio: mapear el código nuevo.** Ambas pantallas ya mostraban
+`mutation.error?.message` genéricamente, así que no hizo falta tocar UI —
+alcanzó con agregar `PLAN_SERVICE_WINDOW_LIMIT_REACHED` a `apiError.js`.
+
+### Cobertura
+
+- `cypress/e2e/business-queue-window-crud.cy.js` — caso nuevo: crear una
+  ventanilla cuando se alcanzó el límite del plan muestra el mensaje
+  traducido.
+- `cypress/e2e/business-operations.cy.js` — caso nuevo: mismo error desde
+  el contador legado de "Operación".
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+### Aviso cuando un negocio ya está por encima del límite de su plan
+
+Verificando este bugfix contra datos reales de la base local (consulta de
+solo lectura, sin tocar `espera-back`) encontré un negocio (plan `basic`,
+límite 1 ventanilla por cola) con **3 ventanillas activas** en una sola
+cola — por diseño, el límite solo se aplica hacia adelante (al crear), no
+hay nada retroactivo que toque filas ya existentes, así que ese negocio
+sigue operando normal, solo no puede agregar una 4ª. El problema es que
+**nada en el panel avisaba esto** — el dueño se enteraría recién al
+intentar crear una ventanilla nueva y chocar con el 409.
+
+**`PLAN_LIMITS` se duplicó en el frontend** (`src/shared/business/planLimits.js`,
+`getPlanLimit(plan)`) — no existe ningún endpoint que exponga la grilla de
+planes, así que es un espejo manual del `PlanLimits.ts` del backend,
+documentado como tal (hay que mantenerlo sincronizado a mano si cambia el
+grid). Se usa **solo para avisar en la UI**, nunca para bloquear — la
+única fuente de verdad de la regla sigue siendo el backend.
+
+- `useCurrentBusinessStore` gana el campo `plan` (ya viajaba en
+  `GET /business/me`, simplemente no se guardaba).
+- `<PlanLimitExceededNotice>` (nuevo, `shared/ui/`) — banner de aviso
+  reusado en dos lugares: `ServiceWindowManager.jsx` (ventanillas de la
+  cola actual vs. `maxServiceWindowsPerQueue`) y `QueuesControl.jsx`
+  (colas del negocio vs. `maxQueuesPerBusiness`). No bloquea nada —
+  el negocio sigue operando con lo que ya tiene, el aviso es solo
+  informativo ("no vas a poder crear otra hasta reducir la cantidad o
+  cambiar de plan").
+- El conteo espeja exactamente el criterio del backend (total de filas,
+  activas o no — ver también la sección de arriba sobre si eso debería
+  contar solo activas, pendiente de confirmar con backend).
+
+#### Cobertura
+
+- `cypress/e2e/business-queue-window-crud.cy.js` — caso nuevo: el fixture
+  base (2 ventanillas, plan basic) muestra el aviso.
+- `cypress/e2e/business-operations.cy.js` — caso nuevo: un negocio con 2
+  colas en plan basic (límite 1) muestra el aviso.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.

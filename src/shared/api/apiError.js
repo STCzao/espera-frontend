@@ -58,6 +58,11 @@ const ERROR_CODE_MESSAGES = {
   // useBusinessCanOperate), pero se mapean igual como resguardo.
   BUSINESS_NOT_OPERATING: 'Este negocio no está operando actualmente.',
   BUSINESS_SUSPENDED_USE_REACTIVATE: 'Este negocio está suspendido — hay que reactivarlo, no volver a aprobarlo.',
+  // Bugfix — límite de ventanillas por fila según el plan (Basic 1, Pro 3,
+  // Premium 20). Aplica tanto al CRUD real (ServiceWindowManager) como al
+  // contador legado (ServiceWindowsControl) — antes ese segundo camino
+  // esquivaba el límite del primero.
+  PLAN_SERVICE_WINDOW_LIMIT_REACHED: 'Tu plan no permite crear más ventanillas en esta cola.',
 }
 
 export class ApiError extends Error {

@@ -1,7 +1,11 @@
 /// <reference types="cypress" />
 
 describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
-  function authenticateVisit({ activeServiceWindows = 3, operationalStatus = 'delayed' } = {}) {
+  function authenticateVisit({
+    activeServiceWindows = 3,
+    operationalStatus = 'delayed',
+    queues = [{ id: 'queue_1', businessId: 'biz_1', name: 'Caja principal', prefix: 'A', isActive: true }],
+  } = {}) {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
       body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
@@ -21,15 +25,13 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
             activeServiceWindows,
             listingStatus: 'draft',
             operationalStatus,
+            plan: 'basic',
           },
         ],
       },
     }).as('businessMe')
 
-    cy.intercept('GET', '**/business/biz_1/queues', {
-      statusCode: 200,
-      body: [{ id: 'queue_1', businessId: 'biz_1', name: 'Caja principal', prefix: 'A', isActive: true }],
-    }).as('queues')
+    cy.intercept('GET', '**/business/biz_1/queues', { statusCode: 200, body: queues }).as('queues')
 
     cy.visit('/panel/business/cafe-espera/operations')
     cy.wait('@me')
@@ -176,5 +178,31 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
 
     cy.wait('@createQueue')
     cy.contains('Tu plan no permite crear más colas para este negocio.').should('be.visible')
+  })
+
+  it('traduce el error cuando se alcanza el límite de ventanillas del plan', () => {
+    authenticateVisit()
+
+    cy.intercept('PUT', '**/business/biz_1/service-windows', {
+      statusCode: 403,
+      body: { message: 'Your plan allows up to 1 service window(s) per queue.', code: 'PLAN_SERVICE_WINDOW_LIMIT_REACHED' },
+    }).as('updateWindows')
+
+    cy.get('input[name="activeServiceWindows"]').clear().type('5')
+    serviceWindowsForm().contains('button', /guardar/i).click()
+
+    cy.wait('@updateWindows')
+    cy.contains('Tu plan no permite crear más ventanillas en esta cola.').should('be.visible')
+  })
+
+  it('avisa cuando un negocio ya tiene más colas de las que su plan permite', () => {
+    authenticateVisit({
+      queues: [
+        { id: 'queue_1', businessId: 'biz_1', name: 'Caja principal', prefix: 'A', isActive: true },
+        { id: 'queue_2', businessId: 'biz_1', name: 'Turnos VIP', prefix: 'B', isActive: true },
+      ],
+    })
+
+    cy.contains('Tenés 2 colas, pero tu plan permite hasta 1.').should('be.visible')
   })
 })
