@@ -1,8 +1,7 @@
 /// <reference types="cypress" />
 
-describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
+describe('HU-2.5 - Estado operativo y colas del negocio', () => {
   function authenticateVisit({
-    activeServiceWindows = 3,
     operationalStatus = 'delayed',
     queues = [{ id: 'queue_1', businessId: 'biz_1', name: 'Caja principal', prefix: 'A', isActive: true }],
   } = {}) {
@@ -22,7 +21,7 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
             status: 'approved',
             phone: '+54 11 4000-1234',
             address: 'Av. Corrientes 1234',
-            activeServiceWindows,
+            activeServiceWindows: 1,
             listingStatus: 'draft',
             operationalStatus,
             plan: 'basic',
@@ -39,67 +38,14 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
     cy.wait('@queues')
   }
 
-  function serviceWindowsForm() {
-    return cy.get('input[name="activeServiceWindows"]').closest('form')
-  }
-
   function operationalStatusForm() {
     return cy.get('select[name="operationalStatus"]').closest('form')
   }
 
-  it('precarga la cantidad de ventanillas y el estado operativo actuales', () => {
+  it('precarga el estado operativo actual', () => {
     authenticateVisit()
 
-    cy.get('input[name="activeServiceWindows"]').should('have.value', '3')
     cy.get('select[name="operationalStatus"]').should('have.value', 'delayed')
-  })
-
-  it('valida que las ventanillas no superen 50', () => {
-    authenticateVisit()
-
-    cy.intercept('PUT', '**/business/biz_1/service-windows').as('updateWindows')
-
-    cy.get('input[name="activeServiceWindows"]').clear().type('51')
-    serviceWindowsForm().contains('button', /guardar/i).click()
-
-    cy.contains(/no puede superar 50/i).should('be.visible')
-    cy.get('@updateWindows.all').should('have.length', 0)
-  })
-
-  it('guarda 0 ventanillas y avisa que el negocio queda sin atención disponible', () => {
-    authenticateVisit()
-
-    cy.intercept('PUT', '**/business/biz_1/service-windows', (request) => {
-      expect(request.body).to.deep.equal({ activeServiceWindows: 0 })
-      request.reply({
-        statusCode: 200,
-        body: { businessId: 'biz_1', activeServiceWindows: 0, attentionAvailable: false },
-      })
-    }).as('updateWindows')
-
-    cy.get('input[name="activeServiceWindows"]').clear().type('0')
-    serviceWindowsForm().contains('button', /guardar/i).click()
-
-    cy.wait('@updateWindows')
-    cy.contains(/sin atención disponible/i).should('be.visible')
-  })
-
-  it('guarda una cantidad mayor a 0 y avisa que el negocio queda disponible', () => {
-    authenticateVisit()
-
-    cy.intercept('PUT', '**/business/biz_1/service-windows', (request) => {
-      expect(request.body).to.deep.equal({ activeServiceWindows: 5 })
-      request.reply({
-        statusCode: 200,
-        body: { businessId: 'biz_1', activeServiceWindows: 5, attentionAvailable: true },
-      })
-    }).as('updateWindows')
-
-    cy.get('input[name="activeServiceWindows"]').clear().type('5')
-    serviceWindowsForm().contains('button', /guardar/i).click()
-
-    cy.wait('@updateWindows')
-    cy.contains(/disponible para recibir turnos/i).should('be.visible')
   })
 
   it('cambia el estado operativo y muestra el mensaje que devuelve el backend', () => {
@@ -178,21 +124,6 @@ describe('HU-2.3 / HU-2.5 - Ventanillas activas y estado operativo', () => {
 
     cy.wait('@createQueue')
     cy.contains('Tu plan no permite crear más colas para este negocio.').should('be.visible')
-  })
-
-  it('traduce el error cuando se alcanza el límite de ventanillas del plan', () => {
-    authenticateVisit()
-
-    cy.intercept('PUT', '**/business/biz_1/service-windows', {
-      statusCode: 403,
-      body: { message: 'Your plan allows up to 1 service window(s) per queue.', code: 'PLAN_SERVICE_WINDOW_LIMIT_REACHED' },
-    }).as('updateWindows')
-
-    cy.get('input[name="activeServiceWindows"]').clear().type('5')
-    serviceWindowsForm().contains('button', /guardar/i).click()
-
-    cy.wait('@updateWindows')
-    cy.contains('Tu plan no permite crear más ventanillas en esta cola.').should('be.visible')
   })
 
   it('avisa cuando un negocio ya tiene más colas de las que su plan permite', () => {

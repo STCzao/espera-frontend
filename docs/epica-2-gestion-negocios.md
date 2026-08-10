@@ -247,7 +247,9 @@ type BusinessHoursResponse = {
 
 ## HU-2.3 - Definir ventanillas o cajas activas
 
-Estado: `implementado`
+Estado: `superseded` (2026-08-10) — ver sección al final de este bloque.
+El resto de esta sección queda como referencia histórica de lo que se
+implementó originalmente.
 
 ### Objetivo de experiencia
 
@@ -320,6 +322,30 @@ de "configuró 3 y volvió a entrar" — siempre arrancaba en el default `1`.
 
 - Validado manualmente contra el backend real, incluyendo el caso `0`
   (negocio sin atención disponible).
+
+### Superseded — cierre del modelo dual de ventanillas (2026-08-10)
+
+El backend cerró por completo el modelo legado (`bugfix/resolve-service-window-model-gap`,
+ver `docs/epica-3-cola.md`, secciones *"Bugfix — cierre del modelo de
+ventanillas, Fase A/B"*): `PUT /api/business/:businessId/service-windows`
+y `Business.activeServiceWindows` (columna incluida) **ya no existen**.
+Toda `Queue` nueva nace con al menos una `ServiceWindow` real automática,
+así que el contador manual dejó de ser necesario — el CRUD real
+(`ServiceWindowManager.jsx`, tab "Ventanillas" de Cola, HU-3.x) es ahora el
+único camino.
+
+**Se eliminó del frontend**: `ServiceWindowsControl.jsx` (esta pantalla),
+`businessOperationsApi.updateServiceWindows`, `serviceWindowsSchema`, y los
+4 tests de Cypress que dependían del `PUT` (precarga, validar máximo 50,
+guardar 0/5). `/panel/business/:businessSlug/operations` queda con dos
+cards: estado operativo (`HU-2.5`) y colas (`feature/additional-queue-creation`).
+
+**Nada más cambió** — `activeServiceWindows` sigue viajando igual en
+`GET /business/me`/`GET /queue/:id/status` (mismo contrato de lectura,
+ahora resuelto contra la `Queue` activa en vez de la columna borrada), así
+que el mini-stat "Ventanillas" de `BusinessQueuePage.jsx` y
+`useCurrentBusinessStore.activeServiceWindows` no necesitaron ningún
+cambio.
 
 ## HU-2.4 - Generar QR único del negocio
 

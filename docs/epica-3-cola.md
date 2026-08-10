@@ -815,3 +815,43 @@ grid). Se usa **solo para avisar en la UI**, nunca para bloquear — la
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.
+
+## Bugfix — cierre del modelo dual de ventanillas (2026-08-10, backend)
+
+Rama frontend: `bugfix/remove-legacy-service-windows-control`.
+
+El backend cerró en dos fases el gap que ya venía documentado como
+conocido (HU-6.3): el contador legado `Business.activeServiceWindows`
+convivía con el CRUD real de `ServiceWindow`. Fase A hizo que toda `Queue`
+nueva (al aprobar el negocio, o al crear una adicional) nazca con al menos
+una `ServiceWindow` real automática. Fase B, con eso garantizado, eliminó
+por completo el camino legado: `PUT /business/:businessId/service-windows`,
+`ConfigureBusinessServiceWindowsUseCase`, y la columna
+`Business.activeServiceWindows` en sí.
+
+**El contrato de lectura no cambió** — `activeServiceWindows` sigue
+viajando en `GET /business/me`, `GET /queue/:id/status`, etc., con el
+mismo shape de siempre, solo que ahora sale del conteo real de
+`ServiceWindow` de la `Queue` activa en vez de la columna borrada. Por eso
+del lado frontend **no hizo falta tocar nada que solo lee ese campo**
+(`useCurrentBusinessStore`, el mini-stat de `BusinessQueuePage.jsx`) — el
+único cambio real fue eliminar todo lo que escribía por el camino viejo:
+`ServiceWindowsControl.jsx` (la card "Ventanillas activas" de
+`/panel/business/:businessSlug/operations`), su método en
+`businessOperationsApi.js`, su schema, y los 4 tests de Cypress que
+dependían del `PUT` ya inexistente. Detalle completo en
+`docs/epica-2-gestion-negocios.md`, sección *"Superseded"* al final de
+`HU-2.3`.
+
+Con esto, el CRUD real (`ServiceWindowManager.jsx`) queda como el único
+camino para gestionar ventanillas — resuelve de raíz la pregunta que le
+había mandado a backend sobre el "modelo dual" (ya no hay dos modelos que
+puedan desincronizarse).
+
+### Cobertura
+
+- `cypress/e2e/business-operations.cy.js` — reescrito: se sacaron los 4
+  casos del contador legado, quedan estado operativo + colas.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
