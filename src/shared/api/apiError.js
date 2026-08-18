@@ -63,6 +63,8 @@ const ERROR_CODE_MESSAGES = {
   // contador legado (ServiceWindowsControl) — antes ese segundo camino
   // esquivaba el límite del primero.
   PLAN_SERVICE_WINDOW_LIMIT_REACHED: 'Tu plan no permite crear más ventanillas en esta cola.',
+  // HU-4.2 — sacar turno sin la app (web ligera, pública).
+  RATE_LIMIT_EXCEEDED: 'Demasiados intentos. Probá de nuevo en unos minutos.',
 }
 
 export class ApiError extends Error {

@@ -27,7 +27,11 @@ mezclarse mentalmente:
   `HU-8.4`/`HU-8.5` suspender/reactivar + métricas globales, `HU-8.6`
   reportes, más gestión manual de suscripciones como bugfix; sidebar con 5
   pantallas: Inicio, Aprobaciones, Negocios, Suscripciones, Reportes), ver
-  `docs/epica-8-backoffice.md`.
+  `docs/epica-8-backoffice.md`. `Épica 4 - Canales de Entrada` con
+  `HU-4.2` implementada (web ligera pública para sacar turno sin la app,
+  `/q/:token` + `/q/turn/:turnId`); `HU-4.1`/`HU-4.3` ya cubiertas por
+  trabajo previo, `HU-4.4` bloqueada del lado backend, ver
+  `docs/epica-4-canales-entrada.md`.
 - Historias implementadas: `HU-1.1`, `HU-1.3`, `HU-1.5`, `HU-1.6`, `HU-1.7`,
   `HU-1.8`, `HU-1.9`, verificación de email (contrato de `HU-1.1`), `HU-2.1`
   (cerrada junto con `HU-1.8`), `HU-2.2`, `HU-2.3`, `HU-2.4`, `HU-2.5`,
@@ -36,7 +40,8 @@ mezclarse mentalmente:
   `HU-6.4` (historial), `HU-6.5` (métricas), `HU-6.6` (UX mobile del
   panel), `HU-8.1` (acceso al Backoffice), `HU-8.2`/`HU-8.3` (aprobaciones
   pendientes), `HU-8.7` (alerta de coherencia), `HU-8.4`/`HU-8.5`
-  (suspender/reactivar negocio + métricas globales), `HU-8.6` (reportes).
+  (suspender/reactivar negocio + métricas globales), `HU-8.6` (reportes),
+  `HU-4.2` (web ligera para sacar turno sin la app).
 - Historias diferidas: `HU-1.2`/`HU-1.4` (Google mobile).
 - Historias diferidas transversales: mobile completa, deep links
   definitivos, notificaciones push end-to-end, gate de UI por rol

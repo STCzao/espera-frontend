@@ -22,6 +22,7 @@ const BusinessHoursPage = lazy(() => import('../../features/business-hours/pages
 const BusinessOperationsPage = lazy(() => import('../../features/business-operations/pages/BusinessOperationsPage.jsx').then((module) => ({ default: module.BusinessOperationsPage })))
 const BusinessQrPage = lazy(() => import('../../features/business-qr/pages/BusinessQrPage.jsx').then((module) => ({ default: module.BusinessQrPage })))
 const ResolveQrPage = lazy(() => import('../../features/business-qr/pages/ResolveQrPage.jsx').then((module) => ({ default: module.ResolveQrPage })))
+const GuestTurnStatusPage = lazy(() => import('../../features/business-qr/pages/GuestTurnStatusPage.jsx').then((module) => ({ default: module.GuestTurnStatusPage })))
 const BusinessEmployeesPage = lazy(() => import('../../features/business-employees/pages/BusinessEmployeesPage.jsx').then((module) => ({ default: module.BusinessEmployeesPage })))
 const AcceptEmployeeInvitationPage = lazy(() => import('../../features/business-employees/pages/AcceptEmployeeInvitationPage.jsx').then((module) => ({ default: module.AcceptEmployeeInvitationPage })))
 const BackofficeHomePage = lazy(() => import('../../features/backoffice/pages/BackofficeHomePage.jsx').then((module) => ({ default: module.BackofficeHomePage })))
@@ -43,6 +44,7 @@ export function AppRouter() {
           <Route path="/oauth/google/callback" element={<GoogleCallbackPage />} />
           <Route path="/business/employee-invitations/:token" element={<AcceptEmployeeInvitationPage />} />
           <Route path="/q/:token" element={<ResolveQrPage />} />
+          <Route path="/q/turn/:turnId" element={<GuestTurnStatusPage />} />
         </Route>
 
         <Route element={<AuthLayout />}>
