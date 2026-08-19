@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { PhoneCall, UserPlus } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { LiveIndicator } from '../../../shared/ui/LiveIndicator.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
@@ -25,6 +27,7 @@ const operationalStatusLabels = {
 export function BusinessQueuePage() {
   const activeQueueId = useCurrentBusinessStore((state) => state.activeQueueId)
   const queryClient = useQueryClient()
+  const shouldReduceMotion = useReducedMotion()
   const [activeTab, setActiveTab] = useState('live')
   const [turnToCancel, setTurnToCancel] = useState(null)
 
@@ -134,9 +137,21 @@ export function BusinessQueuePage() {
                 {data && (
                   <>
                     <div className="px-6 pb-1 pt-5">
-                      <p className="text-sm text-espera-text-muted">Personas esperando</p>
-                      <p className="mt-1 font-mono text-[42px] font-extrabold leading-none tracking-tight text-espera-text">
-                        {data.waitingCount}
+                      <div className="flex items-center gap-2.5">
+                        <p className="text-sm text-espera-text-muted">Personas esperando</p>
+                        <LiveIndicator />
+                      </div>
+                      <p className="mt-1 flex items-baseline font-mono text-[42px] font-extrabold leading-none tracking-tight text-espera-text">
+                        <AnimatePresence mode="wait">
+                          <motion.span
+                            animate={{ opacity: 1, y: 0 }}
+                            initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+                            key={data.waitingCount}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                          >
+                            {data.waitingCount}
+                          </motion.span>
+                        </AnimatePresence>
                         <span className="ml-2 text-lg font-bold text-espera-text-muted">turnos</span>
                       </p>
                       <p className="mt-2 text-sm text-espera-text-muted">

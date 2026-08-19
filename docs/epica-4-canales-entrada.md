@@ -127,3 +127,24 @@ manejo específico de bloqueo).
 
 No pude correr la suite en este entorno (Cypress no levanta su binario de
 Electron acá); verificado por lint + build + lectura de código.
+
+## Refinamiento — Cartel imprimible para el QR físico (2026-08-18)
+
+`BusinessQrPage` (panel del negocio) solo ofrecía "Descargar PNG" del QR
+pelado, sin marca ni instrucciones — el dueño tenía que armar el cartel
+para pegar en el local por su cuenta. Se agregó un botón "Imprimir
+cartel" que dispara `window.print()` sobre una vista dedicada
+(`QrPosterPrint.jsx`), oculta en pantalla y mostrada solo vía
+`@media print` (`.qr-poster-print` en `index.css`): fondo degradado
+oscuro igual al de `/login` y la web ligera de HU-4.2 (mismo gradiente
+de `AuthVisualScene`, pero estático — sin motion ni blur, que no aportan
+nada en papel), título grande, nombre del negocio, el QR sobre una
+tarjeta blanca (necesaria para el quiet zone y que escanee bien) y una
+línea de instrucción. El resto del panel (sidebar, topbar) y el contenido
+normal de la página (`.qr-page-screen-only`) se ocultan durante la
+impresión para que solo salga el cartel.
+
+No se agregó ninguna librería de PDF/canvas — es una vista HTML normal
+que el navegador imprime directo; queda a criterio del usuario el diálogo
+de impresión del navegador (tamaño de papel, orientación, "gráficos de
+fondo" activado para que el degradado salga impreso).

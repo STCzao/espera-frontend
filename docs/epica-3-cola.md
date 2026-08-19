@@ -855,3 +855,31 @@ puedan desincronizarse).
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.
+
+## Refinamiento — Pulido de UI en vivo en el Cola del panel (2026-08-18)
+
+Motivado por el trabajo de `HU-4.2` (web ligera): se armó ahí un
+`LiveIndicator` (punto pulsante violeta) y transiciones animadas al cambiar
+un número en pantalla, y se llevó ese mismo pulido — solo el movimiento, no
+la paleta oscura/gradiente del hero de login — al panel, empezando por
+`BusinessQueuePage.jsx` (Cola), la pantalla con datos realmente en vivo vía
+`useQueueRoom` (Socket.IO).
+
+- `<LiveIndicator />` (`shared/ui/`, extraído de lo que antes era un
+  `LiveDot` duplicado en las dos páginas de HU-4.2) al lado de "Personas
+  esperando".
+- El número grande de "Personas esperando" anima con `AnimatePresence`
+  (fade + slight rise) cada vez que cambia — antes saltaba de golpe con
+  cada actualización del socket.
+
+**Deliberadamente acotado a esta pantalla por ahora.** El resto del panel
+(Perfil, Horarios, Empleados, Backoffice) son pantallas de configuración,
+no de datos en vivo — meter un punto pulsante ahí sería decorativo, no
+informativo, y rompería la regla que el propio componente documenta
+("nunca decorativo"). Si se suma otra pantalla con datos realmente en vivo
+más adelante, este es el patrón a reusar.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código, y confirmando que ningún
+test existente afirma sobre el dígito literal renderizado en el hero
+(solo sobre el resto del texto alrededor, que no cambió).

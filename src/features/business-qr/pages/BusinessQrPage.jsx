@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
-import { Download, RefreshCw } from 'lucide-react'
+import { Download, Printer, RefreshCw } from 'lucide-react'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessQrApi } from '../api/businessQrApi.js'
+import { QrPosterPrint } from '../components/QrPosterPrint.jsx'
 import { QrPreview } from '../components/QrPreview.jsx'
 
 const statusLabels = {
@@ -16,6 +17,7 @@ const statusLabels = {
 
 export function BusinessQrPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
+  const businessName = useCurrentBusinessStore((state) => state.name)
   const businessStatus = useCurrentBusinessStore((state) => state.status)
   const canOperate = useBusinessCanOperate()
   const queryClient = useQueryClient()
@@ -58,94 +60,107 @@ export function BusinessQrPage() {
     link.click()
   }
 
+  function handlePrint() {
+    window.print()
+  }
+
   if (!businessId || (canOperate && qrQuery.isLoading)) {
     return <p className="text-espera-text-muted">Cargando…</p>
   }
 
   return (
     <section>
-      <PanelPageHeader
-        crumb="QR"
-        description="Descargá o regenerá el QR de entrada para pegarlo en tu local."
-        title="QR del negocio"
-      />
+      <div className="qr-page-screen-only">
+        <PanelPageHeader
+          crumb="QR"
+          description="Descargá o regenerá el QR de entrada para pegarlo en tu local."
+          title="QR del negocio"
+        />
 
-      <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
-        <div className="grid gap-5 p-6">
-          {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+          <div className="grid gap-5 p-6">
+            {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
 
-          {canOperate && qrQuery.isError && (
-            <p className="text-sm font-normal text-espera-danger" role="alert">
-              No pudimos cargar el QR de tu negocio.
-            </p>
-          )}
+            {canOperate && qrQuery.isError && (
+              <p className="text-sm font-normal text-espera-danger" role="alert">
+                No pudimos cargar el QR de tu negocio.
+              </p>
+            )}
 
-          {canOperate && qrQuery.data && (
-            <>
-              <div className="flex flex-wrap items-start gap-6">
-                <QrPreview imageUrl={imageUrl} isLoading={pngQuery.isLoading} />
+            {canOperate && qrQuery.data && (
+              <>
+                <div className="flex flex-wrap items-start gap-6">
+                  <QrPreview imageUrl={imageUrl} isLoading={pngQuery.isLoading} />
 
-                <div className="grid gap-3">
-                  <div>
-                    <span className="block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
-                      Estado
-                    </span>
-                    <p className="mt-1 text-sm text-espera-text">
-                      {statusLabels[qrQuery.data.status] ?? qrQuery.data.status}
-                    </p>
-                  </div>
-
-                  <div>
-                    <span className="block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
-                      Enlace
-                    </span>
-                    <a
-                      className="mt-1 block max-w-[280px] break-all text-sm text-espera-purple hover:underline"
-                      href={qrQuery.data.qrUrl}
-                      rel="noreferrer"
-                      target="_blank"
-                    >
-                      {qrQuery.data.qrUrl}
-                    </a>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <div className="w-44">
-                      <FormButton icon={Download} onClick={handleDownload} type="button" variant="outline">
-                        Descargar PNG
-                      </FormButton>
+                  <div className="grid gap-3">
+                    <div>
+                      <span className="block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
+                        Estado
+                      </span>
+                      <p className="mt-1 text-sm text-espera-text">
+                        {statusLabels[qrQuery.data.status] ?? qrQuery.data.status}
+                      </p>
                     </div>
-                    <div className="w-44">
-                      <FormButton
-                        icon={RefreshCw}
-                        isPending={regenerateMutation.isPending}
-                        onClick={() => regenerateMutation.mutate()}
-                        pendingLabel="Regenerando…"
-                        type="button"
-                        variant="solid"
+
+                    <div>
+                      <span className="block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
+                        Enlace
+                      </span>
+                      <a
+                        className="mt-1 block max-w-[280px] break-all text-sm text-espera-purple hover:underline"
+                        href={qrQuery.data.qrUrl}
+                        rel="noreferrer"
+                        target="_blank"
                       >
-                        Regenerar QR
-                      </FormButton>
+                        {qrQuery.data.qrUrl}
+                      </a>
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <div className="w-44">
+                        <FormButton icon={Download} onClick={handleDownload} type="button" variant="outline">
+                          Descargar PNG
+                        </FormButton>
+                      </div>
+                      <div className="w-44">
+                        <FormButton icon={Printer} onClick={handlePrint} type="button" variant="outline">
+                          Imprimir cartel
+                        </FormButton>
+                      </div>
+                      <div className="w-44">
+                        <FormButton
+                          icon={RefreshCw}
+                          isPending={regenerateMutation.isPending}
+                          onClick={() => regenerateMutation.mutate()}
+                          pendingLabel="Regenerando…"
+                          type="button"
+                          variant="solid"
+                        >
+                          Regenerar QR
+                        </FormButton>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {regenerateMutation.isError && (
-                <p className="text-sm font-normal text-espera-danger" role="alert">
-                  {regenerateMutation.error?.message ?? 'No pudimos regenerar el QR. Intentá nuevamente.'}
-                </p>
-              )}
-              {regenerateMutation.isSuccess && (
-                <p className="text-sm font-normal text-espera-text-muted" role="status">
-                  QR regenerado. El anterior sigue funcionando hasta{' '}
-                  {new Date(regenerateMutation.data.previousQrValidUntil).toLocaleString('es-AR')}.
-                </p>
-              )}
-            </>
-          )}
+                {regenerateMutation.isError && (
+                  <p className="text-sm font-normal text-espera-danger" role="alert">
+                    {regenerateMutation.error?.message ?? 'No pudimos regenerar el QR. Intentá nuevamente.'}
+                  </p>
+                )}
+                {regenerateMutation.isSuccess && (
+                  <p className="text-sm font-normal text-espera-text-muted" role="status">
+                    QR regenerado. El anterior sigue funcionando hasta{' '}
+                    {new Date(regenerateMutation.data.previousQrValidUntil).toLocaleString('es-AR')}.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
+
+      {canOperate && qrQuery.data && <QrPosterPrint businessName={businessName} imageUrl={imageUrl} />}
     </section>
   )
 }

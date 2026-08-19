@@ -107,8 +107,7 @@ a {
   flex-direction: column;
   gap: 24px;
   padding: 20px 16px;
-  border-right: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--text);
 }
 
 .panel-layout__nav {
@@ -126,7 +125,7 @@ a {
   font: 700 10px/1.4 var(--font-mono);
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .panel-layout__nav a {
@@ -135,7 +134,7 @@ a {
   gap: 10px;
   padding: 9px 12px;
   border-radius: 8px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.64);
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -143,13 +142,13 @@ a {
 }
 
 .panel-layout__nav a:hover {
-  background: var(--surface-muted);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .panel-layout__nav a.active {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
+  background: var(--primary);
+  color: #fff;
   font-weight: 650;
 }
 
@@ -159,8 +158,8 @@ a {
   gap: 10px;
   padding: 9px 12px;
   border-radius: 8px;
-  color: var(--text-muted);
-  opacity: 0.5;
+  color: rgba(255, 255, 255, 0.64);
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
@@ -174,16 +173,25 @@ a {
 .panel-layout__topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   padding: 14px 32px;
-  border-bottom: 1px solid var(--border);
   background: var(--surface);
+  box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(45, 25, 48, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.panel-layout__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .panel-layout__topbar-business {
-  font-size: 13.5px;
-  font-weight: 650;
+  font-size: 15px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
   color: var(--text);
 }
 
@@ -479,10 +487,12 @@ a {
 /* Sidebar-as-drawer chrome (close button, backdrop, mobile trigger) only
    does anything below the 860px breakpoint — see there for the actual
    off-canvas behavior. These are the always-present element styles. */
+/* Only holds the drawer-close button now that the logo lives in the topbar,
+   so it has nothing to show outside the mobile off-canvas drawer. */
 .panel-layout__sidebar-head {
-  display: flex;
+  display: none;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 
 .panel-layout__drawer-close {
@@ -494,12 +504,13 @@ a {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.64);
   cursor: pointer;
 }
 
 .panel-layout__drawer-close:hover {
-  background: var(--surface-muted);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .panel-layout__backdrop {
@@ -556,6 +567,10 @@ a {
     transform: translateX(0);
   }
 
+  .panel-layout__sidebar-head {
+    display: flex;
+  }
+
   .panel-layout__drawer-close {
     display: inline-flex;
   }
@@ -589,5 +604,98 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .panel-layout__sidebar {
     transition: none;
+  }
+}
+
+/* Printable QR poster — same dark-gradient brand hero used on /login and the
+   guest QR flow, but static (no motion/blur: pointless on paper and just
+   slows the print render down) and hidden outside `@media print`. */
+.qr-poster-print {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(170, 84, 167, 0.42), transparent 40%),
+    radial-gradient(circle at 78% 78%, rgba(144, 58, 141, 0.3), transparent 42%),
+    linear-gradient(135deg, #500097 0%, #2a073f 52%, #110018 100%);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.qr-poster-print__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.qr-poster-print__title {
+  max-width: 14ch;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+}
+
+.qr-poster-print__business {
+  margin-top: -8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.qr-poster-print__qr-card {
+  display: grid;
+  place-items: center;
+  width: 280px;
+  height: 280px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.qr-poster-print__qr-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-poster-print__hint {
+  max-width: 32ch;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  .panel-layout__sidebar,
+  .panel-layout__topbar,
+  .panel-layout__mobile-topbar,
+  .panel-layout__backdrop {
+    display: none !important;
+  }
+
+  .panel-layout__content {
+    padding: 0 !important;
+  }
+
+  .qr-page-screen-only {
+    display: none !important;
+  }
+
+  .qr-poster-print {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
   }
 }

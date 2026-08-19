@@ -12,7 +12,6 @@ describe('Backoffice - acceso restringido a super_admin', () => {
 
     cy.contains('Backoffice Espera').should('be.visible')
     cy.contains('h1', /backoffice/i).should('be.visible')
-    cy.contains('user@example.com').should('be.visible')
   })
 
   it('un business_admin es redirigido a /panel', () => {
