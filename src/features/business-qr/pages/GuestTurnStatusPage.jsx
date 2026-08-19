@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useParams } from 'react-router-dom'
+import { LiveIndicator } from '../../../shared/ui/LiveIndicator.jsx'
 import { guestTurnApi } from '../api/guestTurnApi.js'
 import { GuestVisualScene } from '../components/GuestVisualScene.jsx'
 
@@ -79,12 +80,7 @@ export function GuestTurnStatusPage() {
       >
         <div className="flex items-center justify-between gap-3">
           <p className="m-0 font-mono text-sm uppercase tracking-wider text-espera-text-muted">Tu turno</p>
-          {isPolling && (
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-espera-purple">
-              <LiveDot reduceMotion={shouldReduceMotion} />
-              En vivo
-            </span>
-          )}
+          {isPolling && <LiveIndicator />}
         </div>
 
         <AnimatePresence mode="wait">
@@ -152,21 +148,6 @@ export function GuestTurnStatusPage() {
         {turn.status === 'cancelled' && <p className="mt-5 text-sm text-espera-text-muted">Este turno fue cancelado.</p>}
       </motion.section>
     </GuestVisualScene>
-  )
-}
-
-function LiveDot({ reduceMotion }) {
-  if (reduceMotion) {
-    return <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-espera-purple" />
-  }
-
-  return (
-    <motion.span
-      animate={{ opacity: [1, 0.35, 1] }}
-      aria-hidden="true"
-      className="h-1.5 w-1.5 rounded-full bg-espera-purple"
-      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-    />
   )
 }
 

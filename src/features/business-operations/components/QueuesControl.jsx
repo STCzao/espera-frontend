@@ -102,40 +102,45 @@ export function QueuesControl({ businessId }) {
       )}
 
       {canOperate ? (
-        <form className="flex flex-wrap items-end gap-4 border-t border-espera-border pt-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-          <div className="w-56">
-            <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
-          </div>
-          <div className="w-28">
-            <FormField
-              error={errors.prefix?.message}
-              label="Prefijo"
-              maxLength={3}
-              placeholder="ej. B"
-              registration={register('prefix')}
-            />
-          </div>
-          <div className="w-40">
-            <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
-              Crear cola
-            </FormButton>
-          </div>
-        </form>
+        <div className="border-t border-espera-border pt-4">
+          <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
+            Crear cola
+          </span>
+          <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
+            <div className="w-56">
+              <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
+            </div>
+            <div className="w-28">
+              <FormField
+                error={errors.prefix?.message}
+                label="Prefijo"
+                maxLength={3}
+                placeholder="ej. B"
+                registration={register('prefix')}
+              />
+            </div>
+            <div className="w-40">
+              <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
+                Crear cola
+              </FormButton>
+            </div>
+          </form>
+
+          {createMutation.isError && (
+            <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
+              {createMutation.error?.message ?? 'No pudimos crear la cola. Intentá nuevamente.'}
+            </p>
+          )}
+          {createMutation.isSuccess && (
+            <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">
+              Cola creada.
+            </p>
+          )}
+        </div>
       ) : (
         <div className="border-t border-espera-border pt-4">
           <BusinessNotOperatingNotice status={businessStatus} />
         </div>
-      )}
-
-      {canOperate && createMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {createMutation.error?.message ?? 'No pudimos crear la cola. Intentá nuevamente.'}
-        </p>
-      )}
-      {createMutation.isSuccess && (
-        <p className="text-sm font-normal text-espera-text-muted" role="status">
-          Cola creada.
-        </p>
       )}
     </div>
   )

@@ -48,7 +48,11 @@ export function BusinessPanelLayout() {
   const currentSlug = useCurrentBusinessStore((state) => state.slug)
   const name = useCurrentBusinessStore((state) => state.name)
   const status = useCurrentBusinessStore((state) => state.status)
-  const userEmail = useSessionStore((state) => state.user?.email)
+  // No mostramos email ni un rótulo genérico de rol como relleno — hasta que
+  // el backend exponga el nombre real (GET /auth/me hoy solo devuelve lo que
+  // trae el JWT: id/email/role/approvalStatus, sin firstName/lastName), el
+  // chip de usuario simplemente no se muestra.
+  const userFirstName = useSessionStore((state) => state.user?.firstName)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
   useEffect(() => {
@@ -104,11 +108,6 @@ export function BusinessPanelLayout() {
       )}
       <aside className="panel-layout__sidebar" data-open={isNavOpen}>
         <div className="panel-layout__sidebar-head">
-          <img
-            alt="Espera"
-            className="h-10 w-10 rounded-lg border border-espera-border"
-            src="/Logo_espera.png"
-          />
           <button
             aria-label="Cerrar menú"
             className="panel-layout__drawer-close"
@@ -127,7 +126,7 @@ export function BusinessPanelLayout() {
             {configNavItems.map((item) => renderNavItem(item, businessSlug, () => setIsNavOpen(false)))}
           </div>
         </nav>
-        <LogoutButton className="panel-layout__logout inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-espera-border bg-white px-4 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft focus:outline-none focus:ring-4 focus:ring-espera-purple-soft" />
+        <LogoutButton className="panel-layout__logout inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-transparent px-4 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-4 focus:ring-white/15" />
       </aside>
       <section className="panel-layout__main">
         <header className="panel-layout__mobile-topbar">
@@ -140,24 +139,30 @@ export function BusinessPanelLayout() {
           >
             <Menu aria-hidden="true" size={20} />
           </button>
-          {userEmail && (
-            <span aria-hidden="true" className="panel-layout__user-avatar">
-              {userEmail.charAt(0).toUpperCase()}
-            </span>
-          )}
+          <div className="panel-layout__topbar-right">
+            <img alt="Espera" className="h-8 w-8 rounded-lg border border-espera-border" src="/Logo_espera.png" />
+            {userFirstName && (
+              <span aria-hidden="true" className="panel-layout__user-avatar">
+                {userFirstName.charAt(0)}
+              </span>
+            )}
+          </div>
         </header>
         <header className="panel-layout__topbar">
-          <span className="panel-layout__topbar-business">
-            {businessSlug ? (isCurrentBusiness && name ? name : '…') : 'Espera'}
-          </span>
-          {userEmail && (
-            <span className="panel-layout__user-chip">
-              <span aria-hidden="true" className="panel-layout__user-avatar">
-                {userEmail.charAt(0).toUpperCase()}
-              </span>
-              {userEmail}
+          <div className="panel-layout__topbar-right">
+            <span className="panel-layout__topbar-business">
+              {businessSlug ? (isCurrentBusiness && name ? name : '…') : 'Espera'}
             </span>
-          )}
+            {userFirstName && (
+              <span className="panel-layout__user-chip">
+                <span aria-hidden="true" className="panel-layout__user-avatar">
+                  {userFirstName.charAt(0)}
+                </span>
+                {userFirstName}
+              </span>
+            )}
+            <img alt="Espera" className="h-9 w-9 shrink-0 rounded-lg border border-espera-border" src="/Logo_espera.png" />
+          </div>
         </header>
         <div className="panel-layout__content">
           {approvalStatus === 'pending' && (
