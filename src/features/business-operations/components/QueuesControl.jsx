@@ -116,8 +116,8 @@ export function QueuesControl({ businessId }) {
                   }
                   className={
                     queue.isActive
-                      ? 'shrink-0 rounded-full bg-espera-purple-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-purple disabled:cursor-not-allowed disabled:opacity-60'
-                      : 'shrink-0 rounded-full bg-espera-muted px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-text-muted disabled:cursor-not-allowed disabled:opacity-60'
+                      ? 'shrink-0 rounded-md bg-espera-purple-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-purple disabled:cursor-not-allowed disabled:opacity-60'
+                      : 'shrink-0 rounded-md bg-espera-muted px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-text-muted disabled:cursor-not-allowed disabled:opacity-60'
                   }
                   disabled={isToggling || isLastActive}
                   onClick={() => toggleMutation.mutate(queue.id)}

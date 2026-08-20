@@ -4,7 +4,7 @@ import { Plus, Trash2 } from 'lucide-react'
 const dayLabels = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 const inputClassName =
-  'min-h-12 rounded-lg border border-espera-border bg-white px-4 text-base font-normal text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft'
+  'min-h-12 rounded-lg border border-espera-border bg-espera-surface px-4 text-base font-normal text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft'
 
 export function WeeklyHoursEditor({ control, errors, register }) {
   const { fields, append, remove } = useFieldArray({ control, name: 'weeklyHours' })

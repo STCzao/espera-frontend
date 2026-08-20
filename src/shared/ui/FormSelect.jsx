@@ -8,7 +8,7 @@ export function FormSelect({ children, error, label, loading, loadingLabel, plac
       <select
         aria-describedby={errorId}
         aria-invalid={Boolean(error)}
-        className="min-h-12 rounded-lg border border-espera-border bg-white px-4 text-base font-normal text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
+        className="min-h-12 rounded-lg border border-espera-border bg-espera-surface px-4 text-base font-normal text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
         defaultValue=""
         disabled={loading}
         id={inputId}

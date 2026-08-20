@@ -17,7 +17,17 @@
   --color-espera-purple-strong: #500097;
   --color-espera-purple-soft: #f2e8f3;
   --color-espera-danger: #b4235f;
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-espera-danger-soft: #fbe9ef;
+  /* Status tones for badges/tags — desaturated to match --color-espera-danger's
+     register instead of Tailwind's default (neon) emerald/amber/sky, which had
+     been creeping in ad hoc across ~8 files with no relation to this palette. */
+  --color-espera-success: #1f7a52;
+  --color-espera-success-soft: #e3f2e9;
+  --color-espera-warning: #8a5d12;
+  --color-espera-warning-soft: #f7ecd6;
+  --color-espera-info: #2f5f8a;
+  --color-espera-info-soft: #e5eef5;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
@@ -41,7 +51,7 @@
   --danger: #b4235f;
   --shadow: 0 16px 40px rgba(80, 0, 151, 0.1);
   --radius: 8px;
-  --font: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
   color: var(--text);
@@ -200,7 +210,7 @@ a {
   align-items: center;
   gap: 8px;
   padding: 4px 12px 4px 4px;
-  border-radius: 999px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   font-size: 13px;

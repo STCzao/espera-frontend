@@ -32,7 +32,7 @@ export function ServiceWindowsSummary({ onManage, queueId }) {
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="mt-1.5 h-3 w-32" />
               </div>
-              <Skeleton className="h-6 w-16 shrink-0 !rounded-full" />
+              <Skeleton className="h-6 w-16 shrink-0 !rounded-md" />
             </div>
           ))}
         </div>
@@ -52,12 +52,12 @@ export function ServiceWindowsSummary({ onManage, queueId }) {
               </p>
             </div>
             <span
-              className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+              className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
                 !window.isActive
-                  ? 'border border-espera-border bg-white text-espera-text-muted'
+                  ? 'border border-espera-border bg-espera-surface text-espera-text-muted'
                   : window.currentTurn
                     ? 'bg-espera-purple-soft text-espera-purple'
-                    : 'bg-emerald-50 text-emerald-700'
+                    : 'bg-espera-success-soft text-espera-success'
               }`}
             >
               {!window.isActive ? 'Inactiva' : window.currentTurn ? 'Ocupada' : 'Libre'}
@@ -67,7 +67,7 @@ export function ServiceWindowsSummary({ onManage, queueId }) {
       </div>
 
       <button
-        className="w-full rounded-full border border-espera-border bg-white py-2.5 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
+        className="w-full rounded-md border border-espera-border bg-espera-surface py-2.5 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
         onClick={onManage}
         type="button"
       >

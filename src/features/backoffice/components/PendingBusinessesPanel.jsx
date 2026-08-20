@@ -69,7 +69,7 @@ export function PendingBusinessesPanel() {
               </p>
             </div>
             <button
-              className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
+              className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
               onClick={() => setExpandedBusinessId(expandedBusinessId === business.id ? null : business.id)}
               type="button"
             >
@@ -161,7 +161,7 @@ function BusinessReviewPanel({ businessId }) {
         Nota de aprobación {requiresNote ? '(obligatoria por las alertas de arriba)' : '(opcional)'}
       </label>
       <textarea
-        className="mt-1.5 w-full rounded-lg border border-espera-border bg-white px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+        className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
         id={`business-approval-note-${businessId}`}
         onChange={(event) => setNote(event.target.value)}
         rows={2}
@@ -170,7 +170,7 @@ function BusinessReviewPanel({ businessId }) {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
-          className="rounded-full px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
           disabled={approveMutation.isPending}
           onClick={() => setIsRejecting(true)}
           type="button"
@@ -212,7 +212,7 @@ function BusinessReviewPanel({ businessId }) {
           Motivo del rechazo
         </label>
         <textarea
-          className="mt-1.5 w-full rounded-lg border border-espera-border bg-white px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`reject-business-reason-${businessId}`}
           onChange={(event) => setRejectReason(event.target.value)}
           rows={3}

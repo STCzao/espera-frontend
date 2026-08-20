@@ -20,13 +20,13 @@ export function BusinessOperationsPage() {
       />
 
       <div className="grid gap-6">
-        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-espera-surface">
           <div className="p-6">
             <OperationalStatusControl businessId={businessId} operationalStatus={operationalStatus} />
           </div>
         </div>
 
-        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-espera-surface">
           <div className="p-6">
             <QueuesControl businessId={businessId} />
           </div>

@@ -51,7 +51,7 @@ export function SubscriptionsList() {
 
   if (businessesQuery.isLoading) {
     return (
-      <div className="rounded-lg border border-espera-border bg-white">
+      <div className="rounded-lg border border-espera-border bg-espera-surface">
         <ul>
           {[0, 1, 2].map((index) => (
             <li className="flex items-center gap-3.5 border-t border-espera-border px-5 py-3 first:border-t-0" key={index}>
@@ -68,7 +68,7 @@ export function SubscriptionsList() {
 
   if (businessesQuery.isError) {
     return (
-      <div className="rounded-lg border border-espera-border bg-white p-5">
+      <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
         <p className="text-sm font-normal text-espera-danger" role="alert">
           No pudimos cargar las suscripciones.
         </p>
@@ -80,14 +80,14 @@ export function SubscriptionsList() {
 
   if (organizations.length === 0) {
     return (
-      <div className="rounded-lg border border-espera-border bg-white p-5">
+      <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
         <p className="text-sm text-espera-text-muted">Todavía no hay negocios dados de alta.</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-espera-border bg-white">
+    <div className="rounded-lg border border-espera-border bg-espera-surface">
       <ul>
         {organizations.map((organization) => {
           const isExpanded = expandedOrganizationId === organization.organizationId
@@ -108,7 +108,7 @@ export function SubscriptionsList() {
                   </p>
                 </div>
                 <button
-                  className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
+                  className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
                   onClick={() => setExpandedOrganizationId(isExpanded ? null : organization.organizationId)}
                   type="button"
                 >

@@ -46,7 +46,7 @@ export function ConfirmDialog({
         aria-describedby="confirm-dialog-description"
         aria-labelledby="confirm-dialog-title"
         aria-modal="true"
-        className="w-full max-w-sm rounded-lg border border-espera-border bg-white p-6 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.25)]"
+        className="w-full max-w-sm rounded-lg border border-espera-border bg-espera-surface p-6 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.25)]"
         role="alertdialog"
       >
         <h2 className="m-0 text-lg font-bold" id="confirm-dialog-title">
@@ -58,7 +58,7 @@ export function ConfirmDialog({
         {children && <div className="mt-4">{children}</div>}
         <div className="mt-6 flex justify-end gap-3">
           <button
-            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-espera-border bg-white px-4 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-espera-border bg-espera-surface px-4 text-sm font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
             disabled={isConfirming}
             onClick={onCancel}
             type="button"

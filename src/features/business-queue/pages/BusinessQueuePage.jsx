@@ -135,7 +135,7 @@ export function BusinessQueuePage() {
       <div className="grid gap-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-start">
           {/* Tarjeta principal: tabs + estado en vivo / gestión de ventanillas */}
-          <div className="rounded-lg border border-espera-border bg-white">
+          <div className="rounded-lg border border-espera-border bg-espera-surface">
             <div className="flex gap-1 border-b border-espera-border px-5 pt-2">
               <TabButton active={activeTab === 'live'} onClick={() => setActiveTab('live')}>
                 En vivo
@@ -254,13 +254,13 @@ export function BusinessQueuePage() {
           </div>
 
           {/* Ventanillas: qué está pasando ahora */}
-          <div className="rounded-lg border border-espera-border bg-white">
+          <div className="rounded-lg border border-espera-border bg-espera-surface">
             <ServiceWindowsSummary onManage={() => setActiveTab('windows')} queueId={activeQueueId} />
           </div>
         </div>
 
         {/* Turnos activos */}
-        <div className="rounded-lg border border-espera-border bg-white">
+        <div className="rounded-lg border border-espera-border bg-espera-surface">
           <div className="border-b border-espera-border p-4">
             <ManualTurnForm mutation={manualTurnMutation} />
             {manualTurnMutation.isError && (
@@ -310,7 +310,7 @@ export function BusinessQueuePage() {
         </div>
 
         {/* Últimos llamados */}
-        <div className="rounded-lg border border-espera-border bg-white">
+        <div className="rounded-lg border border-espera-border bg-espera-surface">
           <div className="border-b border-espera-border bg-espera-purple-soft/15 px-5 py-3">
             <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-espera-text-muted">
               Últimos llamados
@@ -374,8 +374,8 @@ function HeroSkeleton() {
       <Skeleton className="mt-2 h-10 w-28" />
       <Skeleton className="mt-3 h-4 w-64" />
       <div className="mt-4 flex flex-wrap gap-3">
-        <Skeleton className="h-12 w-full max-w-[200px] !rounded-full" />
-        <Skeleton className="h-12 w-full max-w-[220px] !rounded-full" />
+        <Skeleton className="h-12 w-full max-w-[200px] !rounded-lg" />
+        <Skeleton className="h-12 w-full max-w-[220px] !rounded-lg" />
       </div>
       <div className="mt-5 grid grid-cols-2 gap-4 border-t border-espera-border pt-5 sm:grid-cols-4">
         {[0, 1, 2, 3].map((index) => (
@@ -399,7 +399,7 @@ function TurnRowsSkeleton() {
             <Skeleton className="h-4 w-40" />
             <Skeleton className="mt-1.5 h-3 w-56" />
           </div>
-          <Skeleton className="h-6 w-20 shrink-0 !rounded-full" />
+          <Skeleton className="h-6 w-20 shrink-0 !rounded-md" />
         </li>
       ))}
     </ul>

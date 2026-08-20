@@ -126,8 +126,8 @@ export function ServiceWindowManager({ queueId }) {
                       aria-label={`${window.isActive ? 'Desactivar' : 'Activar'} ${window.name}`}
                       className={
                         window.isActive
-                          ? 'rounded-full bg-espera-purple-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-purple disabled:cursor-not-allowed disabled:opacity-60'
-                          : 'rounded-full bg-espera-muted px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-text-muted disabled:cursor-not-allowed disabled:opacity-60'
+                          ? 'rounded-md bg-espera-purple-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-purple disabled:cursor-not-allowed disabled:opacity-60'
+                          : 'rounded-md bg-espera-muted px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-text-muted disabled:cursor-not-allowed disabled:opacity-60'
                       }
                       disabled={isToggling}
                       onClick={() =>
@@ -141,7 +141,7 @@ export function ServiceWindowManager({ queueId }) {
                     </button>
                     <button
                       aria-label={`Editar ${window.name}`}
-                      className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
+                      className="rounded-md px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
                       onClick={() => setEditingWindowId(window.id)}
                       type="button"
                     >
@@ -149,7 +149,7 @@ export function ServiceWindowManager({ queueId }) {
                     </button>
                     <button
                       aria-label={`Eliminar ${window.name}`}
-                      className="rounded-full px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={isDeleting}
                       onClick={() => setWindowToDelete(window)}
                       type="button"

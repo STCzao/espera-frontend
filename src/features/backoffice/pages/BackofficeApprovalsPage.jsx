@@ -14,7 +14,7 @@ export function BackofficeApprovalsPage() {
         title="Aprobaciones"
       />
 
-      <div className="rounded-lg border border-espera-border bg-white">
+      <div className="rounded-lg border border-espera-border bg-espera-surface">
         <div className="flex gap-1 border-b border-espera-border px-5 pt-2">
           <TabButton active={activeTab === 'organizations'} onClick={() => setActiveTab('organizations')}>
             Organizaciones
