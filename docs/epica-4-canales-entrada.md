@@ -12,13 +12,16 @@ Contrato y reglas de negocio completos del lado backend:
 
 ## Estado general
 
-- Estado: `HU-4.2 implementada`.
+- Estado: `HU-4.2 implementada`, `HU-4.5 implementada`.
 - **HU-4.1** (escanear QR) y **HU-4.3** (turno manual desde el panel) ya
   estaban cubiertas — HU-4.1 por el resolver de QR (`docs/epica-2-gestion-negocios.md`)
   y HU-4.3 por `ManualTurnForm` (`docs/epica-3-cola.md`). Ninguna necesitó
   trabajo nuevo acá.
 - **HU-4.4** (dispensador físico) bloqueada del lado backend — no hay nada
   que hacer en el frontend hasta que se defina el hardware.
+- **HU-4.5** (reserva por teléfono/WhatsApp, piloto) — agregada fuera de
+  backlog, ver sección al final. Extiende `ManualTurnForm`, no crea
+  pantallas nuevas.
 
 ## Superficies involucradas
 
@@ -148,3 +151,89 @@ No se agregó ninguna librería de PDF/canvas — es una vista HTML normal
 que el navegador imprime directo; queda a criterio del usuario el diálogo
 de impresión del navegador (tamaño de papel, orientación, "gráficos de
 fondo" activado para que el degradado salga impreso).
+
+## HU-4.5 - Reservar turno por teléfono/WhatsApp (piloto)
+
+Estado: `implementada`. Contrato completo (prioridad, `queueJoinedAt`,
+fairness) documentado en `docs/epica-4-canales-entrada.md` de
+`espera-back` — acá solo lo que cambió del lado UI.
+
+### Motivación
+
+Validación con usuarios: solo usarían la app si les ahorra tiempo real, y
+hasta esta historia el único flujo sin escanear en persona (HU-4.2, web
+ligera) igual requiere estar parado en el local. La reserva por teléfono
+es la única forma de ahorrarle tiempo real a alguien — llama o escribe
+por WhatsApp, un empleado del local la carga, y la persona llega recién
+cuando está por tocarle.
+
+### Cambios
+
+No se creó ninguna pantalla nueva — se extendió `ManualTurnForm`
+(`src/features/business-queue/components/ManualTurnForm.jsx`), ya usado
+para HU-4.3:
+
+- Checkbox "Reserva por teléfono/WhatsApp" que revela dos campos
+  opcionales: **Teléfono** (para que el empleado pueda volver a llamar) y
+  **Minutos** (`etaMinutes`, "¿en cuánto dice que llega?", que el backend
+  usa para no dejarla colarse en la cola frente a gente que se registra en
+  vivo mientras tanto — ver `queueJoinedAt` en la doc de backend).
+- Sin tildar el checkbox, el turno se manda igual que siempre
+  (`source: "manual"`, sin `phone` ni `etaMinutes`) — cero cambio de
+  comportamiento para el flujo de HU-4.3 existente.
+- `QueueTurnList` (`src/features/business-queue/components/QueueTurnList.jsx`)
+  ahora muestra el teléfono junto al nombre cuando existe, un tag
+  "Reservado" para `source === "phone"`, y lee `waitingMinutes` negativo
+  (turno con ETA que todavía no llegó) como "llega en ~X min" en vez de
+  "esperando hace X min".
+- `manualTurnSchema` (`src/features/business-queue/model/businessQueueSchemas.js`)
+  y `businessQueueApi.createManualTurn` extendidos para los campos nuevos;
+  este último pasó de recibir `guestName` suelto a recibir el objeto
+  completo de valores (`BusinessQueuePage.jsx` actualizado en consecuencia).
+
+**Refinamiento — sin cálculos de tiempo para el empleado.** Dos ajustes
+separados, mismo motivo:
+
+- El campo "Minutos" para `etaMinutes` era un número libre — obligaba al
+  empleado a convertir mentalmente lo que dijo la persona por teléfono
+  ("una hora y media" → 90). Se reemplazó por un campo "Hora de llegada"
+  con `type="time"` — mismo control nativo que ya usa `WeeklyHoursEditor`
+  para los horarios de atención — donde el empleado tipea la hora tal cual
+  se la dijeron ("15:30"). `minutesUntil` (`shared/format/duration.js`)
+  convierte esa hora a los `etaMinutes` que espera el backend justo antes
+  de enviar el turno; si la hora ya pasó hoy, asume que es al día
+  siguiente (reserva nocturna).
+- `listQuery` en `BusinessQueuePage.jsx` ahora tiene `refetchInterval:
+  30_000` — antes, los minutos por turno (`waitingMinutes`,
+  `estimatedWaitMinutes`) solo se recalculaban cuando llegaba un evento de
+  socket (turno creado/llamado/cancelado); entre eventos, el número
+  quedaba clavado en pantalla aunque el reloj siguiera corriendo, y el
+  empleado tenía que estimar cuánto había pasado desde la última vez que
+  lo vio.
+- Se agregó `src/shared/format/duration.js` (`formatMinutes`) para
+  colapsar minutos crudos a días/horas/minutos en vez de mostrar números
+  grandes sin formato (un turno de HU-3.9/historial atendido un día
+  después, por ejemplo, mostraba "2054 min" en vez de "1d 10h"). Aplicado
+  en `QueueHistoryTable`, `QueueTurnList` y el hero de `BusinessQueuePage`.
+
+### Explícitamente fuera de alcance
+
+Mismo alcance acotado que decidió backend: nada de horario/slot fijo,
+nada de auto-detección de "no show" (se sigue resolviendo a ojo con
+"Cancelar turno"), nada de integración con WhatsApp Business API — la
+reserva la toma una persona del local, no un bot.
+
+### Cobertura
+
+- `cypress/e2e/business-queue-turn-actions.cy.js` — turno manual sin
+  reserva sigue mandando `{ guestName, source: "manual" }` (se actualizó
+  la aserción del body para incluir `source`, que antes no se enviaba);
+  nuevo caso: tildar el checkbox, cargar teléfono y hora de llegada con
+  `cy.clock()` fijado, y verificar que el POST manda
+  `{ guestName, phone, source: "phone", etaMinutes }` con el número de
+  minutos correcto ya calculado.
+- `cypress/e2e/business-queue-history.cy.js` — un turno con `waitMinutes:
+  2054` se muestra como "1d 10h", no como el número crudo.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.

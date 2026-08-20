@@ -24,6 +24,10 @@ export function QueuesControl({ businessId }) {
     queryFn: () => businessOperationsApi.listQueues(businessId),
   })
 
+  // `>= Infinity` is always false, so pro/premium (unlimited) never hits
+  // this — only worth checking once the count has loaded.
+  const isAtQueueLimit = Boolean(queuesQuery.data) && queuesQuery.data.length >= maxQueuesPerBusiness
+
   const {
     formState: { errors },
     handleSubmit,
@@ -42,9 +46,20 @@ export function QueuesControl({ businessId }) {
     },
   })
 
+  const toggleMutation = useMutation({
+    mutationFn: (queueId) => businessOperationsApi.toggleQueue(businessId, queueId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['business-queues', businessId] }),
+  })
+
   function onSubmit(values) {
     createMutation.mutate({ ...values, prefix: values.prefix.toUpperCase() })
   }
+
+  // Mirrors the backend guard (QUEUE_LAST_ACTIVE) so the button is already
+  // disabled instead of letting the employee submit and get rejected — every
+  // live entry point (panel, QR, web, manual) operates through whichever
+  // queue is "the" active one, so a business can't be left with none.
+  const activeQueueCount = queuesQuery.data?.filter((queue) => queue.isActive).length ?? 0
 
   return (
     <div className="grid gap-4">
@@ -80,50 +95,70 @@ export function QueuesControl({ businessId }) {
 
       {queuesQuery.data && (
         <ul>
-          {queuesQuery.data.map((queue) => (
-            <li
-              className="flex items-center justify-between gap-3 border-t border-espera-border py-2.5 first:border-t-0"
-              key={queue.id}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-espera-text">{queue.name}</p>
-                <p className="truncate text-xs text-espera-text-muted">Prefijo {queue.prefix}</p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
-                  queue.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-espera-muted text-espera-text-muted'
-                }`}
+          {queuesQuery.data.map((queue) => {
+            const isLastActive = queue.isActive && activeQueueCount <= 1
+            const isToggling = toggleMutation.isPending && toggleMutation.variables === queue.id
+
+            return (
+              <li
+                className="flex items-center justify-between gap-3 border-t border-espera-border py-2.5 first:border-t-0"
+                key={queue.id}
               >
-                {queue.isActive ? 'Activa' : 'Inactiva'}
-              </span>
-            </li>
-          ))}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-espera-text">{queue.name}</p>
+                  <p className="truncate text-xs text-espera-text-muted">Prefijo {queue.prefix}</p>
+                </div>
+                <button
+                  aria-label={
+                    isLastActive
+                      ? `${queue.name} es la única cola activa — no se puede desactivar`
+                      : `${queue.isActive ? 'Desactivar' : 'Activar'} ${queue.name}`
+                  }
+                  className={
+                    queue.isActive
+                      ? 'shrink-0 rounded-full bg-espera-purple-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-purple disabled:cursor-not-allowed disabled:opacity-60'
+                      : 'shrink-0 rounded-full bg-espera-muted px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-text-muted disabled:cursor-not-allowed disabled:opacity-60'
+                  }
+                  disabled={isToggling || isLastActive}
+                  onClick={() => toggleMutation.mutate(queue.id)}
+                  title={isLastActive ? 'Es la única cola activa del negocio.' : undefined}
+                  type="button"
+                >
+                  {queue.isActive ? 'Activa' : 'Inactiva'}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
 
-      {canOperate ? (
+      {toggleMutation.isError && (
+        <p className="text-sm font-normal text-espera-danger" role="alert">
+          {toggleMutation.error?.message ?? 'No pudimos actualizar la cola.'}
+        </p>
+      )}
+
+      {canOperate && !isAtQueueLimit && (
         <div className="border-t border-espera-border pt-4">
           <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
             Crear cola
           </span>
-          <form className="flex flex-wrap items-end gap-4" noValidate onSubmit={handleSubmit(onSubmit)}>
-            <div className="w-56">
-              <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
-            </div>
-            <div className="w-28">
-              <FormField
-                error={errors.prefix?.message}
-                label="Prefijo"
-                maxLength={3}
-                placeholder="ej. B"
-                registration={register('prefix')}
-              />
-            </div>
-            <div className="w-40">
-              <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
-                Crear cola
-              </FormButton>
-            </div>
+          <form
+            className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_120px_170px] sm:items-end"
+            noValidate
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <FormField error={errors.name?.message} label="Nombre de la cola" registration={register('name')} />
+            <FormField
+              error={errors.prefix?.message}
+              label="Prefijo"
+              maxLength={3}
+              placeholder="ej. B"
+              registration={register('prefix')}
+            />
+            <FormButton isPending={createMutation.isPending} pendingLabel="Creando…" variant="solid">
+              Crear cola
+            </FormButton>
           </form>
 
           {createMutation.isError && (
@@ -137,7 +172,18 @@ export function QueuesControl({ businessId }) {
             </p>
           )}
         </div>
-      ) : (
+      )}
+
+      {canOperate && isAtQueueLimit && (
+        <p className="border-t border-espera-border pt-4 text-sm text-espera-text-muted">
+          {maxQueuesPerBusiness === 1
+            ? 'Tu plan actual permite 1 cola por negocio, y ya la tenés.'
+            : `Tu plan actual permite hasta ${maxQueuesPerBusiness} colas por negocio, y ya las tenés.`}{' '}
+          Cambiá de plan para crear más.
+        </p>
+      )}
+
+      {!canOperate && (
         <div className="border-t border-espera-border pt-4">
           <BusinessNotOperatingNotice status={businessStatus} />
         </div>

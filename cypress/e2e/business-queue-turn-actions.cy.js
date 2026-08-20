@@ -102,7 +102,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     authenticateVisit()
 
     cy.intercept('POST', '**/queue/queue_1/turns/manual', (request) => {
-      expect(request.body).to.deep.equal({ guestName: 'Nuevo Cliente' })
+      expect(request.body).to.deep.equal({ guestName: 'Nuevo Cliente', source: 'manual' })
       request.reply({
         statusCode: 201,
         body: { turnId: 'turn_new', queueId: 'queue_1', displayNumber: 'A-003', guestName: 'Nuevo Cliente', position: 3 },
@@ -113,6 +113,45 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     cy.get('input[name="guestName"]').parents('form').contains('button', /^agregar$/i).click()
 
     cy.wait('@manual')
+    cy.get('input[name="guestName"]').should('have.value', '')
+  })
+
+  it('agrega una reserva por teléfono con los datos declarados', () => {
+    // Fija el reloj para que "10:20" se traduzca de forma determinística a
+    // 20 minutos desde ahora — el empleado tipea la hora que le dijeron por
+    // teléfono, no un número de minutos.
+    cy.clock(new Date('2026-08-20T10:00:00'))
+
+    authenticateVisit()
+
+    cy.intercept('POST', '**/queue/queue_1/turns/manual', (request) => {
+      expect(request.body).to.deep.equal({
+        guestName: 'Reserva Telefónica',
+        phone: '381 555-1234',
+        source: 'phone',
+        etaMinutes: 20,
+      })
+      request.reply({
+        statusCode: 201,
+        body: {
+          turnId: 'turn_new',
+          queueId: 'queue_1',
+          displayNumber: 'A-003',
+          guestName: 'Reserva Telefónica',
+          phone: '381 555-1234',
+          source: 'phone',
+          position: 3,
+        },
+      })
+    }).as('manualPhone')
+
+    cy.get('input[name="guestName"]').type('Reserva Telefónica')
+    cy.contains('label', /reserva por teléfono/i).click()
+    cy.get('input[name="phone"]').type('381 555-1234')
+    cy.get('input[name="arrivalTime"]').type('10:20')
+    cy.get('input[name="guestName"]').parents('form').contains('button', /^agregar$/i).click()
+
+    cy.wait('@manualPhone')
     cy.get('input[name="guestName"]').should('have.value', '')
   })
 
@@ -241,8 +280,13 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
       },
     })
 
+    // La cola tiene una ventanilla activa configurada, así que "Iniciar"
+    // arranca deshabilitado hasta elegir una — el backend rechaza el attend
+    // sin serviceWindowId en ese caso (bugfix 2026-08-20).
+    cy.get('button[aria-label="Iniciar atención a A-002"]').should('be.disabled')
+
     cy.get('select[aria-label="Ventanilla para A-002"]').select('window_1')
-    cy.get('button[aria-label="Iniciar atención a A-002"]').click()
+    cy.get('button[aria-label="Iniciar atención a A-002"]').should('be.enabled').click()
 
     cy.wait('@attend')
     cy.contains(/^atendiendo$/i).should('be.visible')
@@ -257,10 +301,51 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
       body: { message: 'Only a called turn can start attention.' },
     }).as('attend')
 
+    cy.get('select[aria-label="Ventanilla para A-002"]').select('window_1')
     cy.get('button[aria-label="Iniciar atención a A-002"]').click()
 
     cy.wait('@attend')
     cy.contains(/only a called turn can start attention/i).should('be.visible')
+  })
+
+  it('marca un turno llamado como ausente, con confirmación', () => {
+    authenticateVisit()
+
+    cy.intercept('POST', '**/queue/queue_1/turns/turn_called/no-show', {
+      statusCode: 200,
+      body: { turnId: 'turn_called', status: 'no_show', noShowAt: '2026-07-29T21:23:25.151Z' },
+    }).as('markNoShow')
+
+    cy.intercept('GET', '**/queue/queue_1/turns', { statusCode: 200, body: { queueId: 'queue_1', items: [] } })
+
+    cy.get('button[aria-label="Marcar ausente a A-002"]').click()
+    cy.contains('¿Marcar este turno como ausente?').should('be.visible')
+    cy.contains('button', /^marcar ausente$/i).click()
+
+    cy.wait('@markNoShow')
+    cy.contains('Cliente Llamado').should('not.exist')
+  })
+
+  it('muestra error de backend al marcar ausente', () => {
+    authenticateVisit()
+
+    cy.intercept('POST', '**/queue/queue_1/turns/turn_called/no-show', {
+      statusCode: 409,
+      body: { message: 'Only a called turn can be marked as no-show.', code: 'TURN_NOT_CALLED' },
+    }).as('markNoShow')
+
+    cy.get('button[aria-label="Marcar ausente a A-002"]').click()
+    cy.contains('button', /^marcar ausente$/i).click()
+
+    cy.wait('@markNoShow')
+    cy.contains('Ese turno ya no está en estado "llamado".').should('be.visible')
+  })
+
+  it('deshabilita "Llamar siguiente" mientras haya un turno llamado sin resolver', () => {
+    // authenticateVisit por defecto ya trae calledCount: 1 (el turno A-002).
+    authenticateVisit()
+
+    cy.contains('button', /resolvé el turno llamado/i).should('be.disabled')
   })
 
   it('finaliza la atención de un turno y lo saca de la lista', () => {
