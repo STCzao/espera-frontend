@@ -205,6 +205,26 @@ a {
   color: var(--text);
 }
 
+/* Same look as the plain business-name text, but interactive — a native
+   <select> so it works everywhere with zero extra JS, shown only when the
+   owner actually has more than one Business to switch between. */
+.panel-layout__business-switcher {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px 20px 4px 0;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23705574' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+.panel-layout__business-switcher:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .panel-layout__user-chip {
   display: flex;
   align-items: center;
