@@ -883,3 +883,164 @@ No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código, y confirmando que ningún
 test existente afirma sobre el dígito literal renderizado en el hero
 (solo sobre el resto del texto alrededor, que no cambió).
+
+## Bugfix — reconciliación con "restricciones de cola y planes" (2026-08-20, backend)
+
+Rama backend `bugfix/restricciones-cola-y-planes` (ver `docs/epica-3-cola.md`
+y `docs/epica-2-5-cuentas-organizaciones.md` en `espera-back`) agregó
+validaciones que faltaban del lado del servidor. La mayoría son internas
+(occupancy checks, índice único en DB) y no requieren nada acá, pero tres sí:
+
+1. **Tres códigos de error nuevos, sin mapear**: `QUEUE_NO_TURN_READY`
+   (llamar siguiente cuando lo único pendiente es una reserva telefónica que
+   no llegó a su ETA), `SERVICE_WINDOW_REQUIRED` (atender sin ventanilla en
+   una cola que sí tiene activas) y `BUSINESS_OUTSIDE_OPERATING_HOURS`
+   (sacar turno —QR/web ligera, pública— fuera del horario configurado del
+   negocio). Agregados a `shared/api/apiError.js`.
+2. **`SUBSCRIPTION_INACTIVE` con mensaje desactualizado**: el texto decía
+   "no podés crear un negocio nuevo", pero ese código ahora también lo tiran
+   crear una cola o una ventanilla, no solo un negocio. Generalizado a "Tu
+   suscripción está vencida o cancelada." sin mencionar la acción específica.
+3. **Gap real en `StartAttentionControl`** (`QueueTurnList.jsx`): dejaba
+   mandar "Iniciar" sin elegir ventanilla (opción "Sin ventanilla" siempre
+   presente, botón nunca deshabilitado por selección faltante) aunque la
+   cola tuviera ventanillas activas — exactamente el caso que el nuevo
+   `400 SERVICE_WINDOW_REQUIRED` rechaza. Corregido: si hay ventanillas
+   activas, "Sin ventanilla" desaparece y "Iniciar" queda deshabilitado
+   hasta elegir una. `RedirectControl` ya exigía selección, no necesitó
+   cambios.
+
+`QUEUE_NO_TURN_READY` en la práctica es difícil de disparar desde la UI hoy:
+el fix de backend que excluye reservas no vigentes de `waitingCount` ya deja
+"Llamar siguiente" deshabilitado en ese escenario. Se mapeó igual como
+resguardo ante alguna carrera.
+
+### Cobertura
+
+- `cypress/e2e/business-queue-turn-actions.cy.js` — nueva aserción: el botón
+  "Iniciar" arranca deshabilitado con una ventanilla activa configurada, y
+  se habilita recién al elegir una (test existente actualizado en
+  consecuencia, ya que antes hacía click sin seleccionar).
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## Bugfix — reconciliación con el estado `no_show` (2026-08-20, backend)
+
+Backend agregó `TurnStatus.no_show` (ver `docs/epica-3-cola.md` en
+`espera-back`, sección "estado no_show") para distinguir un turno llamado
+que nunca se presentó de uno realmente atendido — antes ambos quedaban como
+`completed`. El propio doc de backend marcó como pendiente que el panel no
+distinguía esto visualmente; se cerró acá:
+
+- `QueueHistoryTable.jsx` — nueva columna/tag "Estado" (Completado /
+  Cancelado / No se presentó) en vez de mostrar los tres iguales. De paso,
+  `formatTime()` ya no le pasa `null` a `new Date()` (resolvía silenciosamente
+  al 1/1/1970 y mostraba una hora inventada) — un turno cancelado antes de
+  ser llamado o sin `attendedAt` ahora muestra "—".
+- `QueueMetricsSummary.jsx` — nuevas filas `noShowCount`/`noShowRate`
+  ("No se presentaron" / "Tasa de no-show"), mismo patrón que las de
+  cancelación. Sin esto, `totalCount` (que el backend redefinió como
+  `completed + cancelled + no_show`) iba a subir sin que se viera de dónde
+  sale ese número.
+
+### Cobertura
+
+- `cypress/e2e/business-queue-history.cy.js` — fixtures con turnos
+  `no_show` y `cancelled` sin `calledAt` (nunca llamado); aserciones sobre
+  los tags de estado por fila y sobre "— → —" en vez de una hora inventada.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## Reconciliación — activar/desactivar cola y fairness del no_show (2026-08-20, backend)
+
+Dos commits de backend (rama `bugfix/queue-activation-toggle`, ver
+`docs/epica-3-cola.md` en `espera-back`), ambos con acción del lado del
+panel:
+
+**Activar/desactivar cola** — pedido explícito nuestro (ver
+`prompt-backend-gestion-colas.md`). Nuevo contrato:
+`PATCH /business/:businessId/queues/:queueId/toggle` → `Queue` actualizada.
+`QueuesControl.jsx`: el badge estático "Activa"/"Inactiva" pasó a ser un
+botón, mismo patrón visual que ya usa `ServiceWindowManager` para
+ventanillas. Replica del lado del cliente la regla del backend (no se
+puede desactivar la única cola activa del negocio, `409
+QUEUE_LAST_ACTIVE`): el botón queda deshabilitado de entrada en ese caso,
+en vez de dejar que el empleado lo intente y se lo rechacen. Sin diálogo de
+confirmación — a diferencia de ventanillas, desactivar una cola no
+interrumpe a nadie ya en la fila (`isActive` solo bloquea turnos *nuevos*),
+así que no hay nada arriesgado que confirmar.
+
+**Fairness del no_show** — a raíz de la charla sobre si "Llamar siguiente"
+debería bloquear cuando el turno anterior sigue `called`. Backend encontró
+un hueco relacionado pero distinto: si ninguna ventanilla estuvo libre
+todavía para el turno `called` vigente, `CallNextUseCase` ahora rechaza en
+vez de marcarlo `no_show` (`409 QUEUE_NO_WINDOW_AVAILABLE`) — no tiene
+sentido llamar a un tercero cuando el segundo ni siquiera tuvo dónde ir.
+Mapeado el código nuevo en `shared/api/apiError.js`; no hizo falta tocar
+`BusinessQueuePage.jsx`, el mensaje ya sale por el mismo
+`callNextMutation.error?.message` que muestra cualquier otro rechazo de
+"Llamar siguiente".
+
+**Todavía sin resolver** (marcar "ausente" como acción explícita en vez de
+automática al pisar el turno llamado, ver
+`prompt-backend-marcar-ausente-explicito.md`) — ninguno de estos dos
+commits lo cubre; sigue pendiente del lado de backend.
+
+### Cobertura
+
+- `cypress/e2e/business-operations.cy.js` — desactivar una cola que no es
+  la única activa, botón deshabilitado cuando sí lo es, y el caso de
+  carrera entre pestañas (backend rechaza aunque el cliente no lo veía
+  venir).
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## Reconciliación — no_show como acción explícita (2026-08-20, backend)
+
+Backend implementó exactamente lo pedido en
+`prompt-backend-marcar-ausente-explicito.md` (rama
+`bugfix/no-show-accion-explicita`, ver `docs/epica-3-cola.md` en
+`espera-back`): "Llamar siguiente" ya no marca `no_show` automáticamente
+al turno `called` vigente — ahora bloquea con `409 TURN_STILL_CALLED`
+hasta que ese turno se resuelva a propósito, atendiéndolo o marcándolo
+ausente. Nuevo contrato: `POST /queue/:queueId/turns/:turnId/no-show` →
+`{ turnId, status: "no_show", noShowAt }`.
+
+Backend también resolvió la pregunta abierta que dejé en el prompt (¿el
+chequeo de fairness de `397c90f` — si la ventanilla nunca estuvo libre —
+se traslada al endpoint nuevo?): decidió que no, a propósito. Ese chequeo
+existía para que el *sistema* no castigara a alguien por un disparador
+mecánico ciego; una vez que es el empleado quien decide explícitamente
+"esta persona no está", ya tiene mejor información que la heurística.
+Como consecuencia, `QUEUE_NO_WINDOW_AVAILABLE` (que había mapeado en
+`apiError.js` al reconciliar `397c90f`) quedó muerto — nunca se dispara —
+y se reemplazó por `TURN_STILL_CALLED`/`TURN_NOT_CALLED`.
+
+### Cambios
+
+- `businessQueueApi.markNoShow(queueId, turnId)` — nuevo.
+- `QueueTurnList.jsx` — botón "Marcar ausente" junto a "Iniciar atención"
+  para cualquier turno `called`.
+- `BusinessQueuePage.jsx` — `markNoShowMutation` + `ConfirmDialog` (mismo
+  patrón que "Cancelar turno": confirmación antes de la acción, ya que es
+  justo el punto de este cambio — que sea deliberado, no accidental).
+  "Llamar siguiente" ahora se deshabilita también cuando
+  `calledCount > 0` (no solo cuando `waitingCount === 0`), con el texto
+  del botón cambiando a "Resolvé el turno llamado" — mismo criterio que
+  ya usamos para el toggle de "última cola activa": bloquear en la UI en
+  vez de dejar que el empleado choque con el 409.
+- `shared/api/apiError.js` — `QUEUE_NO_WINDOW_AVAILABLE` reemplazado por
+  `TURN_STILL_CALLED` y `TURN_NOT_CALLED`.
+
+### Cobertura
+
+- `cypress/e2e/business-queue-turn-actions.cy.js` — marcar ausente con
+  confirmación, error de backend traducido (`TURN_NOT_CALLED`), y
+  "Llamar siguiente" deshabilitado con `calledCount: 1` (el fixture por
+  defecto de este archivo).
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.

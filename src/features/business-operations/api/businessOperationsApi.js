@@ -10,4 +10,7 @@ export const businessOperationsApi = {
   createQueue(businessId, payload) {
     return httpClient.post(`/business/${businessId}/queues`, payload)
   },
+  toggleQueue(businessId, queueId) {
+    return httpClient.patch(`/business/${businessId}/queues/${queueId}/toggle`)
+  },
 }

@@ -6,9 +6,28 @@ const ERROR_CODE_MESSAGES = {
   QUEUE_NOT_ACTIVE: 'La cola está inactiva.',
   QUEUE_EMPTY: 'No hay turnos en espera.',
   QUEUE_NOT_ACCEPTING_TURNS: 'La cola no está aceptando turnos nuevos.',
+  // Bugfix — restricciones de cola y planes (2026-08-20).
+  QUEUE_NO_TURN_READY: 'Hay una reserva telefónica que todavía no llegó a su horario estimado.',
+  // Bugfix — activar/desactivar cola (2026-08-20). QueuesControl ya no deja
+  // tocar el toggle de la única cola activa, pero se mapea igual como
+  // resguardo (ej. otra pestaña desactivó otra cola justo antes).
+  QUEUE_LAST_ACTIVE: 'No podés desactivar la única cola activa del negocio.',
+  // Bugfix — no_show como acción explícita (2026-08-20). "Llamar siguiente"
+  // ahora bloquea directo mientras haya un turno `called` sin resolver — ya
+  // no auto-marca no_show ni chequea disponibilidad de ventanilla, así que
+  // el QUEUE_NO_WINDOW_AVAILABLE que se había mapeado acá quedó muerto
+  // (nunca se dispara) y se reemplaza por este.
+  TURN_STILL_CALLED: 'Hay un turno llamado sin resolver — atendelo o marcalo ausente antes de llamar al siguiente.',
+  // Se dispara si se intenta marcar ausente a un turno que no está en
+  // "llamado" (ej. dos clicks, o ya se le dio "Iniciar" desde otra pestaña).
+  TURN_NOT_CALLED: 'Ese turno ya no está en estado "llamado".',
   BUSINESS_NOT_FOUND: 'El negocio no existe.',
   BUSINESS_NOT_ACCEPTING_CUSTOMERS: 'El negocio todavía no está aprobado.',
   BUSINESS_OPERATIONAL_STATUS_BLOCKED: 'El negocio está pausado o cerrado.',
+  // Bugfix — restricciones de cola y planes (2026-08-20). Pública (HU-4.2,
+  // sacar turno por QR/web ligera) — no dispara para el turno manual del
+  // panel (CreateManualTurnUseCase no la chequea a propósito).
+  BUSINESS_OUTSIDE_OPERATING_HOURS: 'El negocio está fuera de su horario de atención en este momento.',
   CUSTOMER_HAS_ACTIVE_TURN: 'Ya tenés un turno activo en otro negocio.',
   TURN_NOT_FOUND: 'El turno no existe.',
   TURN_NOT_OWNED: 'Ese turno no te pertenece.',
@@ -17,6 +36,9 @@ const ERROR_CODE_MESSAGES = {
   SERVICE_WINDOW_NOT_FOUND: 'La ventanilla no existe.',
   SERVICE_WINDOW_OCCUPIED: 'Esa ventanilla ya está atendiendo a otra persona.',
   SERVICE_WINDOW_IN_USE: 'La ventanilla está atendiendo a alguien ahora mismo.',
+  // Bugfix — restricciones de cola y planes (2026-08-20). En la práctica no
+  // debería mostrarse: QueueTurnList ya exige elegir ventanilla en ese caso.
+  SERVICE_WINDOW_REQUIRED: 'Esta cola tiene ventanillas activas — elegí una para atender.',
   REDIRECT_SAME_WINDOW: 'El turno ya está en esa ventanilla.',
   // Resto de `business`, encontrados al auditar el backend (no vinieron en
   // el contrato original, pero ya existen y usan el mismo mecanismo).
@@ -48,7 +70,11 @@ const ERROR_CODE_MESSAGES = {
   // perezosa trial→expired). Afecta pantallas ya implementadas: "Aprobar" en
   // HU-8.3 (Backoffice) y el alta de negocio (business-onboarding).
   SUBSCRIPTION_NOT_ACTIVE: 'La suscripción de esa organización está vencida o cancelada.',
-  SUBSCRIPTION_INACTIVE: 'Tu suscripción está vencida o cancelada — no podés crear un negocio nuevo.',
+  // Genérico a propósito: además de crear un negocio, ahora también lo tiran
+  // crear una cola o una ventanilla (bugfix 2026-08-20,
+  // EnsureQueueCreationAllowedUseCase / EnsureServiceWindowCreationAllowedUseCase)
+  // — un texto que mencionara "negocio" específicamente quedaría mal en esos casos.
+  SUBSCRIPTION_INACTIVE: 'Tu suscripción está vencida o cancelada.',
   // Colas adicionales por plan.
   BUSINESS_OWNERSHIP_REQUIRED: 'No tenés permisos sobre este negocio.',
   PLAN_QUEUE_LIMIT_REACHED: 'Tu plan no permite crear más colas para este negocio.',

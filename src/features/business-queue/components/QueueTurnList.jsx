@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { formatMinutes } from '../../../shared/format/duration.js'
 
 const priorityLabels = {
   arrived: 'Llegó',
@@ -21,7 +22,7 @@ const statusTagClass = {
   redirected: 'bg-sky-50 text-sky-700',
 }
 
-export function QueueTurnList({ items = [], onAttend, onCancel, onRedirect, pendingTurnId, windows = [] }) {
+export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, onRedirect, pendingTurnId, windows = [] }) {
   const highlightedIds = useChangeHighlight(items)
 
   if (items.length === 0) {
@@ -47,19 +48,29 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onRedirect, pend
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-espera-text">
                 {item.customerName ?? item.guestName ?? 'Sin nombre'}
+                {item.phone && <span className="ml-1.5 font-normal text-espera-text-muted">· {item.phone}</span>}
               </p>
               <p className="truncate text-xs text-espera-text-muted">
                 {item.status === 'redirected' ? (
                   <>En camino a {item.serviceWindowName ?? 'otra ventanilla'}</>
                 ) : (
                   <>
-                    {priorityLabels[item.priority] ?? item.priority} · esperando hace {item.waitingMinutes} min
-                    {item.estimatedWaitMinutes != null && ` · faltan ~${item.estimatedWaitMinutes} min`}
+                    {priorityLabels[item.priority] ?? item.priority} ·{' '}
+                    {item.waitingMinutes < 0
+                      ? `llega en ~${formatMinutes(Math.abs(item.waitingMinutes))}`
+                      : `esperando hace ${formatMinutes(item.waitingMinutes)}`}
+                    {item.estimatedWaitMinutes != null && ` · faltan ~${formatMinutes(item.estimatedWaitMinutes)}`}
                     {item.serviceWindowName && ` · ${item.serviceWindowName}`}
                   </>
                 )}
               </p>
             </div>
+
+            {item.source === 'phone' && (
+              <span className="shrink-0 rounded-full bg-sky-50 px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-sky-700">
+                Reservado
+              </span>
+            )}
 
             <span
               className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
@@ -71,13 +82,24 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onRedirect, pend
 
             <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-1">
               {item.status === 'called' && (
-                <StartAttentionControl
-                  displayNumber={item.displayNumber}
-                  isPending={isPending}
-                  onAttend={onAttend}
-                  turnId={item.turnId}
-                  windows={windows}
-                />
+                <>
+                  <StartAttentionControl
+                    displayNumber={item.displayNumber}
+                    isPending={isPending}
+                    onAttend={onAttend}
+                    turnId={item.turnId}
+                    windows={windows}
+                  />
+                  <button
+                    aria-label={`Marcar ausente a ${item.displayNumber}`}
+                    className="rounded-full px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isPending}
+                    onClick={() => onMarkNoShow(item.turnId, item.displayNumber)}
+                    type="button"
+                  >
+                    Marcar ausente
+                  </button>
+                </>
               )}
               {item.status === 'redirected' && (
                 <button
@@ -174,10 +196,14 @@ function useChangeHighlight(items) {
 function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, windows }) {
   const [windowId, setWindowId] = useState('')
   const activeWindows = windows.filter((window) => window.isActive)
+  // A queue with configured windows must route attention through one — the
+  // backend rejects "attend" without a window in that case (two turns could
+  // otherwise end up attending at once with nothing to tell them apart).
+  const requiresWindow = activeWindows.length > 0
 
   return (
     <span className="inline-flex items-center gap-1">
-      {activeWindows.length > 0 && (
+      {requiresWindow && (
         <select
           aria-label={`Ventanilla para ${displayNumber}`}
           className="h-8 w-24 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
@@ -185,7 +211,7 @@ function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, win
           onChange={(event) => setWindowId(event.target.value)}
           value={windowId}
         >
-          <option value="">Sin ventanilla</option>
+          <option value="">Elegí ventanilla…</option>
           {activeWindows.map((window) => (
             <option disabled={Boolean(window.currentTurn)} key={window.id} value={window.id}>
               {window.name}
@@ -197,7 +223,7 @@ function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, win
       <button
         aria-label={`Iniciar atención a ${displayNumber}`}
         className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
-        disabled={isPending}
+        disabled={isPending || (requiresWindow && !windowId)}
         onClick={() => onAttend(turnId, windowId || undefined)}
         type="button"
       >

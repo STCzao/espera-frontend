@@ -1,8 +1,10 @@
 const rows = [
   { key: 'completedCount', label: 'Completados', format: (value) => value },
   { key: 'cancelledCount', label: 'Cancelados', format: (value) => value },
+  { key: 'noShowCount', label: 'No se presentaron', format: (value) => value },
   { key: 'totalCount', label: 'Total', format: (value) => value },
   { key: 'cancellationRate', label: 'Tasa de cancelación', format: (value) => `${value}%` },
+  { key: 'noShowRate', label: 'Tasa de no-show', format: (value) => `${value}%` },
   {
     key: 'avgServiceMinutes',
     label: 'Promedio de atención',

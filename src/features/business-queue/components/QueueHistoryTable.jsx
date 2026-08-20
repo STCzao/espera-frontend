@@ -1,3 +1,5 @@
+import { formatMinutes } from '../../../shared/format/duration.js'
+
 const priorityLabels = {
   arrived: 'Llegó',
   physical: 'Presencia física',
@@ -12,14 +14,42 @@ const sourceLabels = {
   web: 'Web',
 }
 
+const statusLabels = {
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+  no_show: 'No se presentó',
+}
+
+const statusTagClass = {
+  completed: 'bg-emerald-50 text-emerald-700',
+  cancelled: 'bg-espera-muted text-espera-text-muted',
+  no_show: 'bg-amber-50 text-amber-800',
+}
+
 function priorityLabel(priority) {
   // The history endpoint normalizes underscores to hyphens (e.g. "in-transit"),
   // unlike every other queue endpoint — normalize back before the lookup.
   return priorityLabels[priority?.replace(/-/g, '_')] ?? priority
 }
 
+// null shows up whenever the step never happened — a turn cancelled before
+// being called has no calledAt, a no-show never got an attendedAt. Feeding
+// that straight to `new Date()` silently resolves to the Unix epoch instead
+// of erroring, so it has to be caught explicitly here.
 function formatTime(isoDate) {
-  return new Date(isoDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  return isoDate ? new Date(isoDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '—'
+}
+
+function StatusTag({ status }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+        statusTagClass[status] ?? statusTagClass.completed
+      }`}
+    >
+      {statusLabels[status] ?? status}
+    </span>
+  )
 }
 
 export function QueueHistoryTable({ items = [] }) {
@@ -29,7 +59,7 @@ export function QueueHistoryTable({ items = [] }) {
 
   return (
     <>
-      {/* Ahora 5 columnas compactas (Llamado+Atendido fusionados en Horario,
+      {/* Ahora 6 columnas compactas (Llamado+Atendido fusionados en Horario,
           padding reducido) entran en la mayoría de los anchos sin scroll —
           overflow-x-auto queda solo como red de seguridad para pantallas muy
           angostas. Por debajo de sm seguimos usando filas tipo tarjeta,
@@ -53,6 +83,9 @@ export function QueueHistoryTable({ items = [] }) {
               <th className="px-3 py-2 text-right font-mono text-[10px] font-semibold uppercase tracking-wider text-espera-text-muted">
                 Espera
               </th>
+              <th className="px-3 py-2 text-left font-mono text-[10px] font-semibold uppercase tracking-wider text-espera-text-muted">
+                Estado
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +105,10 @@ export function QueueHistoryTable({ items = [] }) {
                   {formatTime(item.calledAt)} → {formatTime(item.attendedAt)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right text-sm tabular-nums text-espera-text">
-                  {item.waitMinutes} min
+                  {formatMinutes(item.waitMinutes)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <StatusTag status={item.status} />
                 </td>
               </tr>
             ))}
@@ -95,7 +131,10 @@ export function QueueHistoryTable({ items = [] }) {
                 {formatTime(item.attendedAt)}
               </p>
             </div>
-            <span className="shrink-0 text-right text-sm tabular-nums text-espera-text">{item.waitMinutes} min</span>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="text-right text-sm tabular-nums text-espera-text">{formatMinutes(item.waitMinutes)}</span>
+              <StatusTag status={item.status} />
+            </div>
           </li>
         ))}
       </ul>

@@ -10,8 +10,8 @@ export const businessQueueApi = {
   getQueueList(queueId) {
     return httpClient.get(`/queue/${queueId}/turns`)
   },
-  createManualTurn(queueId, guestName) {
-    return httpClient.post(`/queue/${queueId}/turns/manual`, { guestName })
+  createManualTurn(queueId, values) {
+    return httpClient.post(`/queue/${queueId}/turns/manual`, values)
   },
   cancelTurn(queueId, turnId) {
     return httpClient.post(`/queue/${queueId}/turns/${turnId}/cancel`)
@@ -39,6 +39,9 @@ export const businessQueueApi = {
   },
   redirectTurn(queueId, turnId, targetServiceWindowId) {
     return httpClient.post(`/queue/${queueId}/turns/${turnId}/redirect`, { targetServiceWindowId })
+  },
+  markNoShow(queueId, turnId) {
+    return httpClient.post(`/queue/${queueId}/turns/${turnId}/no-show`)
   },
   getTurnHistory(queueId, date) {
     return httpClient.get(`/queue/${queueId}/turns/history${date ? `?date=${date}` : ''}`)

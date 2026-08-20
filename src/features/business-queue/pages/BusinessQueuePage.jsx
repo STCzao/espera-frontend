@@ -9,6 +9,7 @@ import { LiveIndicator } from '../../../shared/ui/LiveIndicator.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
+import { formatMinutes } from '../../../shared/format/duration.js'
 import { useQueueRoom } from '../../../shared/queue/useQueueRoom.js'
 import { businessQueueApi } from '../api/businessQueueApi.js'
 import { ManualTurnForm } from '../components/ManualTurnForm.jsx'
@@ -30,6 +31,7 @@ export function BusinessQueuePage() {
   const shouldReduceMotion = useReducedMotion()
   const [activeTab, setActiveTab] = useState('live')
   const [turnToCancel, setTurnToCancel] = useState(null)
+  const [turnToMarkNoShow, setTurnToMarkNoShow] = useState(null)
 
   const statusQuery = useQuery({
     queryKey: ['queue-status', activeQueueId],
@@ -41,6 +43,13 @@ export function BusinessQueuePage() {
     queryKey: ['queue-list', activeQueueId],
     queryFn: () => businessQueueApi.getQueueList(activeQueueId),
     enabled: Boolean(activeQueueId),
+    // Socket events refetch this on every turn change, but the per-turn
+    // minute counters ("esperando hace X min", "llega en ~X min") drift
+    // between events too — they're a function of the clock, not of queue
+    // activity. Without this, the employee would have to do the math
+    // themselves (was this "20 min" from a minute ago or from 20 minutes
+    // ago?). A 30s refetch keeps the numbers themselves honest instead.
+    refetchInterval: 30_000,
   })
 
   const windowsQuery = useQuery({
@@ -62,7 +71,7 @@ export function BusinessQueuePage() {
   })
 
   const manualTurnMutation = useMutation({
-    mutationFn: (guestName) => businessQueueApi.createManualTurn(activeQueueId, guestName),
+    mutationFn: (values) => businessQueueApi.createManualTurn(activeQueueId, values),
     onSuccess: invalidateQueue,
   })
 
@@ -85,10 +94,19 @@ export function BusinessQueuePage() {
     onSuccess: invalidateQueue,
   })
 
+  const markNoShowMutation = useMutation({
+    mutationFn: (turnId) => businessQueueApi.markNoShow(activeQueueId, turnId),
+    onSuccess: () => {
+      invalidateQueue()
+      setTurnToMarkNoShow(null)
+    },
+  })
+
   const pendingTurnId =
     (cancelTurnMutation.isPending && cancelTurnMutation.variables) ||
     (attendTurnMutation.isPending && attendTurnMutation.variables?.turnId) ||
     (redirectTurnMutation.isPending && redirectTurnMutation.variables?.turnId) ||
+    (markNoShowMutation.isPending && markNoShowMutation.variables) ||
     null
 
   if (!activeQueueId) {
@@ -104,6 +122,11 @@ export function BusinessQueuePage() {
 
   const data = statusQuery.data
   const queueIsEmpty = data?.waitingCount === 0
+  // Backend rejects "Llamar siguiente" with 409 TURN_STILL_CALLED while a
+  // called turn hasn't been resolved — attended or marked absent. Disabling
+  // it here instead of letting the employee hit that error is the same
+  // pattern already used for the "last active queue" toggle.
+  const hasUnresolvedCalledTurn = (data?.calledCount ?? 0) > 0
 
   return (
     <section>
@@ -157,7 +180,10 @@ export function BusinessQueuePage() {
                       <p className="mt-2 text-sm text-espera-text-muted">
                         {data.estimatedTotalWaitMinutes != null ? (
                           <>
-                            Tiempo estimado de espera: <strong className="font-semibold text-espera-text">{data.estimatedTotalWaitMinutes} min</strong>
+                            Tiempo estimado de espera:{' '}
+                            <strong className="font-semibold text-espera-text">
+                              {formatMinutes(data.estimatedTotalWaitMinutes)}
+                            </strong>
                           </>
                         ) : (
                           'Sin atención disponible: no hay ventanillas activas.'
@@ -168,7 +194,7 @@ export function BusinessQueuePage() {
                       <div className="mt-4 flex flex-wrap gap-3">
                         <div className="w-full max-w-[200px]">
                           <FormButton
-                            disabled={callNextMutation.isPending || queueIsEmpty}
+                            disabled={callNextMutation.isPending || hasUnresolvedCalledTurn || queueIsEmpty}
                             icon={PhoneCall}
                             isPending={callNextMutation.isPending}
                             onClick={() => callNextMutation.mutate()}
@@ -177,7 +203,11 @@ export function BusinessQueuePage() {
                             type="button"
                             variant="solid"
                           >
-                            {queueIsEmpty ? 'Cola vacía' : 'Llamar siguiente'}
+                            {hasUnresolvedCalledTurn
+                              ? 'Resolvé el turno llamado'
+                              : queueIsEmpty
+                                ? 'Cola vacía'
+                                : 'Llamar siguiente'}
                           </FormButton>
                         </div>
                         <div className="w-full max-w-[220px]">
@@ -251,6 +281,7 @@ export function BusinessQueuePage() {
               items={listQuery.data.items}
               onAttend={(turnId, serviceWindowId) => attendTurnMutation.mutate({ turnId, serviceWindowId })}
               onCancel={(turnId, displayNumber) => setTurnToCancel({ turnId, displayNumber })}
+              onMarkNoShow={(turnId, displayNumber) => setTurnToMarkNoShow({ turnId, displayNumber })}
               onRedirect={(turnId, targetServiceWindowId) => redirectTurnMutation.mutate({ turnId, targetServiceWindowId })}
               pendingTurnId={pendingTurnId}
               windows={windowsQuery.data?.windows ?? []}
@@ -269,6 +300,11 @@ export function BusinessQueuePage() {
           {redirectTurnMutation.isError && (
             <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
               {redirectTurnMutation.error?.message ?? 'No pudimos derivar el turno.'}
+            </p>
+          )}
+          {markNoShowMutation.isError && (
+            <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
+              {markNoShowMutation.error?.message ?? 'No pudimos marcar el turno como ausente.'}
             </p>
           )}
         </div>
@@ -296,6 +332,20 @@ export function BusinessQueuePage() {
         onConfirm={() => turnToCancel && cancelTurnMutation.mutate(turnToCancel.turnId)}
         open={Boolean(turnToCancel)}
         title="¿Cancelar este turno?"
+      />
+
+      <ConfirmDialog
+        confirmLabel="Marcar ausente"
+        description={
+          turnToMarkNoShow
+            ? `El turno ${turnToMarkNoShow.displayNumber} queda registrado como que no se presentó cuando lo llamaron.`
+            : ''
+        }
+        isConfirming={markNoShowMutation.isPending}
+        onCancel={() => setTurnToMarkNoShow(null)}
+        onConfirm={() => turnToMarkNoShow && markNoShowMutation.mutate(turnToMarkNoShow.turnId)}
+        open={Boolean(turnToMarkNoShow)}
+        title="¿Marcar este turno como ausente?"
       />
     </section>
   )
