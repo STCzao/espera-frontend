@@ -446,7 +446,10 @@ incompletas.
 ### Diferidos
 
 - Reenvío de verificación desde el error de login.
-- Selección de negocio cuando una cuenta pertenece a más de uno.
+- ~~Selección de negocio cuando una cuenta pertenece a más de uno.~~
+  Resuelto (2026-08-21) — ver refinamiento "switcher de sucursal" más abajo.
+  `resolvePostLoginPath` sigue aterrizando siempre en `businesses[0]` a
+  propósito (ver esa sección para el motivo).
 - Tests de componentes.
 - Medición de analytics.
 
@@ -1213,11 +1216,54 @@ valor, o Google rechaza el intercambio con `redirect_uri_mismatch`.
   `BusinessPendingReviewPage.jsx` y `ApprovalStatusBadge.jsx` no están
   ruteados en ningún lado. Candidatos a eliminar o a wirear, pendiente de
   decisión.
-- **Selección de negocio:** ninguna pantalla soporta todavía elegir entre
+- ~~**Selección de negocio:** ninguna pantalla soporta todavía elegir entre
   varios negocios de una misma cuenta; siempre se opera con el primero de
-  la lista.
+  la lista.~~ Resuelto — ver refinamiento "switcher de sucursal" al final
+  de este documento.
 - **Cobertura E2E 100% mockeada:** Cypress corre contra `cy.intercept`, sin
   backend real ni base de datos real en el pipeline. La validación con
   Google OAuth real (`HU-1.9`) y con Postman/backend real sigue siendo
   manual.
 - Cierre de `HU-1.2`/`HU-1.4` (mobile) cuando exista app registrada.
+
+## Refinamiento — switcher de sucursal en el panel (2026-08-21)
+
+Un dueño puede tener varias `Business` (sucursales) bajo la misma cuenta,
+pero hasta ahora no había ninguna forma de moverse entre ellas desde el
+panel salvo cambiando la URL a mano (`/panel/business/:slug`) sabiendo el
+slug de memoria — `resolvePostLoginPath.js` siempre aterriza en
+`businesses[0]` (comentario explícito en el código: "selection between
+them is deferred"). No hacía falta nada nuevo del backend:
+`ListMyBusinessesUseCase` (`GET /business/me`, ya consumido en
+`BusinessPanelLayout.jsx` vía `businessOnboardingApi.listMine`) ya
+devolvía la lista completa con `slug`/`name`/`status`, todo lo necesario.
+
+### Cambios
+
+- `BusinessPanelLayout.jsx` — el nombre del negocio en el topbar
+  (`.panel-layout__topbar-business`) pasa a ser un `<select>` nativo
+  cuando `businessesQuery.data.length > 1`, con el mismo look tipográfico
+  que el texto plano que reemplaza (mismo criterio que el selector de
+  colas en `BusinessQueuePage.jsx`: invisible en el caso común de una sola
+  sucursal, sin agregar UI de más). Elegir una sucursal navega a
+  `/panel/business/:slug` — reusa el mecanismo que el layout ya tiene para
+  resolver `currentBusiness` a partir del `businessSlug` de la URL, sin
+  estado nuevo.
+- `resolvePostLoginPath.js` **no se tocó a propósito** — sigue aterrizando
+  en `businesses[0]` después del login; alcanza con que, una vez adentro,
+  el dueño pueda moverse a las demás con el switcher nuevo.
+
+### Explícitamente fuera de alcance
+
+Nada de comparación/agregación entre sucursales (métricas cruzadas, "cuál
+tiene menos espera ahora ahora") — es navegación, no comparación. Quedó
+anotado aparte, sin urgencia.
+
+### Cobertura
+
+- `cypress/e2e/business-panel-switcher.cy.js` — no aparece con una sola
+  sucursal; con dos, aparece, arranca en la sucursal de la URL actual, y
+  elegir la otra navega correctamente.
+
+No pude correr la suite en este entorno (Cypress no levanta su binario de
+Electron acá); verificado por lint + build + lectura de código.

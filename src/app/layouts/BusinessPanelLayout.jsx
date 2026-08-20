@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart3, Building2, CalendarClock, Home, ListOrdered, Menu, QrCode, Settings2, UsersRound, X } from 'lucide-react'
-import { NavLink, Outlet, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { businessOnboardingApi } from '../../features/business-onboarding/api/businessOnboardingApi.js'
 import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
@@ -43,6 +43,7 @@ function renderNavItem(item, businessSlug, onNavigate) {
 
 export function BusinessPanelLayout() {
   const { businessSlug } = useParams()
+  const navigate = useNavigate()
   const setCurrentBusiness = useCurrentBusinessStore((state) => state.setCurrentBusiness)
   const clearCurrentBusiness = useCurrentBusinessStore((state) => state.clearCurrentBusiness)
   const currentSlug = useCurrentBusinessStore((state) => state.slug)
@@ -150,9 +151,24 @@ export function BusinessPanelLayout() {
         </header>
         <header className="panel-layout__topbar">
           <div className="panel-layout__topbar-right">
-            <span className="panel-layout__topbar-business">
-              {businessSlug ? (isCurrentBusiness && name ? name : '…') : 'Espera'}
-            </span>
+            {businessSlug && businessesQuery.data && businessesQuery.data.length > 1 ? (
+              <select
+                aria-label="Cambiar de sucursal"
+                className="panel-layout__topbar-business panel-layout__business-switcher"
+                onChange={(event) => navigate(`/panel/business/${event.target.value}`)}
+                value={businessSlug}
+              >
+                {businessesQuery.data.map((business) => (
+                  <option key={business.slug} value={business.slug}>
+                    {business.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="panel-layout__topbar-business">
+                {businessSlug ? (isCurrentBusiness && name ? name : '…') : 'Espera'}
+              </span>
+            )}
             {userFirstName && (
               <span className="panel-layout__user-chip">
                 <span aria-hidden="true" className="panel-layout__user-avatar">
