@@ -146,6 +146,52 @@ describe('HU-6.1 / HU-3.8 - Dashboard y lista de la cola', () => {
     cy.contains(/no hay turnos activos en este momento/i).should('be.visible')
   })
 
+  it('no muestra el selector de cola cuando el negocio tiene una sola', () => {
+    authenticateVisit()
+
+    cy.contains('label', 'Cola').should('not.exist')
+  })
+
+  it('muestra un selector de cola con más de una y cambia a la elegida', () => {
+    authenticateVisit({
+      businessOverrides: {
+        queues: [
+          { id: 'queue_1', name: 'Caja principal', prefix: 'A', isActive: true, activeServiceWindows: 1 },
+          { id: 'queue_2', name: 'Turnos VIP', prefix: 'B', isActive: true, activeServiceWindows: 1 },
+        ],
+      },
+    })
+
+    cy.contains('label', 'Cola').find('select').should('have.value', 'queue_1')
+
+    cy.intercept('GET', '**/queue/queue_2/status', {
+      statusCode: 200,
+      body: {
+        queueId: 'queue_2',
+        businessId: 'biz_1',
+        operationalStatus: 'normal',
+        activeServiceWindows: 1,
+        waitingCount: 3,
+        calledCount: 0,
+        estimatedTotalWaitMinutes: 12,
+      },
+    }).as('queue2Status')
+    cy.intercept('GET', '**/queue/queue_2/turns', {
+      statusCode: 200,
+      body: { queueId: 'queue_2', items: [] },
+    }).as('queue2List')
+    cy.intercept('GET', '**/queue/queue_2/windows', {
+      statusCode: 200,
+      body: { windows: [] },
+    }).as('queue2Windows')
+
+    cy.contains('label', 'Cola').find('select').select('queue_2')
+
+    cy.wait('@queue2Status')
+    cy.wait('@queue2List')
+    cy.contains(/tiempo estimado de espera: 12 min/i).should('be.visible')
+  })
+
   it('llama al siguiente turno y actualiza el dashboard y la lista', () => {
     authenticateVisit()
 

@@ -27,22 +27,33 @@ const operationalStatusLabels = {
 
 export function BusinessQueuePage() {
   const activeQueueId = useCurrentBusinessStore((state) => state.activeQueueId)
+  const queues = useCurrentBusinessStore((state) => state.queues)
   const queryClient = useQueryClient()
   const shouldReduceMotion = useReducedMotion()
   const [activeTab, setActiveTab] = useState('live')
   const [turnToCancel, setTurnToCancel] = useState(null)
   const [turnToMarkNoShow, setTurnToMarkNoShow] = useState(null)
+  const [selectedQueueId, setSelectedQueueId] = useState(null)
+
+  // A Pro/Premium business can have more than one Queue, but only one is
+  // "the" active one the backend resolves by default (see
+  // ListMyBusinessesUseCase in espera-back). If the employee picked a
+  // different one, honor that as long as it's still in the list — fall
+  // back to the resolved active queue otherwise (business switched, the
+  // picked one got deactivated, or nothing was picked yet).
+  const queueId =
+    selectedQueueId && queues.some((queue) => queue.id === selectedQueueId) ? selectedQueueId : activeQueueId
 
   const statusQuery = useQuery({
-    queryKey: ['queue-status', activeQueueId],
-    queryFn: () => businessQueueApi.getStatus(activeQueueId),
-    enabled: Boolean(activeQueueId),
+    queryKey: ['queue-status', queueId],
+    queryFn: () => businessQueueApi.getStatus(queueId),
+    enabled: Boolean(queueId),
   })
 
   const listQuery = useQuery({
-    queryKey: ['queue-list', activeQueueId],
-    queryFn: () => businessQueueApi.getQueueList(activeQueueId),
-    enabled: Boolean(activeQueueId),
+    queryKey: ['queue-list', queueId],
+    queryFn: () => businessQueueApi.getQueueList(queueId),
+    enabled: Boolean(queueId),
     // Socket events refetch this on every turn change, but the per-turn
     // minute counters ("esperando hace X min", "llega en ~X min") drift
     // between events too — they're a function of the clock, not of queue
@@ -53,30 +64,30 @@ export function BusinessQueuePage() {
   })
 
   const windowsQuery = useQuery({
-    queryKey: ['queue-windows', activeQueueId],
-    queryFn: () => businessQueueApi.listServiceWindows(activeQueueId),
-    enabled: Boolean(activeQueueId),
+    queryKey: ['queue-windows', queueId],
+    queryFn: () => businessQueueApi.listServiceWindows(queueId),
+    enabled: Boolean(queueId),
   })
 
   function invalidateQueue() {
-    queryClient.invalidateQueries({ queryKey: ['queue-status', activeQueueId] })
-    queryClient.invalidateQueries({ queryKey: ['queue-list', activeQueueId] })
+    queryClient.invalidateQueries({ queryKey: ['queue-status', queueId] })
+    queryClient.invalidateQueries({ queryKey: ['queue-list', queueId] })
   }
 
-  useQueueRoom(activeQueueId, invalidateQueue)
+  useQueueRoom(queueId, invalidateQueue)
 
   const callNextMutation = useMutation({
-    mutationFn: () => businessQueueApi.callNext(activeQueueId),
+    mutationFn: () => businessQueueApi.callNext(queueId),
     onSuccess: invalidateQueue,
   })
 
   const manualTurnMutation = useMutation({
-    mutationFn: (values) => businessQueueApi.createManualTurn(activeQueueId, values),
+    mutationFn: (values) => businessQueueApi.createManualTurn(queueId, values),
     onSuccess: invalidateQueue,
   })
 
   const cancelTurnMutation = useMutation({
-    mutationFn: (turnId) => businessQueueApi.cancelTurn(activeQueueId, turnId),
+    mutationFn: (turnId) => businessQueueApi.cancelTurn(queueId, turnId),
     onSuccess: () => {
       invalidateQueue()
       setTurnToCancel(null)
@@ -84,18 +95,18 @@ export function BusinessQueuePage() {
   })
 
   const attendTurnMutation = useMutation({
-    mutationFn: ({ turnId, serviceWindowId }) => businessQueueApi.attendTurn(activeQueueId, turnId, serviceWindowId),
+    mutationFn: ({ turnId, serviceWindowId }) => businessQueueApi.attendTurn(queueId, turnId, serviceWindowId),
     onSuccess: invalidateQueue,
   })
 
   const redirectTurnMutation = useMutation({
     mutationFn: ({ turnId, targetServiceWindowId }) =>
-      businessQueueApi.redirectTurn(activeQueueId, turnId, targetServiceWindowId),
+      businessQueueApi.redirectTurn(queueId, turnId, targetServiceWindowId),
     onSuccess: invalidateQueue,
   })
 
   const markNoShowMutation = useMutation({
-    mutationFn: (turnId) => businessQueueApi.markNoShow(activeQueueId, turnId),
+    mutationFn: (turnId) => businessQueueApi.markNoShow(queueId, turnId),
     onSuccess: () => {
       invalidateQueue()
       setTurnToMarkNoShow(null)
@@ -109,7 +120,7 @@ export function BusinessQueuePage() {
     (markNoShowMutation.isPending && markNoShowMutation.variables) ||
     null
 
-  if (!activeQueueId) {
+  if (!queueId) {
     return (
       <section>
         <PanelPageHeader crumb="Cola" description="Estado de la cola en tiempo real." title="Cola" />
@@ -131,6 +142,26 @@ export function BusinessQueuePage() {
   return (
     <section>
       <PanelPageHeader crumb="Cola" description="Estado de la cola en tiempo real." title="Cola" />
+
+      {/* Un negocio con plan Pro/Premium puede tener más de una cola —
+          este selector no existe si solo tiene una (el caso de casi todos
+          los negocios hoy, plan basic). */}
+      {queues.length > 1 && (
+        <label className="mb-6 -mt-3 grid max-w-xs gap-1.5 text-sm font-semibold text-espera-text">
+          Cola
+          <select
+            className="h-11 rounded-lg border border-espera-border bg-espera-surface px-3 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft"
+            onChange={(event) => setSelectedQueueId(event.target.value)}
+            value={queueId}
+          >
+            {queues.map((queue) => (
+              <option key={queue.id} value={queue.id}>
+                {queue.name} {queue.isActive ? '' : '(inactiva)'}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
       <div className="grid gap-6">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-start">
@@ -248,14 +279,14 @@ export function BusinessQueuePage() {
 
             {activeTab === 'windows' && (
               <div className="p-5">
-                <ServiceWindowManager queueId={activeQueueId} />
+                <ServiceWindowManager queueId={queueId} />
               </div>
             )}
           </div>
 
           {/* Ventanillas: qué está pasando ahora */}
           <div className="rounded-lg border border-espera-border bg-espera-surface">
-            <ServiceWindowsSummary onManage={() => setActiveTab('windows')} queueId={activeQueueId} />
+            <ServiceWindowsSummary onManage={() => setActiveTab('windows')} queueId={queueId} />
           </div>
         </div>
 

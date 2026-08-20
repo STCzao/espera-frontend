@@ -1044,3 +1044,42 @@ y se reemplazó por `TURN_STILL_CALLED`/`TURN_NOT_CALLED`.
 
 No pude correr la suite en este entorno (mismo bloqueo de Cypress);
 verificado por lint + build + lectura de código.
+
+## Reconciliación — operar más de una cola (2026-08-20, backend)
+
+Backend cerró la pregunta abierta que había quedado documentada en la
+sección de activar/desactivar cola: `ListMyBusinessesUseCase` ahora
+devuelve `queues: Array<{id, name, prefix, isActive, activeServiceWindows}>`
+por negocio (antes solo exponía `activeQueueId`, la única cola que el
+panel podía operar). Backend dejó explícitamente la decisión de UI del
+lado nuestro — "cómo se ve eso... queda del lado frontend/producto."
+
+### Cambios
+
+- `currentBusinessStore.js` — nuevo campo `queues` (default `[]`, puramente
+  aditivo, no cambia el significado de `activeQueueId`/`activeServiceWindows`
+  existentes).
+- `BusinessQueuePage.jsx` — nuevo selector "Cola" (un `<select>` simple,
+  no pestañas ni multi-panel) que aparece **solo si el negocio tiene más
+  de una cola** — con plan basic (lo único vendido hasta ahora) nunca se
+  ve, cero cambio de comportamiento para la base actual. Elegir una cola
+  la vuelve "la operada": todo lo que antes colgaba de `activeQueueId`
+  (estado en vivo, lista de turnos, ventanillas, llamar siguiente,
+  turno manual, marcar ausente, sockets) ahora cuelga de `queueId`, que
+  cae de vuelta a `activeQueueId` si no se eligió nada o la cola elegida
+  ya no está en la lista (negocio cambiado, cola desactivada).
+- Alcance deliberadamente chico: **una cola a la vez**, no operación
+  simultánea de varias con ventanillas por cola — eso es un rediseño más
+  grande que no hay ningún negocio real pidiendo todavía (solo se vendió
+  plan basic hasta ahora). Si en el futuro hace falta operar dos colas a
+  la vez en pantalla, este selector es el punto de partida a extender, no
+  algo para tirar.
+
+### Cobertura
+
+- `cypress/e2e/business-queue.cy.js` — el selector no aparece con una sola
+  cola; con dos, aparece, arranca en `activeQueueId`, y cambiar la
+  selección dispara el fetch de estado/lista/ventanillas de la otra cola.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
