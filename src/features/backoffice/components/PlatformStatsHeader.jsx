@@ -14,7 +14,7 @@ export function PlatformStatsHeader() {
 
   if (statsQuery.isLoading) {
     return (
-      <dl className="grid grid-cols-2 gap-4 rounded-lg border border-espera-border bg-white p-5 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 rounded-lg border border-espera-border bg-espera-surface p-5 sm:grid-cols-4">
         {[0, 1, 2, 3].map((index) => (
           <div key={index}>
             <Skeleton className="h-3 w-24" />
@@ -27,7 +27,7 @@ export function PlatformStatsHeader() {
 
   if (statsQuery.isError) {
     return (
-      <p className="rounded-lg border border-espera-border bg-white p-5 text-sm font-normal text-espera-danger" role="alert">
+      <p className="rounded-lg border border-espera-border bg-espera-surface p-5 text-sm font-normal text-espera-danger" role="alert">
         No pudimos cargar las métricas de la plataforma.
       </p>
     )
@@ -37,7 +37,7 @@ export function PlatformStatsHeader() {
 
   return (
     <>
-      <dl className="grid grid-cols-2 divide-x divide-y divide-espera-border rounded-lg border border-espera-border bg-white sm:grid-cols-4 sm:divide-y-0">
+      <dl className="grid grid-cols-2 divide-x divide-y divide-espera-border rounded-lg border border-espera-border bg-espera-surface sm:grid-cols-4 sm:divide-y-0">
         <Stat label="Negocios activos" value={data.totalActiveBusinesses} />
         <Stat label="Usuarios registrados" value={data.totalRegisteredUsers} />
         <Stat label="Turnos hoy" value={data.turnsToday} />
@@ -46,14 +46,14 @@ export function PlatformStatsHeader() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         {data.range.topBusinesses.length > 0 && (
-          <div className="rounded-lg border border-espera-border bg-white p-5">
+          <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">
               Negocios más activos ({data.range.fromDate} a {data.range.toDate})
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {data.range.topBusinesses.map((business) => (
                 <li
-                  className="rounded-full bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
+                  className="rounded-md bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
                   key={business.businessId}
                 >
                   {business.businessName} · {business.turnCount} turnos
@@ -64,14 +64,14 @@ export function PlatformStatsHeader() {
         )}
 
         {data.range.topCategories.length > 0 && (
-          <div className="rounded-lg border border-espera-border bg-white p-5">
+          <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
             <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">
               Rubros con más demanda ({data.range.fromDate} a {data.range.toDate})
             </p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {data.range.topCategories.map((category) => (
                 <li
-                  className="rounded-full bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
+                  className="rounded-md bg-espera-purple-soft px-3 py-1.5 text-xs font-semibold text-espera-purple"
                   key={category.categoryId}
                 >
                   {category.categoryName} · {category.turnCount} turnos

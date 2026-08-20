@@ -21,9 +21,9 @@ const statusLabels = {
 }
 
 const statusTagClass = {
-  completed: 'bg-emerald-50 text-emerald-700',
+  completed: 'bg-espera-success-soft text-espera-success',
   cancelled: 'bg-espera-muted text-espera-text-muted',
-  no_show: 'bg-amber-50 text-amber-800',
+  no_show: 'bg-espera-warning-soft text-espera-warning',
 }
 
 function priorityLabel(priority) {
@@ -43,7 +43,7 @@ function formatTime(isoDate) {
 function StatusTag({ status }) {
   return (
     <span
-      className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+      className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
         statusTagClass[status] ?? statusTagClass.completed
       }`}
     >

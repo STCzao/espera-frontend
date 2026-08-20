@@ -77,7 +77,7 @@ export function BusinessQrPage() {
           title="QR del negocio"
         />
 
-        <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-espera-surface">
           <div className="grid gap-5 p-6">
             {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
 

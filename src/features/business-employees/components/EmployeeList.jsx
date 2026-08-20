@@ -9,7 +9,7 @@ export function EmployeeList({ employees = [], onRevoke, revokingUserId }) {
     <ul className="grid gap-2">
       {employees.map((employee) => (
         <li
-          className="flex items-center justify-between gap-3 rounded-lg border border-espera-border bg-white px-4 py-3"
+          className="flex items-center justify-between gap-3 rounded-lg border border-espera-border bg-espera-surface px-4 py-3"
           key={employee.userId}
         >
           <div>

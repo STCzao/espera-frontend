@@ -76,7 +76,7 @@ function AmbientGlows({ reduceMotion }) {
       />
       <AmbientGlow
         animate={reduceMotion ? false : { opacity: [0, 0.26, 0], y: ['-18%', '118%'] }}
-        className="absolute left-[58%] top-[-20%] h-[34%] w-px bg-white"
+        className="absolute left-[58%] top-[-20%] h-[34%] w-px bg-espera-surface"
         duration={6.5}
         repeatDelay={1.2}
       />

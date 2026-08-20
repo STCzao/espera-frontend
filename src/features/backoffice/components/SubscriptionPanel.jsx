@@ -113,7 +113,7 @@ export function SubscriptionPanel({ organizationId }) {
         )}
         {canCancel && (
           <button
-            className="rounded-full px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
             disabled={cancelMutation.isPending}
             onClick={() => setIsCancelling(true)}
             type="button"
@@ -123,7 +123,7 @@ export function SubscriptionPanel({ organizationId }) {
         )}
 
         <select
-          className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           onChange={(event) => setSelectedPlan(event.target.value)}
           value={selectedPlan}
         >
@@ -137,7 +137,7 @@ export function SubscriptionPanel({ organizationId }) {
             ))}
         </select>
         <button
-          className="rounded-full border border-espera-border bg-white px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-lg border border-espera-border bg-espera-surface px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!selectedPlan || changePlanMutation.isPending}
           onClick={() => changePlanMutation.mutate(selectedPlan)}
           type="button"
@@ -174,7 +174,7 @@ export function SubscriptionPanel({ organizationId }) {
           Motivo
         </label>
         <textarea
-          className="mt-1.5 w-full rounded-lg border border-espera-border bg-white px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`cancel-subscription-reason-${organizationId}`}
           onChange={(event) => setCancelReason(event.target.value)}
           rows={2}

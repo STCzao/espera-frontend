@@ -9,7 +9,7 @@ export function FormField({ description, error, label, registration, type = 'tex
       <input
         aria-describedby={[descriptionId, errorId].filter(Boolean).join(' ') || undefined}
         aria-invalid={Boolean(error)}
-        className="min-h-12 rounded-lg border border-espera-border bg-white px-4 text-base font-normal text-espera-text outline-none transition placeholder:text-espera-text-muted/70 focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft"
+        className="min-h-12 rounded-lg border border-espera-border bg-espera-surface px-4 text-base font-normal text-espera-text outline-none transition placeholder:text-espera-text-muted/70 focus:border-espera-purple focus:ring-4 focus:ring-espera-purple-soft"
         id={inputId}
         type={type}
         {...props}

@@ -53,7 +53,7 @@ export function BusinessQueueHistoryPage() {
             Fecha
           </label>
           <input
-            className="h-10 w-full min-w-0 max-w-[170px] rounded-lg border border-espera-border bg-white px-3 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-10 w-full min-w-0 max-w-[170px] rounded-lg border border-espera-border bg-espera-surface px-3 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             id="history-date"
             max={todayISO()}
             onChange={(event) => setDate(event.target.value)}
@@ -66,7 +66,7 @@ export function BusinessQueueHistoryPage() {
             content's min-content — and a nowrap truncate row several levels
             down inside is wide enough to drag the whole column (and page)
             wider than the viewport despite its own flex min-w-0. */}
-        <div className="min-w-0 rounded-lg border border-espera-border bg-white">
+        <div className="min-w-0 rounded-lg border border-espera-border bg-espera-surface">
           {metricsQuery.isLoading && <MetricsTableSkeleton />}
           {metricsQuery.isError && (
             <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
@@ -76,7 +76,7 @@ export function BusinessQueueHistoryPage() {
           {metricsQuery.data && <QueueMetricsSummary date={date} metrics={metricsQuery.data} />}
         </div>
 
-        <div className="min-w-0 rounded-lg border border-espera-border bg-white">
+        <div className="min-w-0 rounded-lg border border-espera-border bg-espera-surface">
           <div className="border-b border-espera-border bg-espera-purple-soft/15 px-5 py-3">
             <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-espera-text-muted">
               Turnos completados

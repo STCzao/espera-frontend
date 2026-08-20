@@ -128,7 +128,7 @@ export function ResolveQrPage() {
 
 function StatusDot({ operationalStatus, reduceMotion }) {
   const isLive = operationalStatus === 'normal' || operationalStatus === 'delayed'
-  const colorClass = isLive ? 'bg-emerald-500' : 'bg-espera-text-muted'
+  const colorClass = isLive ? 'bg-espera-success' : 'bg-espera-text-muted'
 
   if (!isLive || reduceMotion) {
     return <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${colorClass}`} />

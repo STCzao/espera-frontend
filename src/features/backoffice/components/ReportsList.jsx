@@ -16,9 +16,9 @@ const statusLabels = {
 
 const statusTagClass = {
   pending: 'bg-espera-muted text-espera-text-muted',
-  resolved: 'bg-emerald-50 text-emerald-700',
-  suspended: 'bg-amber-50 text-amber-800',
-  dismissed: 'bg-rose-50 text-rose-700',
+  resolved: 'bg-espera-success-soft text-espera-success',
+  suspended: 'bg-espera-warning-soft text-espera-warning',
+  dismissed: 'bg-espera-danger-soft text-espera-danger',
 }
 
 const emptyFilters = { status: '', reportedType: '' }
@@ -36,11 +36,11 @@ export function ReportsList() {
   })
 
   return (
-    <div className="rounded-lg border border-espera-border bg-white">
+    <div className="rounded-lg border border-espera-border bg-espera-surface">
       <div className="flex flex-wrap items-end gap-3 border-b border-espera-border p-4">
         <FilterField label="Estado">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}
             value={filters.status}
           >
@@ -54,7 +54,7 @@ export function ReportsList() {
         </FilterField>
         <FilterField label="Tipo">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => setFilters((current) => ({ ...current, reportedType: event.target.value }))}
             value={filters.reportedType}
           >
@@ -159,14 +159,14 @@ function ReportRow({ report }) {
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+          className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
             statusTagClass[report.status] ?? statusTagClass.pending
           }`}
         >
           {statusLabels[report.status] ?? report.status}
         </span>
         <button
-          className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
+          className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft"
           onClick={() => setIsExpanded((current) => !current)}
           type="button"
         >
@@ -207,21 +207,21 @@ function ReportRow({ report }) {
           {report.status === 'pending' && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button
-                className="rounded-full border border-espera-border bg-white px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
+                className="rounded-md border border-espera-border bg-espera-surface px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
                 onClick={() => setAction('resolve')}
                 type="button"
               >
                 Resolver
               </button>
               <button
-                className="rounded-full border border-espera-border bg-white px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
+                className="rounded-md border border-espera-border bg-espera-surface px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
                 onClick={() => setAction('dismiss')}
                 type="button"
               >
                 Descartar
               </button>
               <button
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft"
+                className="rounded-md px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft"
                 onClick={() => setAction('suspend')}
                 type="button"
               >
@@ -254,7 +254,7 @@ function ReportRow({ report }) {
           Nota {action === 'dismiss' ? '(obligatoria)' : '(opcional)'}
         </label>
         <textarea
-          className="mt-1.5 w-full rounded-lg border border-espera-border bg-white px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`report-note-${report.id}`}
           onChange={(event) => setNote(event.target.value)}
           rows={3}

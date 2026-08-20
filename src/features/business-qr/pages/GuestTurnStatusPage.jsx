@@ -175,7 +175,7 @@ function StepTracker({ activeIndex, reduceMotion }) {
                   : { scale: 1 }
               }
               className={`h-3.5 w-3.5 rounded-full border-2 ${
-                isDone || isActive ? 'border-espera-purple bg-espera-purple' : 'border-espera-border bg-white'
+                isDone || isActive ? 'border-espera-purple bg-espera-purple' : 'border-espera-border bg-espera-surface'
               }`}
               transition={isActive && !reduceMotion ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : undefined}
             />

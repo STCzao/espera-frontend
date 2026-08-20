@@ -18,8 +18,8 @@ const statusLabels = {
 const statusTagClass = {
   waiting: 'bg-espera-muted text-espera-text-muted',
   called: 'bg-espera-purple-soft text-espera-purple',
-  attending: 'bg-amber-50 text-amber-800',
-  redirected: 'bg-sky-50 text-sky-700',
+  attending: 'bg-espera-warning-soft text-espera-warning',
+  redirected: 'bg-espera-info-soft text-espera-info',
 }
 
 export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, onRedirect, pendingTurnId, windows = [] }) {
@@ -67,13 +67,13 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, on
             </div>
 
             {item.source === 'phone' && (
-              <span className="shrink-0 rounded-full bg-sky-50 px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-sky-700">
+              <span className="shrink-0 rounded-md bg-espera-info-soft px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-espera-info">
                 Reservado
               </span>
             )}
 
             <span
-              className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+              className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
                 statusTagClass[item.status] ?? statusTagClass.waiting
               }`}
             >
@@ -92,7 +92,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, on
                   />
                   <button
                     aria-label={`Marcar ausente a ${item.displayNumber}`}
-                    className="rounded-full px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isPending}
                     onClick={() => onMarkNoShow(item.turnId, item.displayNumber)}
                     type="button"
@@ -104,7 +104,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, on
               {item.status === 'redirected' && (
                 <button
                   aria-label={`Atender a ${item.displayNumber}`}
-                  className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-md px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isPending}
                   onClick={() => onAttend(item.turnId, item.serviceWindowId ?? undefined)}
                   type="button"
@@ -116,7 +116,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, on
                 <>
                   <button
                     aria-label={`Finalizar atención a ${item.displayNumber}`}
-                    className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isPending}
                     onClick={() => onAttend(item.turnId)}
                     type="button"
@@ -135,7 +135,7 @@ export function QueueTurnList({ items = [], onAttend, onCancel, onMarkNoShow, on
               )}
               <button
                 aria-label={`Cancelar turno ${item.displayNumber}`}
-                className="rounded-full px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md px-2 py-1 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isPending}
                 onClick={() => onCancel(item.turnId, item.displayNumber)}
                 type="button"
@@ -206,7 +206,7 @@ function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, win
       {requiresWindow && (
         <select
           aria-label={`Ventanilla para ${displayNumber}`}
-          className="h-8 w-24 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="h-8 w-24 rounded-md border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           disabled={isPending}
           onChange={(event) => setWindowId(event.target.value)}
           value={windowId}
@@ -222,7 +222,7 @@ function StartAttentionControl({ displayNumber, isPending, onAttend, turnId, win
       )}
       <button
         aria-label={`Iniciar atención a ${displayNumber}`}
-        className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isPending || (requiresWindow && !windowId)}
         onClick={() => onAttend(turnId, windowId || undefined)}
         type="button"
@@ -245,7 +245,7 @@ function RedirectControl({ currentWindowId, displayNumber, isPending, onRedirect
     <span className="inline-flex items-center gap-1">
       <select
         aria-label={`Derivar a ${displayNumber} a otra ventanilla`}
-        className="h-8 w-24 rounded-full border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+        className="h-8 w-24 rounded-md border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
         disabled={isPending}
         onChange={(event) => setWindowId(event.target.value)}
         value={windowId}
@@ -260,7 +260,7 @@ function RedirectControl({ currentWindowId, displayNumber, isPending, onRedirect
       </select>
       <button
         aria-label={`Confirmar derivación de ${displayNumber}`}
-        className="rounded-full px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md px-2 py-1 text-xs font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isPending || !windowId}
         onClick={() => onRedirect(turnId, windowId)}
         type="button"

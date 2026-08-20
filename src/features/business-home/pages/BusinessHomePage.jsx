@@ -77,7 +77,7 @@ export function BusinessHomePage() {
 
           return (
             <Link
-              className="flex items-start gap-3 rounded-lg border border-espera-border bg-white p-4 transition-colors hover:bg-espera-purple-soft/25"
+              className="flex items-start gap-3 rounded-lg border border-espera-border bg-espera-surface p-4 transition-colors hover:bg-espera-purple-soft/25"
               key={item.to}
               to={item.to}
             >

@@ -15,9 +15,9 @@ const statusLabels = {
 
 const statusTagClass = {
   pending: 'bg-espera-muted text-espera-text-muted',
-  approved: 'bg-emerald-50 text-emerald-700',
-  rejected: 'bg-rose-50 text-rose-700',
-  suspended: 'bg-amber-50 text-amber-800',
+  approved: 'bg-espera-success-soft text-espera-success',
+  rejected: 'bg-espera-danger-soft text-espera-danger',
+  suspended: 'bg-espera-warning-soft text-espera-warning',
 }
 
 const planLabels = { basic: 'Basic', pro: 'Pro', premium: 'Premium' }
@@ -88,11 +88,11 @@ export function BusinessMetricsTable() {
   const totalPages = businesses ? Math.max(1, Math.ceil(businesses.total / businesses.pageSize)) : 1
 
   return (
-    <div className="rounded-lg border border-espera-border bg-white">
+    <div className="rounded-lg border border-espera-border bg-espera-surface">
       <div className="flex flex-wrap items-end gap-3 border-b border-espera-border p-4">
         <FilterField label="Estado">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => updateFilter('status', event.target.value)}
             value={filters.status}
           >
@@ -106,7 +106,7 @@ export function BusinessMetricsTable() {
         </FilterField>
         <FilterField label="Categoría">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => updateFilter('categoryId', event.target.value)}
             value={filters.categoryId}
           >
@@ -120,7 +120,7 @@ export function BusinessMetricsTable() {
         </FilterField>
         <FilterField label="Plan">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => updateFilter('subscriptionPlan', event.target.value)}
             value={filters.subscriptionPlan}
           >
@@ -134,7 +134,7 @@ export function BusinessMetricsTable() {
         </FilterField>
         <FilterField label="Suscripción">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => updateFilter('subscriptionStatus', event.target.value)}
             value={filters.subscriptionStatus}
           >
@@ -148,7 +148,7 @@ export function BusinessMetricsTable() {
         </FilterField>
         <FilterField label="Orden">
           <select
-            className="h-9 rounded-lg border border-espera-border bg-white px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+            className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
             onChange={(event) => {
               setPage(1)
               setSortBy(event.target.value)
@@ -160,7 +160,7 @@ export function BusinessMetricsTable() {
           </select>
         </FilterField>
         <button
-          className="rounded-full border border-espera-border bg-white px-3 py-2 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
+          className="rounded-md border border-espera-border bg-espera-surface px-3 py-2 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft"
           onClick={() => {
             setPage(1)
             setSortDir((current) => (current === 'desc' ? 'asc' : 'desc'))
@@ -218,7 +218,7 @@ export function BusinessMetricsTable() {
                   </p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
+                  className={`shrink-0 rounded-md px-2.5 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider ${
                     statusTagClass[business.status] ?? statusTagClass.pending
                   }`}
                 >
@@ -227,7 +227,7 @@ export function BusinessMetricsTable() {
                 <div className="ml-auto flex shrink-0 items-center gap-2">
                   {business.status === 'approved' && (
                     <button
-                      className="rounded-full px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
+                      className="rounded-md px-3 py-1.5 text-xs font-semibold text-espera-danger transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={isPending}
                       onClick={() => setBusinessToSuspend(business)}
                       type="button"
@@ -266,7 +266,7 @@ export function BusinessMetricsTable() {
           </span>
           <div className="flex gap-2">
             <button
-              className="rounded-full border border-espera-border bg-white px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-espera-border bg-espera-surface px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-50"
               disabled={page <= 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               type="button"
@@ -274,7 +274,7 @@ export function BusinessMetricsTable() {
               Anterior
             </button>
             <button
-              className="rounded-full border border-espera-border bg-white px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-espera-border bg-espera-surface px-3 py-1.5 text-xs font-semibold text-espera-text transition-colors hover:bg-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-50"
               disabled={page >= totalPages}
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               type="button"
@@ -309,7 +309,7 @@ export function BusinessMetricsTable() {
           Motivo de la suspensión
         </label>
         <textarea
-          className="mt-1.5 w-full rounded-lg border border-espera-border bg-white px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
+          className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id="suspend-business-reason"
           onChange={(event) => setSuspendReason(event.target.value)}
           rows={3}

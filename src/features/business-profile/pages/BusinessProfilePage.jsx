@@ -81,7 +81,7 @@ export function BusinessProfilePage() {
         title="Perfil del negocio"
       />
 
-      <div className="max-w-2xl rounded-lg border border-espera-border bg-white">
+      <div className="max-w-2xl rounded-lg border border-espera-border bg-espera-surface">
         <div className="p-6">
           <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
             Datos generales
