@@ -9,6 +9,11 @@ export const useCurrentBusinessStore = create((set) => ({
   operationalStatus: null,
   activeServiceWindows: null,
   activeQueueId: null,
+  // Every queue the business has, not just the one activeQueueId resolves
+  // to — a Pro/Premium business can have more than one (see
+  // ListMyBusinessesUseCase in espera-back). Empty by default so callers
+  // can safely `.length`/`.map` without a null check.
+  queues: [],
   plan: null,
   setCurrentBusiness(business) {
     set({
@@ -20,6 +25,7 @@ export const useCurrentBusinessStore = create((set) => ({
       operationalStatus: business?.operationalStatus ?? null,
       activeServiceWindows: business?.activeServiceWindows ?? null,
       activeQueueId: business?.activeQueueId ?? null,
+      queues: business?.queues ?? [],
       plan: business?.plan ?? null,
     })
   },
@@ -33,6 +39,7 @@ export const useCurrentBusinessStore = create((set) => ({
       operationalStatus: null,
       activeServiceWindows: null,
       activeQueueId: null,
+      queues: [],
       plan: null,
     })
   },
