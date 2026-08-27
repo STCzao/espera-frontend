@@ -225,6 +225,28 @@ a {
   border-radius: 4px;
 }
 
+.panel-layout__add-business {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.panel-layout__add-business:hover {
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+.panel-layout__add-business:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 .panel-layout__user-chip {
   display: flex;
   align-items: center;

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BarChart3, Building2, CalendarClock, Home, ListOrdered, Menu, QrCode, Settings2, UsersRound, X } from 'lucide-react'
-import { NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
+import { BarChart3, Building2, CalendarClock, Home, ListOrdered, Menu, Plus, QrCode, Settings2, UsersRound, X } from 'lucide-react'
+import { Link, NavLink, Outlet, useNavigate, useParams } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { businessOnboardingApi } from '../../features/business-onboarding/api/businessOnboardingApi.js'
 import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
+import { getPlanLimit } from '../../shared/business/planLimits.js'
 import { useSessionStore } from '../../shared/auth/sessionStore.js'
 
 const primaryNavItems = [
@@ -54,6 +55,7 @@ export function BusinessPanelLayout() {
   // trae el JWT: id/email/role/approvalStatus, sin firstName/lastName), el
   // chip de usuario simplemente no se muestra.
   const userFirstName = useSessionStore((state) => state.user?.firstName)
+  const plan = useCurrentBusinessStore((state) => state.plan)
   const [isNavOpen, setIsNavOpen] = useState(false)
 
   useEffect(() => {
@@ -97,6 +99,12 @@ export function BusinessPanelLayout() {
 
   const isCurrentBusiness = Boolean(businessSlug) && currentSlug === businessSlug
   const approvalStatus = isCurrentBusiness ? status : null
+  // Only Premium allows more than one Business per Organization (Basic and
+  // Pro both cap at 1 — see PLAN_LIMITS in espera-back) — this link is
+  // invisible for the vast majority of accounts, same gating criterion as
+  // the switcher itself and "Crear cola" in QueuesControl.
+  const canAddBusiness =
+    Boolean(businessesQuery.data) && businessesQuery.data.length < getPlanLimit(plan).maxBusinesses
 
   return (
     <main className="panel-layout">
@@ -168,6 +176,11 @@ export function BusinessPanelLayout() {
               <span className="panel-layout__topbar-business">
                 {businessSlug ? (isCurrentBusiness && name ? name : '…') : 'Espera'}
               </span>
+            )}
+            {canAddBusiness && (
+              <Link aria-label="Agregar sucursal" className="panel-layout__add-business" title="Agregar sucursal" to="/business/new">
+                <Plus aria-hidden="true" size={16} />
+              </Link>
             )}
             {userFirstName && (
               <span className="panel-layout__user-chip">

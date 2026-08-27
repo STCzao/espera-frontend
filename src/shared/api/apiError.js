@@ -58,9 +58,20 @@ const ERROR_CODE_MESSAGES = {
   APPROVAL_NOTE_REQUIRED: 'Hay alertas de coherencia sin resolver — agregá una nota para aprobar de todas formas.',
   BUSINESS_CANNOT_BE_SUSPENDED: 'Solo se pueden suspender negocios aprobados.',
   BUSINESS_NOT_SUSPENDED: 'Ese negocio no está suspendido.',
-  SUBSCRIPTION_CANNOT_BE_ACTIVATED: 'Solo se puede activar una suscripción pendiente o en prueba.',
+  // Bugfix — reactivar desde cancelled/expired (2026-08-20). Solo queda sin
+  // cubrir el caso "ya está activa" (SubscriptionPanel además oculta el
+  // botón "Activar" en ese caso, esto es resguardo).
+  SUBSCRIPTION_CANNOT_BE_ACTIVATED: 'Esa suscripción ya está activa.',
   SUBSCRIPTION_ALREADY_CANCELLED: 'Esa suscripción ya está cancelada o vencida.',
-  SUBSCRIPTION_DOWNGRADE_BLOCKED: 'No se puede bajar a ese plan: la organización tiene más negocios de los que permite.',
+  // Bugfix — restructuración de límites de plan (2026-08-20). Reemplaza al
+  // único SUBSCRIPTION_DOWNGRADE_BLOCKED de antes — el backend ahora
+  // distingue cuál de los tres recursos frena el downgrade.
+  SUBSCRIPTION_DOWNGRADE_BLOCKED_BUSINESSES:
+    'No se puede bajar a ese plan: la organización tiene más negocios de los que permite. Desactivá alguno primero.',
+  SUBSCRIPTION_DOWNGRADE_BLOCKED_QUEUES:
+    'No se puede bajar a ese plan: un negocio tiene más colas activas de las que permite. Desactivá alguna primero.',
+  SUBSCRIPTION_DOWNGRADE_BLOCKED_WINDOWS:
+    'No se puede bajar a ese plan: una cola tiene más ventanillas activas de las que permite. Desactivá alguna primero.',
   // Backoffice — reportes (HU-8.6).
   REPORT_NOT_FOUND: 'El reporte no existe.',
   REPORT_NOT_PENDING: 'Ese reporte ya fue revisado.',

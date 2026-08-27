@@ -1267,3 +1267,98 @@ anotado aparte, sin urgencia.
 
 No pude correr la suite en este entorno (Cypress no levanta su binario de
 Electron acá); verificado por lint + build + lectura de código.
+
+## Refinamiento — alta de sucursal adicional desde el panel (2026-08-21)
+
+El switcher de arriba resuelve moverse entre sucursales que ya existen,
+pero no había ninguna forma de **crear** una adicional una vez que la
+cuenta ya tenía al menos una — `/business/new` (`BusinessCreatePage.jsx`)
+solo estaba enlazado desde `NoBusinessPanel.jsx`, la pantalla de "todavía
+no tenés negocio" (cero sucursales). Reportado al revisar por qué una
+cuenta con el plan recién cambiado "no tiene para switchear": la cuenta
+tenía una sola sucursal, así que el switcher no debía aparecer (correcto),
+pero tampoco había manera de agregar una segunda sin escribir la URL a
+mano.
+
+### El dato que faltaba: `maxBusinesses` no estaba en el mirror del frontend
+
+`shared/business/planLimits.js` (mirror de `PLAN_LIMITS` de
+`espera-back`) solo tenía `maxQueuesPerBusiness`/`maxServiceWindowsPerQueue`
+— le faltaba `maxBusinesses`, que el backend sí tiene:
+**`basic: 1`, `pro: 1`, `premium: Infinity`**. Dato importante para
+cualquiera probando esto: cambiar una cuenta a plan **Pro** habilita
+colas ilimitadas *por negocio*, pero no un segundo negocio — para eso
+hace falta **Premium**. Agregado al mirror del frontend.
+
+### Cambios
+
+- `BusinessPanelLayout.jsx` — botón "+" (`aria-label="Agregar sucursal"`)
+  junto al switcher/nombre del negocio en el topbar, enlaza a
+  `/business/new`. Visible solo si `businessesQuery.data.length <
+  getPlanLimit(plan).maxBusinesses` — mismo criterio de "invisible en el
+  caso común" que el switcher y que "Crear cola" en `QueuesControl.jsx`;
+  en la práctica solo lo ven cuentas Premium.
+- `BusinessCreatePage.jsx` **no se tocó** — ya funciona como ruta
+  standalone independiente de cuántos negocios tenga la cuenta (navega a
+  `/panel/business/:slug` del nuevo negocio al crearlo), no asumía "cero
+  negocios" en ningún lado.
+
+### Cobertura
+
+- `cypress/e2e/business-panel-switcher.cy.js` — el botón no aparece con
+  plan basic/pro (una sola sucursal permitida); aparece y apunta a
+  `/business/new` con plan premium.
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
+
+## Bugfix — "Volver al panel" mandaba a un dueño con negocio a la pantalla vacía (2026-08-21)
+
+Reportado al probar el "+ Nueva sucursal" recién agregado: un dueño que ya
+tiene un negocio, entra a `/business/new` para crear el segundo, y toca
+"Volver al panel" (`to="/panel"`, sin slug) — en vez de volver a su
+negocio, aterrizaba en `NoBusinessPanel` ("Todavía no registraste tu
+negocio"), como si la cuenta no tuviera ninguno.
+
+### La causa
+
+`/panel` (la ruta índice, sin `:businessSlug`) tenía como único hijo
+`<Route index element={<NoBusinessPanel />} />` — **incondicional**, sin
+ninguna consulta de si la cuenta realmente tiene negocios. Tenía sentido
+mientras el único camino hacia esa ruta era el redirect post-login con
+cero negocios (`resolvePostLoginPath.js`) — pero "Volver al panel" abrió
+un segundo camino hacia la misma ruta para una cuenta que sí tiene
+negocios, y ahí quedó expuesto que la ruta nunca chequeaba nada.
+
+### Fix
+
+Nuevo `PanelIndexRedirect.jsx` como elemento de esa ruta índice: pide
+`GET /business/me` (mismo `queryKey: ['business-me']` que ya usa
+`BusinessPanelLayout.jsx`, así que no duplica el fetch — cachea) y:
+- si hay al menos un negocio, navega a `/panel/business/:slug` del
+  primero (misma regla "el primero encontrado" que
+  `resolvePostLoginPath.js`, por consistencia);
+- si no hay ninguno, recién ahí muestra `NoBusinessPanel`.
+
+`resolvePostLoginPath.js` no se tocó — sigue resolviendo el destino
+post-login por su cuenta; este fix cubre la ruta `/panel` bare en sí
+misma para cualquier otro camino que termine ahí (bookmarks viejos,
+"Volver al panel", etc.), no solo el login.
+
+### De paso — alerta de error del formulario de alta, unificada
+
+`BusinessCreateFormPanel.jsx` tenía su propio cuadro de error
+(`border-[#f3b7ce] bg-[#fff3f7]`, colores hardcodeados) en vez de
+reusar `.business-alert business-alert--danger`, que ya existe y se ve
+prácticamente igual — duplicado accidental, no una decisión de diseño.
+Reemplazado.
+
+### Cobertura
+
+- `cypress/e2e/business-create.cy.js` — "Volver al panel" con una cuenta
+  que ya tiene un negocio navega a `/panel/business/:slug`, no a la
+  pantalla vacía; `/panel` sin negocios sigue mostrando `NoBusinessPanel`
+  (caso real preservado).
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.

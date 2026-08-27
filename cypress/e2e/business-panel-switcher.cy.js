@@ -1,6 +1,6 @@
 /// <reference types="cypress" />
 
-describe('Switcher de sucursal en el panel de negocio', () => {
+describe('Switcher y alta de sucursal en el panel de negocio', () => {
   function authenticate() {
     cy.intercept('GET', '**/auth/me', {
       statusCode: 200,
@@ -71,5 +71,27 @@ describe('Switcher de sucursal en el panel de negocio', () => {
 
     cy.location('pathname').should('eq', '/panel/business/cafe-espera-sucursal-norte')
     cy.get('select[aria-label="Cambiar de sucursal"]').should('have.value', 'cafe-espera-sucursal-norte')
+  })
+
+  it('no ofrece agregar sucursal con plan basic o pro (tope 1 negocio)', () => {
+    authenticate()
+    mockBusinessMe(oneBusiness) // plan: 'basic'
+
+    cy.visit('/panel/business/cafe-espera')
+    cy.wait('@me')
+    cy.wait('@businessMe')
+
+    cy.get('a[aria-label="Agregar sucursal"]').should('not.exist')
+  })
+
+  it('ofrece agregar sucursal con plan premium', () => {
+    authenticate()
+    mockBusinessMe([{ ...oneBusiness[0], plan: 'premium' }])
+
+    cy.visit('/panel/business/cafe-espera')
+    cy.wait('@me')
+    cy.wait('@businessMe')
+
+    cy.get('a[aria-label="Agregar sucursal"]').should('have.attr', 'href', '/business/new')
   })
 })

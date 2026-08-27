@@ -15,7 +15,10 @@ const subscriptionStatusLabels = {
   cancelled: 'Cancelada',
 }
 
-const ACTIVATABLE_STATUSES = ['pending', 'trial']
+// Bugfix (2026-08-20, backend): reactivar ahora también funciona desde
+// cancelled/expired, no solo pending/trial — cubre tanto la primera
+// activación como una renovación después de vencer.
+const ACTIVATABLE_STATUSES = ['pending', 'trial', 'cancelled', 'expired']
 const TERMINAL_STATUSES = ['cancelled', 'expired']
 
 function formatDate(isoDate) {

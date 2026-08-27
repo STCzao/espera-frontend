@@ -653,3 +653,61 @@ para un caso de uso que hoy no lleva a ningún lado.
 - Validado manualmente end-to-end contra el backend real: invitar → aceptar
   (token de DB, sin depender de email real) → aparece activo en la lista →
   revocar → desaparece de la lista.
+
+## Reconciliación — reformulación del pitch de planes (2026-08-20, backend)
+
+Backend respondió al planteo de que "multi-cola por negocio" no
+justificaba pagar Premium (ver charla con el dueño: *"¿para qué querría
+otra cola si con una puedo gestionar todas las ventanillas?"*) —
+reformuló la grilla de planes en vez de construir ruteo de cliente hacia
+una cola específica. Grilla nueva (`PLAN_LIMITS` en espera-back):
+
+| Plan    | Negocios | Colas por negocio | Ventanillas por cola |
+| ------- | -------- | ------------------ | --------------------- |
+| Basic   | 1        | 1                   | 1                      |
+| Pro     | 1        | 1                   | Hasta 10               |
+| Premium | Hasta 3  | 1                   | Hasta 20               |
+
+Cambios de antes: `maxQueuesPerBusiness` pasó a **1 en los tres planes**
+(antes Pro/Premium eran ilimitados) — el pilar real dentro de un negocio
+pasa a ser el techo de ventanillas (Pro 3→10, Premium ya era 20). Y
+`maxBusinesses` de Premium pasó de ilimitado a **3** — la única señal de
+mercado real es un prospecto con 2 sucursales, prometer infinito sin
+haberlo corrido a esa escala era sobre-prometer.
+
+**No se retiró nada**: `CreateQueueUseCase`/`ToggleQueueUseCase` y el
+selector de cola en `BusinessQueuePage.jsx` (ver `docs/epica-3-cola.md`,
+"operar más de una cola") quedan intactos — simplemente ningún plan hoy
+permite llegar al escenario de tener una segunda cola activa, así que ese
+selector queda invisible en la práctica hasta que el pitch cambie de
+nuevo (es un cambio de una constante, no de código).
+
+### Cambios en frontend
+
+- `shared/business/planLimits.js` — mirror actualizado a la grilla nueva
+  (antes tenía `Infinity` en `pro.maxQueuesPerBusiness`,
+  `premium.maxQueuesPerBusiness` y `premium.maxBusinesses` — los tres
+  quedaban desalineados con el backend real). Esto afecta directamente al
+  gating de "+ Nueva sucursal" (`BusinessPanelLayout.jsx`) y "Crear cola"
+  (`QueuesControl.jsx`), que ya leían de acá — no hizo falta tocar esos
+  componentes, solo la constante.
+- `shared/api/apiError.js` — `SUBSCRIPTION_DOWNGRADE_BLOCKED` (un solo
+  código) reemplazado por `_BUSINESSES`/`_QUEUES`/`_WINDOWS` (el backend
+  ahora distingue cuál de los tres recursos frena el downgrade).
+  `SUBSCRIPTION_CANNOT_BE_ACTIVATED` reescrito: con el fix de abajo, el
+  único caso real que cubre es "ya está activa".
+- `SubscriptionPanel.jsx` (Backoffice) — `ACTIVATABLE_STATUSES` pasa a
+  incluir `cancelled`/`expired` (antes solo `pending`/`trial`): el backend
+  ahora permite reactivar una suscripción cancelada o vencida, no solo la
+  primera activación. Sin este fix, el botón "Activar" no aparecía nunca
+  para una cuenta cancelada aunque el backend ya lo aceptara.
+
+### Cobertura
+
+- `cypress/e2e/backoffice-subscriptions.cy.js` — reactivar desde
+  `cancelled` (con `cancellationReason` visible), y el downgrade
+  bloqueado por ventanillas activas mostrando el mensaje traducido
+  correcto (no el genérico de antes).
+
+No pude correr la suite en este entorno (mismo bloqueo de Cypress);
+verificado por lint + build + lectura de código.
