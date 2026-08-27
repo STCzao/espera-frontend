@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
 
@@ -21,7 +22,7 @@ export function BusinessCreateFormPanel({
   return (
     <motion.section
       animate={reduceMotion ? false : { opacity: 1, y: 0 }}
-      className="w-full max-w-[610px] rounded-lg border border-white/18 bg-[#fdf9ff] p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8"
+      className="w-full max-w-[610px] rounded-lg border border-white/18 bg-espera-card p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8"
       initial={reduceMotion ? false : { opacity: 0, y: 14 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
@@ -99,13 +100,5 @@ export function BusinessCreateFormPanel({
         </FormButton>
       </form>
     </motion.section>
-  )
-}
-
-function FormError({ children }) {
-  return (
-    <div className="rounded-lg border border-[#f3b7ce] bg-[#fff3f7] px-4 py-3 text-sm text-espera-danger" role="alert">
-      {children}
-    </div>
   )
 }

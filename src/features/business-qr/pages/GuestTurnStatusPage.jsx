@@ -15,7 +15,7 @@ const POLL_INTERVAL_MS = 6000
 const steps = ['En espera', 'Te llamamos', 'Atendido']
 
 const cardClassName =
-  'w-full max-w-[480px] rounded-lg border border-white/18 bg-[#fdf9ff] p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8'
+  'w-full max-w-[480px] rounded-lg border border-white/18 bg-espera-card p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8'
 
 function stepIndexFor(status) {
   if (status === 'waiting') return 0

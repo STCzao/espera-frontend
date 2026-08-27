@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { GoogleIcon } from './GoogleIcon.jsx'
 
 export function GoogleAuthButton({ googleMutation, onClick }) {
@@ -24,11 +25,7 @@ export function GoogleAuthButton({ googleMutation, onClick }) {
         Continuar con Google
       </button>
 
-      {googleMutation.isError && (
-        <div className="rounded-lg border border-[#f3b7ce] bg-[#fff3f7] px-4 py-3 text-sm text-espera-danger" role="alert">
-          No pudimos conectar con Google. Intentá nuevamente.
-        </div>
-      )}
+      {googleMutation.isError && <FormError>No pudimos conectar con Google. Intentá nuevamente.</FormError>}
     </>
   )
 }

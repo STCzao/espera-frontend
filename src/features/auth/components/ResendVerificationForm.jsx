@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { authApi } from '../api/authApi.js'
 import { resendVerificationSchema } from '../model/authSchemas.js'
 
@@ -28,11 +29,7 @@ export function ResendVerificationForm() {
         <input {...register('email')} autoComplete="email" type="email" />
         {errors.email && <span className="form-error">{errors.email.message}</span>}
       </label>
-      {resendMutation.isError && (
-        <p className="form-error" role="alert">
-          {genericErrorMessage}
-        </p>
-      )}
+      {resendMutation.isError && <FormError>{genericErrorMessage}</FormError>}
       <button className="button" disabled={resendMutation.isPending} type="submit">
         {resendMutation.isPending ? 'Enviando…' : 'Reenviar verificación'}
       </button>

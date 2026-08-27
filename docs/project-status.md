@@ -193,6 +193,24 @@ Estado:
   `#9d479a` y `#aa54a7`.
 - La escala violeta se complementará con blancos y colores especiales para
   alertas, modales y acciones cuando cada caso de UI lo requiera.
+- **Refinamiento (2026-08-21) — un solo tratamiento visual para "esto es un
+  error".** Auditoría encontró 4 estilos distintos conviviendo para el
+  mismo significado: `.business-alert business-alert--danger` (panel),
+  una caja con colores hardcodeados (`border-[#f3b7ce] bg-[#fff3f7]`)
+  duplicada de forma idéntica en 8 archivos (login, registro, recuperar/
+  resetear contraseña, Google, aceptar invitación, QR, alta de sucursal),
+  la clase huérfana `.form-error` (un solo uso), y texto suelto sin caja
+  en el resto del panel. Unificado: nuevo `shared/ui/FormError.jsx`
+  (envoltorio de `.business-alert--danger`, con `!mb-0` para no duplicar
+  el `gap-*` que ya ponen los formularios) reemplaza las 8 duplicaciones y
+  el huérfano. El texto suelto sin caja del panel (`text-sm font-normal
+  text-espera-danger`) queda como está — es un patrón distinto, más liviano
+  a propósito para formularios de configuración con muchos campos, no una
+  inconsistencia sin resolver.
+- De paso, se tokenizó `--color-espera-card` (`#fdf9ff`, la tarjeta clara
+  sobre el hero oscuro de login/registro/recuperación/QR/invitación) —
+  estaba repetido como literal `bg-[#fdf9ff]` en 12 archivos sin ningún
+  token detrás.
 - La tipografía principal del frontend es `Geist Sans`; `Geist Mono` queda
   reservado para datos, códigos y usos técnicos.
 - Tailwind CSS será la base visual principal.
