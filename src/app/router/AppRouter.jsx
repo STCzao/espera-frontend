@@ -13,7 +13,7 @@ const ResetPasswordPage = lazy(() => import('../../features/auth/pages/ResetPass
 const VerifyEmailPage = lazy(() => import('../../features/auth/pages/VerifyEmailPage.jsx').then((module) => ({ default: module.VerifyEmailPage })))
 const GoogleCallbackPage = lazy(() => import('../../features/auth/pages/GoogleCallbackPage.jsx').then((module) => ({ default: module.GoogleCallbackPage })))
 const BusinessCreatePage = lazy(() => import('../../features/business-onboarding/pages/BusinessCreatePage.jsx').then((module) => ({ default: module.BusinessCreatePage })))
-const NoBusinessPanel = lazy(() => import('../../features/business-onboarding/pages/NoBusinessPanel.jsx').then((module) => ({ default: module.NoBusinessPanel })))
+const PanelIndexRedirect = lazy(() => import('../../features/business-onboarding/pages/PanelIndexRedirect.jsx').then((module) => ({ default: module.PanelIndexRedirect })))
 const BusinessHomePage = lazy(() => import('../../features/business-home/pages/BusinessHomePage.jsx').then((module) => ({ default: module.BusinessHomePage })))
 const BusinessQueuePage = lazy(() => import('../../features/business-queue/pages/BusinessQueuePage.jsx').then((module) => ({ default: module.BusinessQueuePage })))
 const BusinessQueueHistoryPage = lazy(() => import('../../features/business-queue/pages/BusinessQueueHistoryPage.jsx').then((module) => ({ default: module.BusinessQueueHistoryPage })))
@@ -50,7 +50,7 @@ export function AppRouter() {
         <Route element={<AuthLayout />}>
           <Route path="/business/new" element={<BusinessCreatePage />} />
           <Route path="/panel" element={<BusinessPanelLayout />}>
-            <Route index element={<NoBusinessPanel />} />
+            <Route index element={<PanelIndexRedirect />} />
           </Route>
           <Route path="/panel/business/:businessSlug" element={<BusinessPanelLayout />}>
             <Route index element={<BusinessHomePage />} />

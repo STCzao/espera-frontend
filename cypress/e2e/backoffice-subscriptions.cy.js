@@ -70,6 +70,53 @@ describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propi
     cy.wait('@activateSubscription')
   })
 
+  it('reactiva una suscripción cancelada (bugfix 2026-08-20)', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'pro', status: 'cancelled', cancellationReason: 'No pagó' },
+    }).as('getSubscription')
+    cy.intercept('PATCH', '**/organizations/org_1/subscription/activate', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'pro', status: 'active' },
+    }).as('activateSubscription')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@businesses')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+
+    cy.contains('motivo: No pagó').should('be.visible')
+    cy.contains('button', /^activar$/i).click()
+    cy.wait('@activateSubscription')
+  })
+
+  it('traduce el error cuando el downgrade queda bloqueado por colas o ventanillas activas', () => {
+    cy.intercept('GET', '**/organizations/org_1/subscription', {
+      statusCode: 200,
+      body: { id: 'sub_1', organizationId: 'org_1', plan: 'premium', status: 'active' },
+    }).as('getSubscription')
+    cy.intercept('PATCH', '**/organizations/org_1/subscription/plan', {
+      statusCode: 409,
+      body: {
+        message: 'Cannot downgrade to basic: a queue has more active service windows than the new plan allows.',
+        code: 'SUBSCRIPTION_DOWNGRADE_BLOCKED_WINDOWS',
+      },
+    }).as('changePlan')
+
+    cy.visit('/backoffice/subscriptions')
+    cy.wait('@me')
+    cy.wait('@businesses')
+    cy.contains('button', /gestionar/i).click()
+    cy.wait('@getSubscription')
+
+    cy.contains('option', 'Cambiar plan a…').parent('select').select('basic')
+    cy.contains('button', /confirmar cambio de plan/i).click()
+    cy.wait('@changePlan')
+
+    cy.contains('una cola tiene más ventanillas activas de las que permite').should('be.visible')
+  })
+
   it('cancela una suscripción pidiendo motivo', () => {
     cy.intercept('GET', '**/organizations/org_1/subscription', {
       statusCode: 200,
