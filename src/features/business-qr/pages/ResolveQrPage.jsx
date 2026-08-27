@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { businessQrApi } from '../api/businessQrApi.js'
 import { guestTurnApi } from '../api/guestTurnApi.js'
@@ -18,7 +19,7 @@ const operationalStatusLabels = {
 }
 
 const cardClassName =
-  'w-full max-w-[480px] rounded-lg border border-white/18 bg-[#fdf9ff] p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8'
+  'w-full max-w-[480px] rounded-lg border border-white/18 bg-espera-card p-7 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8'
 
 export function ResolveQrPage() {
   const { token } = useParams()
@@ -111,9 +112,7 @@ export function ResolveQrPage() {
             />
 
             {createTurnMutation.isError && (
-              <p className="rounded-lg border border-[#f3b7ce] bg-[#fff3f7] px-4 py-3 text-sm text-espera-danger" role="alert">
-                {createTurnMutation.error?.message ?? 'No pudimos sacar tu turno. Intentá nuevamente.'}
-              </p>
+              <FormError>{createTurnMutation.error?.message ?? 'No pudimos sacar tu turno. Intentá nuevamente.'}</FormError>
             )}
 
             <FormButton isPending={createTurnMutation.isPending} pendingLabel="Sacando turno…" size="lg" variant="solid">

@@ -8,7 +8,7 @@ export function RegisterSuccessPanel({ reduceMotion }) {
   return (
     <motion.section
       animate={reduceMotion ? false : { opacity: 1, y: 0 }}
-      className="relative w-full max-w-[560px] overflow-hidden rounded-lg border border-white/18 bg-[#fdf9ff] p-8 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)]"
+      className="relative w-full max-w-[560px] overflow-hidden rounded-lg border border-white/18 bg-espera-card p-8 text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)]"
       initial={reduceMotion ? false : { opacity: 0, y: 14 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >

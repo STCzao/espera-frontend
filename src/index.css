@@ -9,6 +9,11 @@
   --color-espera-violet-300: #aa54a7;
   --color-espera-bg: #fbf7fc;
   --color-espera-surface: #ffffff;
+  /* The floating card on top of the dark auth/guest hero (login, register,
+     recovery, guest QR, invite-acceptance) — a hair off pure white, distinct
+     from --color-espera-surface. Was repeated as a raw bg-[#fdf9ff] literal
+     in 12 files with no token backing it. */
+  --color-espera-card: #fdf9ff;
   --color-espera-muted: #f2e8f3;
   --color-espera-text: #2d1930;
   --color-espera-text-muted: #705574;

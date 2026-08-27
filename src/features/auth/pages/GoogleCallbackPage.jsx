@@ -45,7 +45,7 @@ export function GoogleCallbackPage() {
     <LoginVisualScene reduceMotion={shouldReduceMotion}>
       <motion.section
         animate={shouldReduceMotion ? false : { opacity: 1, y: 0 }}
-        className="w-full max-w-[480px] rounded-lg border border-white/18 bg-[#fdf9ff] p-7 text-center text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8"
+        className="w-full max-w-[480px] rounded-lg border border-white/18 bg-espera-card p-7 text-center text-espera-text shadow-[0_18px_60px_rgba(0,0,0,0.20)] sm:p-8"
         initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
       >
