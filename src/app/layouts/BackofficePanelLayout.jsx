@@ -3,6 +3,7 @@ import { Building2, CircleCheckBig, CreditCard, Flag, LayoutDashboard, Menu, X }
 import { Navigate, NavLink, Outlet } from 'react-router-dom'
 import { LogoutButton } from '../../features/auth/components/LogoutButton.jsx'
 import { useSessionStore } from '../../shared/auth/sessionStore.js'
+import { Footer } from '../../shared/ui/Footer.jsx'
 
 const navItems = [
   { to: '.', label: 'Inicio', icon: LayoutDashboard, end: true },
@@ -113,6 +114,7 @@ export function BackofficePanelLayout() {
         <div className="panel-layout__content">
           <Outlet />
         </div>
+        <Footer className="border-t border-espera-border" />
       </section>
     </main>
   )

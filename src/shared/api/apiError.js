@@ -102,6 +102,19 @@ const ERROR_CODE_MESSAGES = {
   PLAN_SERVICE_WINDOW_LIMIT_REACHED: 'Tu plan no permite crear más ventanillas en esta cola.',
   // HU-4.2 — sacar turno sin la app (web ligera, pública).
   RATE_LIMIT_EXCEEDED: 'Demasiados intentos. Probá de nuevo en unos minutos.',
+  // Sucursales adicionales por plan (2026-09-01). El mensaje del backend trae
+  // el número de sucursales permitidas embebido en el texto en inglés — sin
+  // un campo `details` estructurado no hay forma de traducirlo con el número,
+  // así que queda genérico (mismo criterio que PLAN_QUEUE_LIMIT_REACHED).
+  PLAN_BUSINESS_LIMIT_REACHED: 'Tu plan no permite crear más sucursales.',
+  // Invitaciones de empleados (HU-2.8).
+  OWNER_CANNOT_BE_EMPLOYEE: 'El dueño del negocio no puede ser invitado como empleado.',
+  EMPLOYEE_ALREADY_ACTIVE: 'Ese empleado ya tiene acceso a este negocio.',
+  EMPLOYEE_INVITATION_PENDING: 'Ya hay una invitación pendiente para ese email.',
+  EMPLOYEE_INVITATION_EXPIRED: 'La invitación venció. Pedí que te envíen una nueva.',
+  EMPLOYEE_INVITATION_NOT_FOUND: 'La invitación no existe o ya fue utilizada.',
+  EMPLOYEE_INVITATION_ROLE_CONFLICT: 'Las cuentas de negocio no pueden aceptar invitaciones de empleado.',
+  OWNER_CANNOT_BE_REVOKED: 'No podés revocar el acceso del dueño del negocio.',
 }
 
 export class ApiError extends Error {

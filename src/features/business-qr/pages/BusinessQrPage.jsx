@@ -3,6 +3,7 @@ import { useEffect, useMemo } from 'react'
 import { Download, Printer, RefreshCw } from 'lucide-react'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
@@ -81,11 +82,7 @@ export function BusinessQrPage() {
           <div className="grid gap-5 p-6">
             {!canOperate && <BusinessNotOperatingNotice status={businessStatus} />}
 
-            {canOperate && qrQuery.isError && (
-              <p className="text-sm font-normal text-espera-danger" role="alert">
-                No pudimos cargar el QR de tu negocio.
-              </p>
-            )}
+            {canOperate && qrQuery.isError && <FormError>No pudimos cargar el QR de tu negocio.</FormError>}
 
             {canOperate && qrQuery.data && (
               <>
@@ -144,9 +141,9 @@ export function BusinessQrPage() {
                 </div>
 
                 {regenerateMutation.isError && (
-                  <p className="text-sm font-normal text-espera-danger" role="alert">
+                  <FormError>
                     {regenerateMutation.error?.message ?? 'No pudimos regenerar el QR. Intentá nuevamente.'}
-                  </p>
+                  </FormError>
                 )}
                 {regenerateMutation.isSuccess && (
                   <p className="text-sm font-normal text-espera-text-muted" role="status">

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { PlanLimitExceededNotice } from '../../../shared/ui/PlanLimitExceededNotice.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
@@ -83,11 +84,7 @@ export function QueuesControl({ businessId }) {
         </ul>
       )}
 
-      {queuesQuery.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar las colas.
-        </p>
-      )}
+      {queuesQuery.isError && <FormError>No pudimos cargar las colas.</FormError>}
 
       {queuesQuery.data && queuesQuery.data.length > maxQueuesPerBusiness && (
         <PlanLimitExceededNotice count={queuesQuery.data.length} label="colas" limit={maxQueuesPerBusiness} />
@@ -133,9 +130,7 @@ export function QueuesControl({ businessId }) {
       )}
 
       {toggleMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {toggleMutation.error?.message ?? 'No pudimos actualizar la cola.'}
-        </p>
+        <FormError>{toggleMutation.error?.message ?? 'No pudimos actualizar la cola.'}</FormError>
       )}
 
       {canOperate && !isAtQueueLimit && (
@@ -162,9 +157,9 @@ export function QueuesControl({ businessId }) {
           </form>
 
           {createMutation.isError && (
-            <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
-              {createMutation.error?.message ?? 'No pudimos crear la cola. Intentá nuevamente.'}
-            </p>
+            <div className="mt-3">
+              <FormError>{createMutation.error?.message ?? 'No pudimos crear la cola. Intentá nuevamente.'}</FormError>
+            </div>
           )}
           {createMutation.isSuccess && (
             <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
@@ -69,9 +70,9 @@ export function BusinessQueueHistoryPage() {
         <div className="min-w-0 rounded-lg border border-espera-border bg-espera-surface">
           {metricsQuery.isLoading && <MetricsTableSkeleton />}
           {metricsQuery.isError && (
-            <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-              No pudimos cargar las métricas.
-            </p>
+            <div className="p-5">
+              <FormError>No pudimos cargar las métricas.</FormError>
+            </div>
           )}
           {metricsQuery.data && <QueueMetricsSummary date={date} metrics={metricsQuery.data} />}
         </div>
@@ -84,9 +85,9 @@ export function BusinessQueueHistoryPage() {
           </div>
           {historyQuery.isLoading && <HistoryRowsSkeleton />}
           {historyQuery.isError && (
-            <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-              No pudimos cargar el historial.
-            </p>
+            <div className="p-5">
+              <FormError>No pudimos cargar el historial.</FormError>
+            </div>
           )}
           {historyQuery.data && <QueueHistoryTable items={historyQuery.data} />}
         </div>

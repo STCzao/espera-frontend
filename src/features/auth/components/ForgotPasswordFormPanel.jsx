@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 
@@ -49,23 +50,9 @@ export function ForgotPasswordFormPanel({ form, forgotMutation, onSubmit, reduce
           <FormError>No pudimos procesar la solicitud. Probá de nuevo en unos minutos.</FormError>
         )}
 
-        <button
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-espera-border bg-espera-surface px-4 font-semibold text-espera-purple transition-colors hover:bg-espera-purple-soft focus:outline-none focus:ring-4 focus:ring-espera-purple-soft disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={isBusy}
-          type="submit"
-        >
-          {isBusy ? (
-            <>
-              <Loader2 className="animate-spin" size={18} aria-hidden="true" />
-              Enviando
-            </>
-          ) : (
-            <>
-              Enviar enlace de recuperación
-              <ArrowRight size={18} aria-hidden="true" />
-            </>
-          )}
-        </button>
+        <FormButton icon={ArrowRight} isPending={isBusy} pendingLabel="Enviando">
+          Enviar enlace de recuperación
+        </FormButton>
 
         <p className="text-center text-sm text-espera-text-muted">
           <Link className="font-semibold text-espera-purple underline-offset-4 hover:underline" to="/login">

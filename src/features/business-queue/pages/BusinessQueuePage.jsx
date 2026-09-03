@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { LiveIndicator } from '../../../shared/ui/LiveIndicator.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
@@ -183,9 +184,9 @@ export function BusinessQueuePage() {
               <>
                 {statusQuery.isLoading && <HeroSkeleton />}
                 {statusQuery.isError && (
-                  <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-                    No pudimos cargar el estado de la cola.
-                  </p>
+                  <div className="p-5">
+                    <FormError>No pudimos cargar el estado de la cola.</FormError>
+                  </div>
                 )}
 
                 {data && (
@@ -254,9 +255,11 @@ export function BusinessQueuePage() {
                       </div>
 
                       {callNextMutation.isError && (
-                        <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
-                          {callNextMutation.error?.message ?? 'No pudimos llamar al siguiente turno.'}
-                        </p>
+                        <div className="mt-3">
+                          <FormError>
+                            {callNextMutation.error?.message ?? 'No pudimos llamar al siguiente turno.'}
+                          </FormError>
+                        </div>
                       )}
                       {callNextMutation.isSuccess && (
                         <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">
@@ -295,17 +298,17 @@ export function BusinessQueuePage() {
           <div className="border-b border-espera-border p-4">
             <ManualTurnForm mutation={manualTurnMutation} />
             {manualTurnMutation.isError && (
-              <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-                {manualTurnMutation.error?.message ?? 'No pudimos agregar el turno.'}
-              </p>
+              <div className="mt-2">
+                <FormError>{manualTurnMutation.error?.message ?? 'No pudimos agregar el turno.'}</FormError>
+              </div>
             )}
           </div>
 
           {listQuery.isLoading && <TurnRowsSkeleton />}
           {listQuery.isError && (
-            <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-              No pudimos cargar la lista de turnos.
-            </p>
+            <div className="p-5">
+              <FormError>No pudimos cargar la lista de turnos.</FormError>
+            </div>
           )}
           {listQuery.data && (
             <QueueTurnList
@@ -319,24 +322,26 @@ export function BusinessQueuePage() {
             />
           )}
           {cancelTurnMutation.isError && (
-            <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-              {cancelTurnMutation.error?.message ?? 'No pudimos cancelar el turno.'}
-            </p>
+            <div className="border-t border-espera-border p-4">
+              <FormError>{cancelTurnMutation.error?.message ?? 'No pudimos cancelar el turno.'}</FormError>
+            </div>
           )}
           {attendTurnMutation.isError && (
-            <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-              {attendTurnMutation.error?.message ?? 'No pudimos actualizar el turno.'}
-            </p>
+            <div className="border-t border-espera-border p-4">
+              <FormError>{attendTurnMutation.error?.message ?? 'No pudimos actualizar el turno.'}</FormError>
+            </div>
           )}
           {redirectTurnMutation.isError && (
-            <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-              {redirectTurnMutation.error?.message ?? 'No pudimos derivar el turno.'}
-            </p>
+            <div className="border-t border-espera-border p-4">
+              <FormError>{redirectTurnMutation.error?.message ?? 'No pudimos derivar el turno.'}</FormError>
+            </div>
           )}
           {markNoShowMutation.isError && (
-            <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-              {markNoShowMutation.error?.message ?? 'No pudimos marcar el turno como ausente.'}
-            </p>
+            <div className="border-t border-espera-border p-4">
+              <FormError>
+                {markNoShowMutation.error?.message ?? 'No pudimos marcar el turno como ausente.'}
+              </FormError>
+            </div>
           )}
         </div>
 
