@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
@@ -112,7 +113,9 @@ export function BusinessProfilePage() {
               </FormSelect>
             </div>
             {categoriesQuery.isError && (
-              <span className="-mt-3 text-xs font-normal text-espera-danger">No pudimos cargar las categorías.</span>
+              <div className="-mt-3">
+                <FormError>No pudimos cargar las categorías.</FormError>
+              </div>
             )}
 
             <FormField
@@ -144,9 +147,7 @@ export function BusinessProfilePage() {
             )}
 
             {updateMutation.isError && (
-              <p className="text-sm font-normal text-espera-danger" role="alert">
-                {updateMutation.error?.message ?? 'No pudimos guardar los cambios. Intentá nuevamente.'}
-              </p>
+              <FormError>{updateMutation.error?.message ?? 'No pudimos guardar los cambios. Intentá nuevamente.'}</FormError>
             )}
             {updateMutation.isSuccess && (
               <p className="text-sm font-normal text-espera-text-muted" role="status">

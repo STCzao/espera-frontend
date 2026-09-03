@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -51,9 +52,9 @@ export function PendingOrganizationsPanel() {
 
   if (pendingQuery.isError) {
     return (
-      <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-        No pudimos cargar las organizaciones pendientes.
-      </p>
+      <div className="p-5">
+        <FormError>No pudimos cargar las organizaciones pendientes.</FormError>
+      </div>
     )
   }
 
@@ -108,9 +109,9 @@ export function PendingOrganizationsPanel() {
       </ul>
 
       {approveMutation.isError && (
-        <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-          {approveMutation.error?.message ?? 'No pudimos aprobar la organización.'}
-        </p>
+        <div className="border-t border-espera-border p-4">
+          <FormError>{approveMutation.error?.message ?? 'No pudimos aprobar la organización.'}</FormError>
+        </div>
       )}
 
       <ConfirmDialog
@@ -139,15 +140,16 @@ export function PendingOrganizationsPanel() {
         <textarea
           className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id="reject-organization-reason"
+          maxLength={500}
           onChange={(event) => setRejectReason(event.target.value)}
           rows={3}
           value={rejectReason}
         />
       </ConfirmDialog>
       {rejectMutation.isError && (
-        <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-          {rejectMutation.error?.message ?? 'No pudimos rechazar la organización.'}
-        </p>
+        <div className="border-t border-espera-border p-4">
+          <FormError>{rejectMutation.error?.message ?? 'No pudimos rechazar la organización.'}</FormError>
+        </div>
       )}
     </>
   )

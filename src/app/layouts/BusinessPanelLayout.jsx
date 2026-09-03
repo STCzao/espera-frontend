@@ -7,6 +7,7 @@ import { businessOnboardingApi } from '../../features/business-onboarding/api/bu
 import { useCurrentBusinessStore } from '../../shared/business/currentBusinessStore.js'
 import { getPlanLimit } from '../../shared/business/planLimits.js'
 import { useSessionStore } from '../../shared/auth/sessionStore.js'
+import { Footer } from '../../shared/ui/Footer.jsx'
 
 const primaryNavItems = [
   { to: '.', label: 'Inicio', icon: Home, end: true },
@@ -196,7 +197,6 @@ export function BusinessPanelLayout() {
         <div className="panel-layout__content">
           {approvalStatus === 'pending' && (
             <div className="business-alert business-alert--warning" role="status">
-              <span className="business-alert__led" aria-hidden="true" />
               <strong>Tu negocio está pendiente de revisión.</strong>{' '}
               Podés corregir el perfil mientras esperás, pero invitar empleados, el QR, horarios, ventanillas,
               estado operativo y crear colas quedan disponibles recién cuando se apruebe.
@@ -216,6 +216,7 @@ export function BusinessPanelLayout() {
           )}
           <Outlet />
         </div>
+        <Footer className="border-t border-espera-border" />
       </section>
     </main>
   )

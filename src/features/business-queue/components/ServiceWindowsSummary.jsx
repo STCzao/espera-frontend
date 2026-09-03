@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { businessQueueApi } from '../api/businessQueueApi.js'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 
 export function ServiceWindowsSummary({ onManage, queueId }) {
@@ -15,11 +16,7 @@ export function ServiceWindowsSummary({ onManage, queueId }) {
     <div className="flex h-full flex-col gap-3.5 p-5">
       <h3 className="text-sm font-bold text-espera-text">Ventanillas</h3>
 
-      {windowsQuery.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar las ventanillas.
-        </p>
-      )}
+      {windowsQuery.isError && <FormError>No pudimos cargar las ventanillas.</FormError>}
       {windows.length === 0 && !windowsQuery.isLoading && (
         <p className="text-sm text-espera-text-muted">Todavía no cargaste ninguna ventanilla.</p>
       )}

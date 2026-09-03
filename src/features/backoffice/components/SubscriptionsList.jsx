@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 import { SubscriptionPanel } from './SubscriptionPanel.jsx'
@@ -69,9 +70,7 @@ export function SubscriptionsList() {
   if (businessesQuery.isError) {
     return (
       <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar las suscripciones.
-        </p>
+        <FormError>No pudimos cargar las suscripciones.</FormError>
       </div>
     )
   }

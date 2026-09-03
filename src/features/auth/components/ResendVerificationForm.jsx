@@ -1,7 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
+import { FormField } from '../../../shared/ui/FormField.jsx'
 import { authApi } from '../api/authApi.js'
 import { resendVerificationSchema } from '../model/authSchemas.js'
 
@@ -19,20 +21,28 @@ export function ResendVerificationForm() {
   const resendMutation = useMutation({ mutationFn: authApi.resendVerification })
 
   if (resendMutation.isSuccess) {
-    return <p role="status">Te enviamos un nuevo enlace de verificación.</p>
+    return (
+      <p className="mt-8 text-sm text-espera-text-muted" role="status">
+        Te enviamos un nuevo enlace de verificación.
+      </p>
+    )
   }
 
   return (
-    <form className="form-stack" onSubmit={handleSubmit((values) => resendMutation.mutate(values))} noValidate>
-      <label>
-        Email
-        <input {...register('email')} autoComplete="email" type="email" />
-        {errors.email && <span className="form-error">{errors.email.message}</span>}
-      </label>
+    <form className="mt-8 grid gap-5" noValidate onSubmit={handleSubmit((values) => resendMutation.mutate(values))}>
+      <FormField
+        autoComplete="email"
+        error={errors.email?.message}
+        label="Email"
+        registration={register('email')}
+        type="email"
+      />
+
       {resendMutation.isError && <FormError>{genericErrorMessage}</FormError>}
-      <button className="button" disabled={resendMutation.isPending} type="submit">
-        {resendMutation.isPending ? 'Enviando…' : 'Reenviar verificación'}
-      </button>
+
+      <FormButton isPending={resendMutation.isPending} pendingLabel="Enviando…">
+        Reenviar verificación
+      </FormButton>
     </form>
   )
 }

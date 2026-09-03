@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -78,9 +79,9 @@ export function SubscriptionPanel({ organizationId }) {
 
   if (subscriptionQuery.isError) {
     return (
-      <p className="border-t border-espera-border px-5 py-4 text-sm font-normal text-espera-danger" role="alert">
-        {subscriptionQuery.error?.message ?? 'No pudimos cargar la suscripción.'}
-      </p>
+      <div className="border-t border-espera-border px-5 py-4">
+        <FormError>{subscriptionQuery.error?.message ?? 'No pudimos cargar la suscripción.'}</FormError>
+      </div>
     )
   }
 
@@ -150,14 +151,14 @@ export function SubscriptionPanel({ organizationId }) {
       </div>
 
       {activateMutation.isError && (
-        <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-          {activateMutation.error?.message ?? 'No pudimos activar la suscripción.'}
-        </p>
+        <div className="mt-2">
+          <FormError>{activateMutation.error?.message ?? 'No pudimos activar la suscripción.'}</FormError>
+        </div>
       )}
       {changePlanMutation.isError && (
-        <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-          {changePlanMutation.error?.message ?? 'No pudimos cambiar el plan.'}
-        </p>
+        <div className="mt-2">
+          <FormError>{changePlanMutation.error?.message ?? 'No pudimos cambiar el plan.'}</FormError>
+        </div>
       )}
 
       <ConfirmDialog
@@ -179,15 +180,16 @@ export function SubscriptionPanel({ organizationId }) {
         <textarea
           className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`cancel-subscription-reason-${organizationId}`}
+          maxLength={500}
           onChange={(event) => setCancelReason(event.target.value)}
           rows={2}
           value={cancelReason}
         />
       </ConfirmDialog>
       {cancelMutation.isError && (
-        <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-          {cancelMutation.error?.message ?? 'No pudimos cancelar la suscripción.'}
-        </p>
+        <div className="mt-2">
+          <FormError>{cancelMutation.error?.message ?? 'No pudimos cancelar la suscripción.'}</FormError>
+        </div>
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
@@ -90,9 +91,7 @@ export function OperationalStatusControl({ businessId, operationalStatus }) {
       )}
 
       {canOperate && updateMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {updateMutation.error?.message ?? 'No pudimos actualizar el estado. Intentá nuevamente.'}
-        </p>
+        <FormError>{updateMutation.error?.message ?? 'No pudimos actualizar el estado. Intentá nuevamente.'}</FormError>
       )}
       {updateMutation.isSuccess && (
         <p className="text-sm font-normal text-espera-text-muted" role="status">

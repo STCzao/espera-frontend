@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -27,9 +28,9 @@ export function PlatformStatsHeader() {
 
   if (statsQuery.isError) {
     return (
-      <p className="rounded-lg border border-espera-border bg-espera-surface p-5 text-sm font-normal text-espera-danger" role="alert">
-        No pudimos cargar las métricas de la plataforma.
-      </p>
+      <div className="rounded-lg border border-espera-border bg-espera-surface p-5">
+        <FormError>No pudimos cargar las métricas de la plataforma.</FormError>
+      </div>
     )
   }
 
