@@ -89,6 +89,14 @@ export function BusinessCreateFormPanel({
           registration={register('address')}
         />
 
+        <FormField
+          description="Se pide para aprobar tu negocio en el backoffice. Podés completarlo más tarde, pero cargarlo ahora evita demoras."
+          error={errors.legalId?.message}
+          label="CUIT/CUIL (opcional)"
+          placeholder="Ej: 30-12345678-9"
+          registration={register('legalId')}
+        />
+
         {createMutation.isError && (
           <FormError>
             {createMutation.error?.message ?? 'No pudimos crear el negocio. Intentá nuevamente.'}

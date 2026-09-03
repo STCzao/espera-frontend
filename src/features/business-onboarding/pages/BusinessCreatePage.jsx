@@ -15,6 +15,7 @@ const defaultValues = {
   categoryId: '',
   phone: '',
   address: '',
+  legalId: '',
 }
 
 export function BusinessCreatePage() {
@@ -33,7 +34,11 @@ export function BusinessCreatePage() {
   const categoriesQuery = useBusinessCategories()
 
   function handleSubmit(values) {
-    createMutation.mutate(values)
+    // The backend rejects an empty (but present) legalId outright — "Legal
+    // id cannot be empty." — since it only treats the field as optional
+    // when it's missing entirely. Blank stays blank on screen; it just
+    // doesn't get sent as `""`.
+    createMutation.mutate({ ...values, legalId: values.legalId?.trim() || undefined })
   }
 
   return (
