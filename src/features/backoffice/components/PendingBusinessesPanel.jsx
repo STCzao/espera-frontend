@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useBusinessCategories } from '../../business-onboarding/hooks/useBusinessCategories.js'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -44,9 +45,9 @@ export function PendingBusinessesPanel() {
 
   if (pendingQuery.isError) {
     return (
-      <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-        No pudimos cargar los negocios pendientes.
-      </p>
+      <div className="p-5">
+        <FormError>No pudimos cargar los negocios pendientes.</FormError>
+      </div>
     )
   }
 
@@ -128,9 +129,9 @@ function BusinessReviewPanel({ businessId }) {
 
   if (reviewQuery.isError) {
     return (
-      <p className="border-t border-espera-border px-5 py-4 text-sm font-normal text-espera-danger" role="alert">
-        No pudimos cargar el detalle de este negocio.
-      </p>
+      <div className="border-t border-espera-border px-5 py-4">
+        <FormError>No pudimos cargar el detalle de este negocio.</FormError>
+      </div>
     )
   }
 
@@ -146,7 +147,6 @@ function BusinessReviewPanel({ businessId }) {
 
       {alerts.length > 0 && (
         <div className="business-alert business-alert--warning mt-3 flex items-start gap-2" role="status">
-          <span className="business-alert__led mt-1.5 shrink-0" aria-hidden="true" />
           <div className="space-y-1">
             {alerts.map((alert) => (
               <p className="m-0" key={alert}>
@@ -163,6 +163,7 @@ function BusinessReviewPanel({ businessId }) {
       <textarea
         className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
         id={`business-approval-note-${businessId}`}
+        maxLength={500}
         onChange={(event) => setNote(event.target.value)}
         rows={2}
         value={note}
@@ -190,9 +191,9 @@ function BusinessReviewPanel({ businessId }) {
       </div>
 
       {approveMutation.isError && (
-        <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-          {approveMutation.error?.message ?? 'No pudimos aprobar el negocio.'}
-        </p>
+        <div className="mt-2">
+          <FormError>{approveMutation.error?.message ?? 'No pudimos aprobar el negocio.'}</FormError>
+        </div>
       )}
 
       <ConfirmDialog
@@ -214,15 +215,16 @@ function BusinessReviewPanel({ businessId }) {
         <textarea
           className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`reject-business-reason-${businessId}`}
+          maxLength={500}
           onChange={(event) => setRejectReason(event.target.value)}
           rows={3}
           value={rejectReason}
         />
       </ConfirmDialog>
       {rejectMutation.isError && (
-        <p className="mt-2 text-sm font-normal text-espera-danger" role="alert">
-          {rejectMutation.error?.message ?? 'No pudimos rechazar el negocio.'}
-        </p>
+        <div className="mt-2">
+          <FormError>{rejectMutation.error?.message ?? 'No pudimos rechazar el negocio.'}</FormError>
+        </div>
       )}
     </div>
   )

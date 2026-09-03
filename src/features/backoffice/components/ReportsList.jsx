@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -82,9 +83,9 @@ export function ReportsList() {
       )}
 
       {reportsQuery.isError && (
-        <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar los reportes.
-        </p>
+        <div className="p-5">
+          <FormError>No pudimos cargar los reportes.</FormError>
+        </div>
       )}
 
       {reportsQuery.data && reportsQuery.data.length === 0 && (
@@ -182,7 +183,9 @@ function ReportRow({ report }) {
             businessReviewQuery.isLoading ? (
               <Skeleton className="mt-1 h-4 w-40" />
             ) : businessReviewQuery.isError ? (
-              <p className="mt-1 text-sm text-espera-danger">No pudimos resolver el negocio reportado.</p>
+              <div className="mt-1">
+                <FormError>No pudimos resolver el negocio reportado.</FormError>
+              </div>
             ) : (
               <p className="mt-1 text-sm text-espera-text">
                 {businessReviewQuery.data.business.name} ({businessReviewQuery.data.business.status})
@@ -256,15 +259,16 @@ function ReportRow({ report }) {
         <textarea
           className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id={`report-note-${report.id}`}
+          maxLength={500}
           onChange={(event) => setNote(event.target.value)}
           rows={3}
           value={note}
         />
       </ConfirmDialog>
       {activeMutation.isError && (
-        <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-          {activeMutation.error?.message ?? 'No pudimos actualizar el reporte.'}
-        </p>
+        <div className="border-t border-espera-border p-4">
+          <FormError>{activeMutation.error?.message ?? 'No pudimos actualizar el reporte.'}</FormError>
+        </div>
       )}
     </li>
   )

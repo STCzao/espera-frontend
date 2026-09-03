@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
@@ -75,15 +76,11 @@ export function BusinessHoursPage() {
             <WeeklyHoursEditor control={control} errors={errors} register={register} />
             <NonWorkingDaysEditor control={control} errors={errors} register={register} />
 
-            {hoursQuery.isError && (
-              <p className="text-sm font-normal text-espera-danger" role="alert">
-                No pudimos cargar los horarios guardados.
-              </p>
-            )}
+            {hoursQuery.isError && <FormError>No pudimos cargar los horarios guardados.</FormError>}
             {updateMutation.isError && (
-              <p className="text-sm font-normal text-espera-danger" role="alert">
+              <FormError>
                 {updateMutation.error?.message ?? 'No pudimos guardar los horarios. Intentá nuevamente.'}
-              </p>
+              </FormError>
             )}
             {updateMutation.isSuccess && (
               <p className="text-sm font-normal text-espera-text-muted" role="status">

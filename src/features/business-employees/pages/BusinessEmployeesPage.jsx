@@ -5,12 +5,14 @@ import { useForm } from 'react-hook-form'
 import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessEmployeesApi } from '../api/businessEmployeesApi.js'
 import { EmployeeList } from '../components/EmployeeList.jsx'
+import { PendingInvitationList } from '../components/PendingInvitationList.jsx'
 import { inviteEmployeeSchema } from '../model/businessEmployeesSchemas.js'
 
 export function BusinessEmployeesPage() {
@@ -19,10 +21,17 @@ export function BusinessEmployeesPage() {
   const canOperate = useBusinessCanOperate()
   const queryClient = useQueryClient()
   const [employeeToRevoke, setEmployeeToRevoke] = useState(null)
+  const [invitationToCancel, setInvitationToCancel] = useState(null)
 
   const employeesQuery = useQuery({
     queryKey: ['business-employees', businessId],
     queryFn: () => businessEmployeesApi.list(businessId),
+    enabled: Boolean(businessId),
+  })
+
+  const pendingInvitationsQuery = useQuery({
+    queryKey: ['business-employee-invitations', businessId],
+    queryFn: () => businessEmployeesApi.listPendingInvitations(businessId),
     enabled: Boolean(businessId),
   })
 
@@ -35,7 +44,10 @@ export function BusinessEmployeesPage() {
 
   const inviteMutation = useMutation({
     mutationFn: (values) => businessEmployeesApi.invite(businessId, values),
-    onSuccess: () => reset({ email: '' }),
+    onSuccess: () => {
+      reset({ email: '' })
+      queryClient.invalidateQueries({ queryKey: ['business-employee-invitations', businessId] })
+    },
   })
 
   const revokeMutation = useMutation({
@@ -43,6 +55,14 @@ export function BusinessEmployeesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['business-employees', businessId] })
       setEmployeeToRevoke(null)
+    },
+  })
+
+  const cancelInvitationMutation = useMutation({
+    mutationFn: (invitationId) => businessEmployeesApi.cancelInvitation(businessId, invitationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['business-employee-invitations', businessId] })
+      setInvitationToCancel(null)
     },
   })
 
@@ -91,9 +111,11 @@ export function BusinessEmployeesPage() {
                 </form>
 
                 {inviteMutation.isError && (
-                  <p className="mt-3 text-sm font-normal text-espera-danger" role="alert">
-                    {inviteMutation.error?.message ?? 'No pudimos enviar la invitación. Intentá nuevamente.'}
-                  </p>
+                  <div className="mt-3">
+                    <FormError>
+                      {inviteMutation.error?.message ?? 'No pudimos enviar la invitación. Intentá nuevamente.'}
+                    </FormError>
+                  </div>
                 )}
                 {inviteMutation.isSuccess && (
                   <p className="mt-3 text-sm font-normal text-espera-text-muted" role="status">
@@ -112,16 +134,33 @@ export function BusinessEmployeesPage() {
               Empleados activos
             </span>
 
-            {employeesQuery.isError && (
-              <p className="text-sm font-normal text-espera-danger" role="alert">
-                No pudimos cargar los empleados.
-              </p>
-            )}
+            {employeesQuery.isError && <FormError>No pudimos cargar los empleados.</FormError>}
             {employeesQuery.data && (
               <EmployeeList
                 employees={employeesQuery.data.employees}
                 onRevoke={setEmployeeToRevoke}
                 revokingUserId={revokeMutation.isPending ? revokeMutation.variables : null}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="max-w-2xl rounded-lg border border-espera-border bg-espera-surface">
+          <div className="p-6">
+            <span className="mb-4 block font-mono text-[10.5px] font-bold uppercase tracking-[0.08em] text-espera-text-muted">
+              Invitaciones pendientes
+            </span>
+
+            {pendingInvitationsQuery.isError && (
+              <FormError>No pudimos cargar las invitaciones pendientes.</FormError>
+            )}
+            {pendingInvitationsQuery.data && (
+              <PendingInvitationList
+                cancelingInvitationId={
+                  cancelInvitationMutation.isPending ? cancelInvitationMutation.variables : null
+                }
+                invitations={pendingInvitationsQuery.data.invitations}
+                onCancel={setInvitationToCancel}
               />
             )}
           </div>
@@ -140,7 +179,31 @@ export function BusinessEmployeesPage() {
         onConfirm={() => employeeToRevoke && revokeMutation.mutate(employeeToRevoke.userId)}
         open={Boolean(employeeToRevoke)}
         title="¿Revocar el acceso de este empleado?"
-      />
+      >
+        {revokeMutation.isError && (
+          <FormError>
+            {revokeMutation.error?.message ?? 'No pudimos revocar el acceso. Intentá nuevamente.'}
+          </FormError>
+        )}
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        confirmLabel="Cancelar invitación"
+        description={
+          invitationToCancel ? `Se cancelará la invitación enviada a ${invitationToCancel.email}.` : ''
+        }
+        isConfirming={cancelInvitationMutation.isPending}
+        onCancel={() => setInvitationToCancel(null)}
+        onConfirm={() => invitationToCancel && cancelInvitationMutation.mutate(invitationToCancel.invitationId)}
+        open={Boolean(invitationToCancel)}
+        title="¿Cancelar esta invitación?"
+      >
+        {cancelInvitationMutation.isError && (
+          <FormError>
+            {cancelInvitationMutation.error?.message ?? 'No pudimos cancelar la invitación. Intentá nuevamente.'}
+          </FormError>
+        )}
+      </ConfirmDialog>
     </section>
   )
 }

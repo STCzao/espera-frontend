@@ -7,7 +7,6 @@ const messagesByStatus = {
 export function BusinessNotOperatingNotice({ status }) {
   return (
     <div className="business-alert business-alert--warning" role="status">
-      <span className="business-alert__led" aria-hidden="true" />
       {messagesByStatus[status] ?? 'Este negocio no está operando actualmente.'}
     </div>
   )

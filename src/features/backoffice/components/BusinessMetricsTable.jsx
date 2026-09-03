@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useBusinessCategories } from '../../business-onboarding/hooks/useBusinessCategories.js'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
 
@@ -185,9 +186,9 @@ export function BusinessMetricsTable() {
       )}
 
       {businessesQuery.isError && (
-        <p className="p-5 text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar los negocios.
-        </p>
+        <div className="p-5">
+          <FormError>No pudimos cargar los negocios.</FormError>
+        </div>
       )}
 
       {businesses && businesses.items.length === 0 && (
@@ -254,9 +255,9 @@ export function BusinessMetricsTable() {
       )}
 
       {reactivateMutation.isError && (
-        <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-          {reactivateMutation.error?.message ?? 'No pudimos reactivar el negocio.'}
-        </p>
+        <div className="border-t border-espera-border p-4">
+          <FormError>{reactivateMutation.error?.message ?? 'No pudimos reactivar el negocio.'}</FormError>
+        </div>
       )}
 
       {businesses && businesses.total > businesses.pageSize && (
@@ -311,15 +312,16 @@ export function BusinessMetricsTable() {
         <textarea
           className="mt-1.5 w-full rounded-lg border border-espera-border bg-espera-surface px-3 py-2 text-sm text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
           id="suspend-business-reason"
+          maxLength={500}
           onChange={(event) => setSuspendReason(event.target.value)}
           rows={3}
           value={suspendReason}
         />
       </ConfirmDialog>
       {suspendMutation.isError && (
-        <p className="border-t border-espera-border p-4 text-sm font-normal text-espera-danger" role="alert">
-          {suspendMutation.error?.message ?? 'No pudimos suspender el negocio.'}
-        </p>
+        <div className="border-t border-espera-border p-4">
+          <FormError>{suspendMutation.error?.message ?? 'No pudimos suspender el negocio.'}</FormError>
+        </div>
       )}
     </div>
   )

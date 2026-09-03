@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
 import { PlanLimitExceededNotice } from '../../../shared/ui/PlanLimitExceededNotice.jsx'
@@ -85,11 +86,7 @@ export function ServiceWindowManager({ queueId }) {
         <PlanLimitExceededNotice count={windows.length} label="ventanillas en esta cola" limit={maxServiceWindowsPerQueue} />
       )}
 
-      {windowsQuery.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          No pudimos cargar las ventanillas.
-        </p>
-      )}
+      {windowsQuery.isError && <FormError>No pudimos cargar las ventanillas.</FormError>}
 
       {windows.length === 0 && !windowsQuery.isLoading && (
         <p className="text-sm text-espera-text-muted">Todavía no cargaste ninguna ventanilla.</p>
@@ -180,19 +177,13 @@ export function ServiceWindowManager({ queueId }) {
 
       <ServiceWindowForm mutation={createMutation} />
       {createMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {createMutation.error?.message ?? 'No pudimos crear la ventanilla.'}
-        </p>
+        <FormError>{createMutation.error?.message ?? 'No pudimos crear la ventanilla.'}</FormError>
       )}
       {deleteMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {deleteMutation.error?.message ?? 'No pudimos eliminar la ventanilla.'}
-        </p>
+        <FormError>{deleteMutation.error?.message ?? 'No pudimos eliminar la ventanilla.'}</FormError>
       )}
       {toggleMutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {toggleMutation.error?.message ?? 'No pudimos actualizar la ventanilla.'}
-        </p>
+        <FormError>{toggleMutation.error?.message ?? 'No pudimos actualizar la ventanilla.'}</FormError>
       )}
 
       <ConfirmDialog
@@ -251,9 +242,7 @@ function ServiceWindowEditForm({ mutation, onCancel, window }) {
         <option value="technical">Técnica</option>
       </FormSelect>
       {mutation.isError && (
-        <p className="text-sm font-normal text-espera-danger" role="alert">
-          {mutation.error?.message ?? 'No pudimos guardar los cambios.'}
-        </p>
+        <FormError>{mutation.error?.message ?? 'No pudimos guardar los cambios.'}</FormError>
       )}
       <div className="flex gap-2">
         <FormButton isPending={mutation.isPending} pendingLabel="Guardando…" variant="solid">

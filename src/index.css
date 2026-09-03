@@ -292,7 +292,6 @@ a {
   margin-bottom: 24px;
 }
 
-.auth-card h1,
 .placeholder h1 {
   margin: 0;
   font-size: clamp(28px, 3vw, 42px);
@@ -309,25 +308,19 @@ a {
 }
 
 .page-header p,
-.auth-card p,
 .placeholder p {
   margin: 8px 0 0;
   color: var(--text-muted);
 }
 
-.auth-card,
 .placeholder {
   width: 100%;
-  max-width: 520px;
+  max-width: 760px;
   padding: 28px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
-}
-
-.placeholder {
-  max-width: 760px;
 }
 
 .status-list {
@@ -345,66 +338,11 @@ a {
   color: var(--text-muted);
 }
 
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 24px;
-}
-
-.button {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--accent);
-  color: white;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.button.secondary {
-  border-color: var(--border);
-  background: var(--surface);
-  color: var(--text);
-}
-
 .loading-screen {
   display: grid;
   min-height: 100svh;
   place-items: center;
   color: var(--text-muted);
-}
-
-.form-stack {
-  display: grid;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.form-stack label {
-  display: grid;
-  gap: 6px;
-  font-weight: 650;
-}
-
-.form-stack input,
-.form-stack select {
-  min-height: 44px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-}
-
-.form-error {
-  margin: 0;
-  color: var(--danger) !important;
 }
 
 .business-alert,
@@ -457,11 +395,30 @@ a {
   }
 }
 
-.queue-steps__progress {
-  animation: queue-progress 3.6s linear infinite;
+/* Chases the dots instead of both segments lighting up together: dot 1
+   peaks at 8–18% of the 3.6s cycle, dot 2 at ~41–51% (its own animation
+   starts 1.2s / 33% in), dot 3 at ~75–85% (2.4s / 67% in) — segment 1 fills
+   right after dot 1 peaks and finishes just as dot 2 peaks, segment 2 does
+   the same between dot 2 and dot 3. */
+.queue-steps__progress--1 {
+  animation: queue-progress-1 3.6s linear infinite;
+}
+
+.queue-steps__progress--2 {
+  animation: queue-progress-2 3.6s linear infinite;
 }
 
 .queue-steps__dot {
+  /* Also the resting look during items 2 and 3's `animation-delay` (1.2s /
+     2.4s, below): with `animation-fill-mode` defaulting to `none`, a
+     delayed animation applies NO styling at all until it actually starts —
+     the element shows this base value instead, not the keyframes' own 0%
+     state. Without it, opacity fell back to the UA default of 1 (fully
+     lit) for the whole delay, so every dot looked "active" from frame one
+     instead of just the first one, defeating the sequential chase. */
+  opacity: 0.6;
+  transform: scale(1);
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
   transition:
     opacity 200ms ease,
     transform 200ms ease,
@@ -470,63 +427,110 @@ a {
 
 .queue-steps__meta,
 .queue-steps__label {
+  /* Same `animation-delay` gap as the dot above. */
+  opacity: 0.52;
+  transform: translateY(0) scale(1);
   transition:
     color 200ms ease,
     opacity 200ms ease,
     transform 200ms ease;
 }
 
-.queue-steps__item--1 .queue-steps__dot,
+/* Split from a single shared animation: a glow (`box-shadow`) reads as a
+   soft halo on the round dot, but the exact same box-shadow on a text
+   `<span>` renders as an ugly rectangle around the word instead — text
+   gets its own keyframes with no box-shadow. */
+.queue-steps__item--1 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear infinite;
+}
 .queue-steps__item--1 .queue-steps__label,
 .queue-steps__item--1 .queue-steps__meta {
-  animation: queue-step-active 3.6s linear infinite;
+  animation: queue-step-active-text 3.6s linear infinite;
 }
 
-.queue-steps__item--2 .queue-steps__dot,
+.queue-steps__item--2 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear 1.2s infinite;
+}
 .queue-steps__item--2 .queue-steps__label,
 .queue-steps__item--2 .queue-steps__meta {
-  animation: queue-step-active 3.6s linear 1.2s infinite;
+  animation: queue-step-active-text 3.6s linear 1.2s infinite;
 }
 
-.queue-steps__item--3 .queue-steps__dot,
+.queue-steps__item--3 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear 2.4s infinite;
+}
 .queue-steps__item--3 .queue-steps__label,
 .queue-steps__item--3 .queue-steps__meta {
-  animation: queue-step-active 3.6s linear 2.4s infinite;
+  animation: queue-step-active-text 3.6s linear 2.4s infinite;
 }
 
-@keyframes queue-progress {
-  0% {
+@keyframes queue-progress-1 {
+  0%,
+  18% {
     transform: scaleX(0);
-    opacity: 0.35;
+    opacity: 0;
   }
-  88% {
+  41% {
     transform: scaleX(1);
-    opacity: 0.95;
+    opacity: 1;
   }
+  50%,
   100% {
     transform: scaleX(1);
     opacity: 0;
   }
 }
 
-@keyframes queue-step-active {
+@keyframes queue-progress-2 {
+  0%,
+  51% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  74% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  83%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes queue-step-active-dot {
+  0%,
+  26%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
+  }
+  8%,
+  18% {
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.75);
+  }
+}
+
+@keyframes queue-step-active-text {
   0%,
   26%,
   100% {
     opacity: 0.52;
     transform: translateY(0) scale(1);
-    box-shadow: none;
   }
   8%,
   18% {
     opacity: 1;
     transform: translateY(-2px) scale(1.12);
-    box-shadow: 0 0 24px rgba(255, 255, 255, 0.7);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .queue-steps__progress,
+  .queue-steps__progress--1,
+  .queue-steps__progress--2,
   .queue-steps__item--1 .queue-steps__dot,
   .queue-steps__item--1 .queue-steps__label,
   .queue-steps__item--1 .queue-steps__meta,
@@ -536,7 +540,8 @@ a {
   .queue-steps__item--3 .queue-steps__dot,
   .queue-steps__item--3 .queue-steps__label,
   .queue-steps__item--3 .queue-steps__meta,
-  .queue-steps.is-static .queue-steps__progress {
+  .queue-steps.is-static .queue-steps__progress--1,
+  .queue-steps.is-static .queue-steps__progress--2 {
     animation: none;
   }
 }
