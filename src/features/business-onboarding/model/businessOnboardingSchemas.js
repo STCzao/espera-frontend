@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidCuit } from '../../../shared/utils/cuit.js'
 
 export const createBusinessSchema = z.object({
   name: z
@@ -9,10 +10,14 @@ export const createBusinessSchema = z.object({
   categoryId: z.string().trim().uuid('Seleccioná una categoría.'),
   phone: z.string().trim().max(30, 'Máximo 30 caracteres.').optional(),
   address: z.string().trim().min(1, 'Ingresá la dirección.'),
-  // Optional on purpose, same as the backend (HU-2.5.5): the backoffice asks
-  // for it before approving, but registration isn't blocked without it —
-  // it can still be added later. No format check here either — the backend
-  // stores it as free text (a CUIT or the org's razón social), not a
-  // validated CUIT/CUIL number.
-  legalId: z.string().trim().max(50, 'Máximo 50 caracteres.').optional(),
+  // Mandatory as of the backend's HU-2.5.5 revision (2026-09-08) — a CUIT is
+  // a legal requirement for the Organization, so registration is now the
+  // gate that used to let it through unset. Checked against the same real
+  // check-digit algorithm as the backend so a typo surfaces here instead of
+  // a round-trip 400.
+  legalId: z
+    .string({ required_error: 'Ingresá el CUIT.' })
+    .trim()
+    .min(1, 'Ingresá el CUIT.')
+    .refine(isValidCuit, 'El CUIT no es válido.'),
 })
