@@ -23,10 +23,18 @@ const statusTagClass = {
 
 const planLabels = { basic: 'Basic', pro: 'Pro', premium: 'Premium' }
 
-const subscriptionStatusLabels = {
-  pending: 'Pendiente',
-  trial: 'Prueba',
-  active: 'Activa',
+// Mirrors CommercialState (espera-backend, organization/domain/CommercialState.ts)
+// — plan + subscriptionStatus combined into the one label an operator
+// actually needs ("is this real revenue?") instead of cross-referencing
+// two enums, same reasoning as the backend's own computeCommercialState.
+const commercialStateLabels = {
+  pending_approval: 'Pendiente de aprobación',
+  trialing_basic: 'Prueba Basic',
+  trialing_pro: 'Prueba Pro',
+  trialing_premium: 'Prueba Premium',
+  paying_basic: 'Pagando Basic',
+  paying_pro: 'Pagando Pro',
+  paying_premium: 'Pagando Premium',
   expired: 'Vencida',
   cancelled: 'Cancelada',
 }
@@ -35,7 +43,7 @@ const emptyFilters = {
   status: '',
   categoryId: '',
   subscriptionPlan: '',
-  subscriptionStatus: '',
+  commercialState: '',
 }
 
 function formatDate(isoDate) {
@@ -133,14 +141,14 @@ export function BusinessMetricsTable() {
             ))}
           </select>
         </FilterField>
-        <FilterField label="Suscripción">
+        <FilterField label="Estado comercial">
           <select
             className="h-9 rounded-lg border border-espera-border bg-espera-surface px-2.5 text-xs text-espera-text outline-none transition focus:border-espera-purple focus:ring-2 focus:ring-espera-purple-soft"
-            onChange={(event) => updateFilter('subscriptionStatus', event.target.value)}
-            value={filters.subscriptionStatus}
+            onChange={(event) => updateFilter('commercialState', event.target.value)}
+            value={filters.commercialState}
           >
-            <option value="">Todas</option>
-            {Object.entries(subscriptionStatusLabels).map(([value, label]) => (
+            <option value="">Todos</option>
+            {Object.entries(commercialStateLabels).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -211,9 +219,8 @@ export function BusinessMetricsTable() {
                   <p className="truncate text-sm font-semibold text-espera-text">{business.businessName}</p>
                   <p className="truncate text-xs text-espera-text-muted">
                     {categoryNameById.get(business.categoryId) ?? 'Categoría sin resolver'}
-                    {business.subscriptionPlan && ` · ${planLabels[business.subscriptionPlan] ?? business.subscriptionPlan}`}
-                    {business.subscriptionStatus &&
-                      ` (${subscriptionStatusLabels[business.subscriptionStatus] ?? business.subscriptionStatus})`}
+                    {business.commercialState &&
+                      ` · ${commercialStateLabels[business.commercialState] ?? business.commercialState}`}
                     {' · '}
                     alta {formatDate(business.createdAt)}
                   </p>
