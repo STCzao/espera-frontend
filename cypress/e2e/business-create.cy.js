@@ -9,7 +9,7 @@ describe('BusinessCreatePage - Crear negocio con cuenta existente', () => {
 
     cy.intercept('GET', '**/business/categories', {
       statusCode: 200,
-      body: { categories: [{ id: 'cat-uuid-123', name: 'Cafetería' }] },
+      body: { categories: [{ id: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f', name: 'Cafetería' }] },
     }).as('categories')
 
     cy.visit('/business/new')
@@ -35,39 +35,49 @@ describe('BusinessCreatePage - Crear negocio con cuenta existente', () => {
 
     cy.contains('button', /crear negocio/i).click()
 
-    cy.contains(/ingresá el nombre del negocio/i).should('be.visible')
+    cy.contains(/el nombre debe tener al menos 2 caracteres/i).should('be.visible')
     cy.contains(/seleccioná una categoría/i).should('be.visible')
     cy.contains(/ingresá la dirección/i).should('be.visible')
+    cy.contains(/ingresá el cuit/i).should('be.visible')
     cy.get('@create.all').should('have.length', 0)
   })
 
-  it('crea el negocio, refresca el token y redirige al panel cuando el backend responde ok', () => {
+  it('crea el negocio, relee la sesión (sin refresh de token) y redirige al panel', () => {
     authenticateVisit()
 
     cy.intercept('POST', '**/business', (request) => {
       expect(request.body).to.deep.equal({
         name: 'Cafe Espera',
-        categoryId: 'cat-uuid-123',
+        categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f',
         phone: '',
         address: 'Av. Corrientes 1234',
+        legalId: '20-12345678-6',
       })
 
       request.reply({ statusCode: 201, body: { businessSlug: 'cafe-espera', status: 'pending' } })
     }).as('create')
 
-    cy.intercept('POST', '**/auth/refresh-token', {
-      statusCode: 200,
-      body: { accessToken: 'access-token-456', refreshToken: 'refresh-token-456' },
-    }).as('refresh')
+    cy.intercept('POST', '**/auth/refresh-token').as('refresh')
 
     cy.get('input[name="name"]').type('Cafe Espera')
-    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('select[name="categoryId"]').select('3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f')
     cy.get('input[name="address"]').type('Av. Corrientes 1234')
+    cy.get('input[name="legalId"]').type('20-12345678-6')
+
+    // Después del alta, /auth/me ya devuelve el rol nuevo leído de la base.
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: {
+        user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin', approvalStatus: 'pending' },
+      },
+    }).as('meAfterCreate')
+
     cy.contains('button', /crear negocio/i).click()
 
     cy.wait('@create')
-    cy.wait('@refresh')
+    cy.wait('@meAfterCreate')
     cy.url().should('include', '/panel/business/cafe-espera')
+    cy.get('@refresh.all').should('have.length', 0)
   })
 
   it('muestra error del backend sin perder el formulario', () => {
@@ -79,8 +89,9 @@ describe('BusinessCreatePage - Crear negocio con cuenta existente', () => {
     }).as('create')
 
     cy.get('input[name="name"]').type('Cafe Espera')
-    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('select[name="categoryId"]').select('3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f')
     cy.get('input[name="address"]').type('Av. Corrientes 1234')
+    cy.get('input[name="legalId"]').type('20-12345678-6')
     cy.contains('button', /crear negocio/i).click()
 
     cy.wait('@create')
@@ -95,7 +106,7 @@ describe('BusinessCreatePage - Crear negocio con cuenta existente', () => {
     }).as('me')
     cy.intercept('GET', '**/business/categories', {
       statusCode: 200,
-      body: { categories: [{ id: 'cat-uuid-123', name: 'Cafetería' }] },
+      body: { categories: [{ id: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f', name: 'Cafetería' }] },
     }).as('categories')
     cy.intercept('GET', '**/business/me', {
       statusCode: 200,

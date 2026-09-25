@@ -7,7 +7,9 @@ import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { FormSelect } from '../../../shared/ui/FormSelect.jsx'
+import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperatingNotice.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useAccountPendingApproval } from '../../../shared/auth/useAccountPendingApproval.js'
 import { businessOnboardingApi } from '../../business-onboarding/api/businessOnboardingApi.js'
 import { useBusinessCategories } from '../../business-onboarding/hooks/useBusinessCategories.js'
 import { businessProfileApi } from '../api/businessProfileApi.js'
@@ -25,6 +27,7 @@ const defaultValues = {
 export function BusinessProfilePage() {
   const { businessSlug } = useParams()
   const queryClient = useQueryClient()
+  const isAccountPending = useAccountPendingApproval()
 
   const businessesQuery = useQuery({
     queryKey: ['business-me'],
@@ -59,7 +62,10 @@ export function BusinessProfilePage() {
 
   const categoriesQuery = useBusinessCategories()
   const selectedCategoryId = useWatch({ control, name: 'categoryId' })
-  const categoryConfigQuery = useCategoryConfig(selectedCategoryId)
+  // PATCH /profile and the category config both need an approved account
+  // (403 ACCOUNT_PENDING_APPROVAL otherwise); the form stays readable so the
+  // owner can check what they submitted while the review is pending.
+  const categoryConfigQuery = useCategoryConfig(selectedCategoryId, { enabled: !isAccountPending })
 
   const updateMutation = useMutation({
     mutationFn: (values) => businessProfileApi.updateProfile(currentBusiness.id, values),
@@ -155,11 +161,15 @@ export function BusinessProfilePage() {
               </p>
             )}
 
-            <div className="max-w-[220px]">
-              <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
-                Guardar cambios
-              </FormButton>
-            </div>
+            {isAccountPending ? (
+              <BusinessNotOperatingNotice status="pending" />
+            ) : (
+              <div className="max-w-[220px]">
+                <FormButton isPending={updateMutation.isPending} pendingLabel="Guardando…" variant="solid">
+                  Guardar cambios
+                </FormButton>
+              </div>
+            )}
           </form>
         </div>
       </div>

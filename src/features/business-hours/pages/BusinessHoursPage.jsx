@@ -6,6 +6,7 @@ import { BusinessNotOperatingNotice } from '../../../shared/ui/BusinessNotOperat
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useAccountPendingApproval } from '../../../shared/auth/useAccountPendingApproval.js'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessHoursApi } from '../api/businessHoursApi.js'
@@ -22,12 +23,13 @@ export function BusinessHoursPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
   const businessStatus = useCurrentBusinessStore((state) => state.status)
   const canOperate = useBusinessCanOperate()
+  const isAccountPending = useAccountPendingApproval()
   const queryClient = useQueryClient()
 
   const hoursQuery = useQuery({
     queryKey: ['business-hours', businessId],
     queryFn: () => businessHoursApi.getHours(businessId),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId) && !isAccountPending,
   })
 
   const {

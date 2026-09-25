@@ -52,9 +52,9 @@ export function BusinessPanelLayout() {
   const name = useCurrentBusinessStore((state) => state.name)
   const status = useCurrentBusinessStore((state) => state.status)
   // No mostramos email ni un rótulo genérico de rol como relleno — hasta que
-  // el backend exponga el nombre real (GET /auth/me hoy solo devuelve lo que
-  // trae el JWT: id/email/role/approvalStatus, sin firstName/lastName), el
-  // chip de usuario simplemente no se muestra.
+  // el backend exponga el nombre real (GET /auth/me hoy devuelve id/email/
+  // role/approvalStatus leídos de la base, sin firstName/lastName), el chip
+  // de usuario simplemente no se muestra.
   const userFirstName = useSessionStore((state) => state.user?.firstName)
   const plan = useCurrentBusinessStore((state) => state.plan)
   const [isNavOpen, setIsNavOpen] = useState(false)
