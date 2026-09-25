@@ -124,6 +124,102 @@ describe('HU-4.2 - Sacar turno sin la app (web ligera)', () => {
     cy.contains('Tu turno ya fue atendido').should('be.visible')
   })
 
+  function mockWaitingTurn(overrides = {}) {
+    return {
+      turnId: 'turn_4',
+      queueId: 'queue_1',
+      displayNumber: 'A-010',
+      status: 'waiting',
+      position: 2,
+      estimatedWaitMinutes: 8,
+      serviceWindowId: null,
+      ...overrides,
+    }
+  }
+
+  it('deja salir de la fila con confirmación y muestra el turno cancelado', () => {
+    let statusCallCount = 0
+    cy.intercept('GET', '**/queue/guest-turns/turn_4', (request) => {
+      statusCallCount += 1
+      request.reply({
+        statusCode: 200,
+        body: statusCallCount === 1 ? mockWaitingTurn() : mockWaitingTurn({ status: 'cancelled', position: 0 }),
+      })
+    }).as('turnStatus')
+    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', {
+      statusCode: 200,
+      body: { cancelled: true, turnId: 'turn_4' },
+    }).as('cancelGuestTurn')
+
+    cy.visit('/q/turn/turn_4')
+    cy.wait('@turnStatus')
+
+    cy.contains('button', /salir de la fila/i).click()
+    cy.contains('¿Salir de la fila?').should('be.visible')
+    cy.contains('button', /seguir en la fila/i).click()
+    cy.get('@cancelGuestTurn.all').should('have.length', 0)
+
+    cy.contains('button', /salir de la fila/i).click()
+    cy.get('[role="alertdialog"]').contains('button', /salir de la fila/i).click()
+
+    cy.wait('@cancelGuestTurn')
+    cy.contains('Este turno fue cancelado.').should('be.visible')
+    cy.contains('button', /salir de la fila/i).should('not.exist')
+  })
+
+  it('si lo llamaron justo antes de cancelar, muestra el error y el estado nuevo', () => {
+    let statusCallCount = 0
+    cy.intercept('GET', '**/queue/guest-turns/turn_4', (request) => {
+      statusCallCount += 1
+      request.reply({
+        statusCode: 200,
+        body: statusCallCount === 1 ? mockWaitingTurn() : mockWaitingTurn({ status: 'called', position: 0 }),
+      })
+    }).as('turnStatus')
+    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', {
+      statusCode: 409,
+      body: { message: 'Turn cannot be cancelled.', code: 'TURN_NOT_CANCELLABLE' },
+    }).as('cancelGuestTurn')
+
+    cy.visit('/q/turn/turn_4')
+    cy.wait('@turnStatus')
+
+    cy.contains('button', /salir de la fila/i).click()
+    cy.get('[role="alertdialog"]').contains('button', /salir de la fila/i).click()
+
+    cy.wait('@cancelGuestTurn')
+    cy.contains('¡Es tu turno!').should('be.visible')
+  })
+
+  it('muestra un estado propio cuando el turno quedó ausente (no_show)', () => {
+    cy.intercept('GET', '**/queue/guest-turns/turn_4', {
+      statusCode: 200,
+      body: mockWaitingTurn({ status: 'no_show', position: 0 }),
+    }).as('turnStatus')
+
+    cy.visit('/q/turn/turn_4')
+    cy.wait('@turnStatus')
+
+    cy.contains('Te llamamos y no te encontramos').should('be.visible')
+    cy.contains('Ya estás en la fila.').should('not.exist')
+  })
+
+  it('avisa que la fila online está completa (409 GUEST_TURN_LIMIT_REACHED)', () => {
+    mockResolveQr()
+    cy.intercept('POST', '**/queue/guest-turns', {
+      statusCode: 409,
+      body: { message: 'Guest turn limit reached.', code: 'GUEST_TURN_LIMIT_REACHED' },
+    }).as('createGuestTurn')
+
+    cy.visit('/q/token-abc123')
+    cy.wait('@resolveQr')
+    cy.get('input[name="guestName"]').type('Juan Pérez')
+    cy.contains('button', /sacar turno/i).click()
+
+    cy.wait('@createGuestTurn')
+    cy.contains('Acercate al mostrador').should('be.visible')
+  })
+
   it('muestra un error cuando el turno no existe', () => {
     cy.intercept('GET', '**/queue/guest-turns/turn-inexistente', {
       statusCode: 404,
