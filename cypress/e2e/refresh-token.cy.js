@@ -55,6 +55,69 @@ describe('HU-1.5 - Refresh Token', () => {
     cy.url().should('include', '/login')
   })
 
+  it('reintenta el refresh ante 409 REFRESH_TOKEN_ROTATED (otra pestaña rotó la cookie) sin cerrar la sesión', () => {
+    let meCallCount = 0
+    let refreshCallCount = 0
+
+    cy.intercept('GET', '**/auth/me', (request) => {
+      meCallCount += 1
+
+      if (meCallCount === 1) {
+        request.reply({ statusCode: 401, body: { message: 'Missing or invalid bearer token.' } })
+        return
+      }
+
+      request.reply({
+        statusCode: 200,
+        body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
+      })
+    }).as('me')
+
+    cy.intercept('POST', '**/auth/refresh-token', (request) => {
+      refreshCallCount += 1
+
+      if (refreshCallCount === 1) {
+        request.reply({
+          statusCode: 409,
+          body: {
+            message: 'This session was just refreshed elsewhere. Retry with the current token.',
+            code: 'REFRESH_TOKEN_ROTATED',
+          },
+        })
+        return
+      }
+
+      request.reply({ statusCode: 200, body: { accessToken: 'new-access-token' } })
+    }).as('refresh')
+
+    cy.visit('/panel/business/biz_1/profile')
+
+    cy.wait('@me')
+    cy.wait('@refresh')
+    cy.wait('@refresh')
+    cy.wait('@me')
+    cy.contains('h1', /perfil del negocio/i).should('be.visible')
+    cy.url().should('include', '/panel/business/biz_1/profile')
+  })
+
+  it('cierra la sesión y vuelve a /login si el backend responde 403 ACCOUNT_BLOCKED en medio de la sesión', () => {
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: { user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin' } },
+    }).as('me')
+
+    cy.intercept('GET', '**/business/me', {
+      statusCode: 403,
+      body: { message: 'Your account has been blocked.', code: 'ACCOUNT_BLOCKED' },
+    }).as('businessMe')
+
+    cy.visit('/panel/business/biz_1/profile')
+
+    cy.wait('@me')
+    cy.wait('@businessMe')
+    cy.url().should('include', '/login')
+  })
+
   it('no persiste el accessToken en localStorage tras un login exitoso', () => {
     cy.intercept('POST', '**/auth/login', {
       statusCode: 200,
