@@ -120,7 +120,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     // Fija el reloj para que "10:20" se traduzca de forma determinística a
     // 20 minutos desde ahora — el empleado tipea la hora que le dijeron por
     // teléfono, no un número de minutos.
-    cy.clock(new Date('2026-08-20T10:00:00'))
+    cy.clock(new Date('2026-08-20T10:00:00'), ['Date'])
 
     authenticateVisit()
 
@@ -320,7 +320,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
 
     cy.get('button[aria-label="Marcar ausente a A-002"]').click()
     cy.contains('¿Marcar este turno como ausente?').should('be.visible')
-    cy.contains('button', /^marcar ausente$/i).click()
+    cy.get('[role="alertdialog"]').contains('button', /^marcar ausente$/i).click()
 
     cy.wait('@markNoShow')
     cy.contains('Cliente Llamado').should('not.exist')
@@ -335,7 +335,7 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
     }).as('markNoShow')
 
     cy.get('button[aria-label="Marcar ausente a A-002"]').click()
-    cy.contains('button', /^marcar ausente$/i).click()
+    cy.get('[role="alertdialog"]').contains('button', /^marcar ausente$/i).click()
 
     cy.wait('@markNoShow')
     cy.contains('Ese turno ya no está en estado "llamado".').should('be.visible')
