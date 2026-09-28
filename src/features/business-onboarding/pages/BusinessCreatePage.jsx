@@ -1,9 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useReducedMotion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { authApi } from '../../auth/api/authApi.js'
+import { sessionQueryKey } from '../../auth/hooks/useSessionBootstrap.js'
 import { businessOnboardingApi } from '../api/businessOnboardingApi.js'
 import { BusinessCreateFormPanel } from '../components/BusinessCreateFormPanel.jsx'
 import { BusinessCreateVisualScene } from '../components/BusinessCreateVisualScene.jsx'
@@ -21,13 +21,16 @@ const defaultValues = {
 export function BusinessCreatePage() {
   const shouldReduceMotion = useReducedMotion()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const form = useForm({ defaultValues, resolver: zodResolver(createBusinessSchema) })
   const createMutation = useMutation({
     mutationFn: businessOnboardingApi.createBusiness,
     onSuccess: async ({ businessSlug }) => {
-      // The JWT still says role:user at this point; refresh it now so it
-      // reflects business_admin without waiting for the user's next login.
-      await authApi.refreshToken()
+      // The backend applies the new role (business_admin, pending approval)
+      // on the very next request — no token refresh needed. The cached
+      // session user still says role:user though, and the panel gates on
+      // role/approvalStatus, so re-read /auth/me before entering it.
+      await queryClient.invalidateQueries({ queryKey: sessionQueryKey })
       navigate(`/panel/business/${businessSlug}`, { replace: true })
     },
   })

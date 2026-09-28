@@ -10,8 +10,16 @@ import { QueueMetricsSummary } from '../components/QueueMetricsSummary.jsx'
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
 
+// The backend stamps turns and scopes history/metrics by Argentina's calendar
+// day (todayUTC() in espera-backend). toISOString() would give the UTC date,
+// which from 21:00 local time on is already tomorrow — "today" would come back
+// empty for the last hours of the business day. en-CA formats as YYYY-MM-DD.
+const argentinaDateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/Argentina/Buenos_Aires',
+})
+
 function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  return argentinaDateFormatter.format(new Date())
 }
 
 export function BusinessQueueHistoryPage() {

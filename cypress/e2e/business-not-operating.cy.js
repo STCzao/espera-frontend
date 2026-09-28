@@ -103,3 +103,53 @@ describe('Bugfix business-status-guards — el panel avisa cuando el negocio no 
     cy.contains('Caja principal').should('be.visible')
   })
 })
+
+describe('Alineación backend — cuenta de negocio pendiente de aprobación (403 ACCOUNT_PENDING_APPROVAL)', () => {
+  function mockPendingAccount() {
+    mockSession('pending')
+    cy.intercept('GET', '**/auth/me', {
+      statusCode: 200,
+      body: {
+        user: { id: 'user_1', email: 'santi@example.com', role: 'business_admin', approvalStatus: 'pending' },
+      },
+    }).as('me')
+  }
+
+  it('Perfil: muestra los datos pero no ofrece guardar ni pide la config de categoría', () => {
+    mockPendingAccount()
+    cy.intercept('GET', '**/business/categories', {
+      statusCode: 200,
+      body: { categories: [{ id: 'cat-uuid-123', name: 'Gastronomía' }] },
+    })
+    cy.intercept('GET', '**/business/categories/*/config').as('categoryConfig')
+    cy.visit('/panel/business/cafe-espera/profile')
+    cy.wait('@me')
+    cy.wait('@businessMe')
+
+    cy.get('input[name="name"]').should('have.value', 'Cafe Espera')
+    cy.contains('button', /guardar cambios/i).should('not.exist')
+    cy.contains('se habilita cuando se apruebe').should('be.visible')
+
+    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('@categoryConfig.all').should('have.length', 0)
+  })
+
+  it('Horarios y Empleados: no disparan requests que el backend rechazaría', () => {
+    mockPendingAccount()
+    cy.intercept('GET', '**/business/biz_1/hours').as('hours')
+    cy.intercept('GET', '**/business/biz_1/employees*').as('employees')
+
+    cy.visit('/panel/business/cafe-espera/hours')
+    cy.wait('@me')
+    cy.wait('@businessMe')
+    cy.contains('h1', /horarios de atención/i).should('be.visible')
+
+    cy.visit('/panel/business/cafe-espera/employees')
+    cy.wait('@me')
+    cy.wait('@businessMe')
+    cy.contains('se habilita cuando se apruebe').should('be.visible')
+
+    cy.get('@hours.all').should('have.length', 0)
+    cy.get('@employees.all').should('have.length', 0)
+  })
+})

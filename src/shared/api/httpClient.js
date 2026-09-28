@@ -32,7 +32,17 @@ async function request(path, options = {}, retrying = false) {
   }
 
   if (!response.ok) {
-    throw await parseApiError(response)
+    const error = await parseApiError(response)
+
+    // The backend re-reads the blocked flag on every authenticated request,
+    // so a block applied mid-session surfaces here, on whatever request came
+    // next — not only at login. Ending the session sends AuthLayout back to
+    // /login instead of leaving the panel up with every action failing.
+    if (error.code === 'ACCOUNT_BLOCKED' && path !== '/auth/login' && path !== '/auth/login/google') {
+      useSessionStore.getState().clearSession()
+    }
+
+    throw error
   }
 
   if (response.status === 204) {
@@ -42,8 +52,23 @@ async function request(path, options = {}, retrying = false) {
   return options.responseType === 'blob' ? response.blob() : response.json()
 }
 
+// Refresh tokens rotate on every use. When another tab rotated the shared
+// cookie a moment earlier, the backend answers 409 REFRESH_TOKEN_ROTATED
+// instead of 401: the browser already holds the new cookie, so retrying once
+// succeeds. Treating that 409 as a failed refresh would log this tab out.
+async function postRefreshToken() {
+  try {
+    return await request('/auth/refresh-token', { method: 'POST' }, true)
+  } catch (error) {
+    if (error.code === 'REFRESH_TOKEN_ROTATED') {
+      return request('/auth/refresh-token', { method: 'POST' }, true)
+    }
+    throw error
+  }
+}
+
 async function refreshSession() {
-  refreshPromise ??= request('/auth/refresh-token', { method: 'POST' }, true)
+  refreshPromise ??= postRefreshToken()
     .then((payload) => {
       useSessionStore.getState().setAccessToken(payload.accessToken)
       return true

@@ -8,6 +8,7 @@ import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { FormField } from '../../../shared/ui/FormField.jsx'
 import { PanelPageHeader } from '../../../shared/ui/PanelPageHeader.jsx'
+import { useAccountPendingApproval } from '../../../shared/auth/useAccountPendingApproval.js'
 import { useBusinessCanOperate } from '../../../shared/business/useBusinessCanOperate.js'
 import { useCurrentBusinessStore } from '../../../shared/business/currentBusinessStore.js'
 import { businessEmployeesApi } from '../api/businessEmployeesApi.js'
@@ -19,6 +20,7 @@ export function BusinessEmployeesPage() {
   const businessId = useCurrentBusinessStore((state) => state.businessId)
   const businessStatus = useCurrentBusinessStore((state) => state.status)
   const canOperate = useBusinessCanOperate()
+  const isAccountPending = useAccountPendingApproval()
   const queryClient = useQueryClient()
   const [employeeToRevoke, setEmployeeToRevoke] = useState(null)
   const [invitationToCancel, setInvitationToCancel] = useState(null)
@@ -26,13 +28,13 @@ export function BusinessEmployeesPage() {
   const employeesQuery = useQuery({
     queryKey: ['business-employees', businessId],
     queryFn: () => businessEmployeesApi.list(businessId),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId) && !isAccountPending,
   })
 
   const pendingInvitationsQuery = useQuery({
     queryKey: ['business-employee-invitations', businessId],
     queryFn: () => businessEmployeesApi.listPendingInvitations(businessId),
-    enabled: Boolean(businessId),
+    enabled: Boolean(businessId) && !isAccountPending,
   })
 
   const {

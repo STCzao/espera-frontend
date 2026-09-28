@@ -115,6 +115,17 @@ const ERROR_CODE_MESSAGES = {
   EMPLOYEE_INVITATION_NOT_FOUND: 'La invitación no existe o ya fue utilizada.',
   EMPLOYEE_INVITATION_ROLE_CONFLICT: 'Las cuentas de negocio no pueden aceptar invitaciones de empleado.',
   OWNER_CANNOT_BE_REVOKED: 'No podés revocar el acceso del dueño del negocio.',
+  // Alineación con el backend (2026-09-25). authenticate/authorize ahora leen
+  // rol, aprobación y bloqueo de la base en cada request, y la escritura de
+  // turnos usa compare-and-swap.
+  ACCOUNT_PENDING_APPROVAL: 'Tu cuenta todavía está en revisión. Vas a poder usar esta sección cuando la aprobemos.',
+  ACCOUNT_BLOCKED: 'Tu cuenta fue bloqueada. Contactanos si creés que es un error.',
+  SESSION_EXPIRED: 'Tu sesión venció. Volvé a ingresar.',
+  TURN_CONFLICT: 'Alguien acaba de modificar este turno. Actualizá la lista y probá de nuevo.',
+  // Turnos de invitado (web ligera): tope de 50 activos por cola y
+  // cancelación propia solo mientras el turno está en espera.
+  GUEST_TURN_LIMIT_REACHED: 'La fila online está completa en este momento. Acercate al mostrador para pedir tu turno.',
+  TURN_NOT_GUEST: 'Este turno no se puede cancelar desde acá.',
 }
 
 export class ApiError extends Error {
