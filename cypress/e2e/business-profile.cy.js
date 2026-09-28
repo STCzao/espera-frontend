@@ -20,8 +20,8 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
       statusCode: 200,
       body: {
         categories: [
-          { id: 'cat-uuid-123', name: 'Gastronomía' },
-          { id: 'cat-uuid-456', name: 'Salud' },
+          { id: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f', name: 'Gastronomía' },
+          { id: '7a1c2e3f-4b5d-4e6f-8a9b-0c1d2e3f4a5b', name: 'Salud' },
         ],
       },
     }).as('categories')
@@ -50,23 +50,23 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
 
     cy.contains('button', /guardar cambios/i).click()
 
-    cy.contains(/ingresá el nombre del negocio/i).should('be.visible')
-    cy.contains(/ingresá la dirección/i).should('be.visible')
+    cy.contains(/el nombre debe tener al menos 2 caracteres/i).should('be.visible')
+    cy.contains(/la dirección debe tener al menos 5 caracteres/i).should('be.visible')
     cy.get('@update.all').should('have.length', 0)
   })
 
   it('muestra los atributos informativos al elegir una categoría', () => {
     authenticateVisit()
 
-    cy.intercept('GET', '**/business/categories/cat-uuid-123/config', {
+    cy.intercept('GET', '**/business/categories/3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f/config', {
       statusCode: 200,
       body: {
-        categoryId: 'cat-uuid-123',
+        categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f',
         attributes: [{ key: 'averageServiceMinutes', label: 'Tiempo promedio por atencion', type: 'number', required: true }],
       },
     }).as('categoryConfig')
 
-    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('select[name="categoryId"]').select('3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f')
 
     cy.wait('@categoryConfig')
     cy.contains('Tiempo promedio por atencion').should('be.visible')
@@ -76,15 +76,15 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
   it('guarda los cambios y muestra confirmación', () => {
     authenticateVisit()
 
-    cy.intercept('GET', '**/business/categories/cat-uuid-123/config', {
+    cy.intercept('GET', '**/business/categories/3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f/config', {
       statusCode: 200,
-      body: { categoryId: 'cat-uuid-123', attributes: [] },
+      body: { categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f', attributes: [] },
     })
 
     cy.intercept('PATCH', '**/business/biz_1/profile', (request) => {
       expect(request.body).to.deep.equal({
         name: 'Cafe Espera Renovado',
-        categoryId: 'cat-uuid-123',
+        categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f',
         phone: '+54 11 5000-9999',
         address: 'Av. Corrientes 1234',
       })
@@ -94,7 +94,7 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
         body: {
           businessId: 'biz_1',
           name: 'Cafe Espera Renovado',
-          categoryId: 'cat-uuid-123',
+          categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f',
           phone: '+54 11 5000-9999',
           address: 'Av. Corrientes 1234',
           listingStatus: 'draft',
@@ -103,7 +103,7 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
     }).as('update')
 
     cy.get('input[name="name"]').clear().type('Cafe Espera Renovado')
-    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('select[name="categoryId"]').select('3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f')
     cy.get('input[name="phone"]').clear().type('+54 11 5000-9999')
     cy.get('input[name="address"]').clear().type('Av. Corrientes 1234')
     cy.contains('button', /guardar cambios/i).click()
@@ -115,12 +115,12 @@ describe('HU-2.1 / HU-2.6 - Perfil del negocio', () => {
   it('muestra el error de backend sin perder el formulario', () => {
     authenticateVisit()
 
-    cy.intercept('GET', '**/business/categories/cat-uuid-123/config', {
+    cy.intercept('GET', '**/business/categories/3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f/config', {
       statusCode: 200,
-      body: { categoryId: 'cat-uuid-123', attributes: [] },
+      body: { categoryId: '3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f', attributes: [] },
     }).as('categoryConfig')
 
-    cy.get('select[name="categoryId"]').select('cat-uuid-123')
+    cy.get('select[name="categoryId"]').select('3f2b8c1e-5a4d-4c6b-9e7f-1a2b3c4d5e6f')
     cy.wait('@categoryConfig')
     cy.get('input[name="address"]').clear().type('Av. Corrientes 1234')
 
