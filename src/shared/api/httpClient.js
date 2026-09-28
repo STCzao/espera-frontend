@@ -59,6 +59,38 @@ async function refreshSession() {
   return refreshPromise
 }
 
+// Seconds of margin before `exp`: a token that expires mid-handshake would
+// still leave the socket anonymous.
+const ACCESS_TOKEN_EXPIRY_MARGIN_SECONDS = 30
+
+// Only reads `exp` to decide whether to refresh first; the signature is the
+// backend's job. A token it can't read is sent as-is rather than refreshed:
+// a failed refresh ends the session, too high a price for a guess.
+function isAccessTokenExpiring(token) {
+  try {
+    const payloadSegment = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const { exp } = JSON.parse(atob(payloadSegment))
+    return typeof exp === 'number' && exp - ACCESS_TOKEN_EXPIRY_MARGIN_SECONDS <= Date.now() / 1000
+  } catch {
+    return false
+  }
+}
+
+// For callers that authenticate outside `request()` (the Socket.IO
+// handshake), where a stale token can't fall back on the 401 → refresh retry.
+// No token means no session (e.g. the anonymous guest page): returns null
+// without calling refresh, which would only 401 and hit a rate-limited endpoint.
+export async function getFreshAccessToken() {
+  const accessToken = tokenStorage.getAccessToken()
+
+  if (!accessToken || !isAccessTokenExpiring(accessToken)) {
+    return accessToken
+  }
+
+  await refreshSession()
+  return tokenStorage.getAccessToken()
+}
+
 export const httpClient = {
   get(path) {
     return request(path)

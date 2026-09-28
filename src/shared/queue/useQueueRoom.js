@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { io } from 'socket.io-client'
+import { getFreshAccessToken } from '../api/httpClient.js'
 import { env } from '../config/env.js'
 
 // Keeps the latest onUpdate in a ref instead of the effect's dependency array
@@ -20,7 +21,21 @@ export function useQueueRoom(queueId, onUpdate) {
     // StrictMode's mount→cleanup→mount in dev tears down the first socket
     // before it finishes connecting, and the second instance can silently
     // reuse a half-torn-down manager instead of opening a fresh connection.
-    const socket = io(env.socketUrl, { forceNew: true, transports: ['websocket'] })
+    //
+    // `auth` is a callback, not an object, so every (re)connection sends the
+    // token that is valid *then* — access tokens last 15 min and a panel can
+    // sit open all day. The backend only lets an authenticated owner/employee
+    // join a queue room without a turnId; a missing or invalid token leaves
+    // the socket anonymous instead of dropping it.
+    const socket = io(env.socketUrl, {
+      forceNew: true,
+      transports: ['websocket'],
+      auth: (callback) => {
+        getFreshAccessToken()
+          .catch(() => null)
+          .then((token) => callback(token ? { token } : {}))
+      },
+    })
 
     // `connect` fires again after the browser/OS drops and restores the
     // connection (e.g. phone screen locks and unlocks) — re-joining the room
