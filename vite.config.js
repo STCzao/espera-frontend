@@ -10,4 +10,13 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  server: {
+    watch: {
+      // Artefactos que escribe Cypress mientras corre contra este servidor.
+      // En Windows, el .crdownload de una descarga en curso está bloqueado:
+      // el watcher recibe EBUSY, el error no se maneja y el dev server se
+      // cae a mitad de la suite (todos los specs siguientes fallan).
+      ignored: ['**/cypress/downloads/**', '**/cypress/screenshots/**', '**/cypress/videos/**'],
+    },
+  },
 })
