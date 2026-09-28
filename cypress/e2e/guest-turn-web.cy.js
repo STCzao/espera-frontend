@@ -137,18 +137,21 @@ describe('HU-4.2 - Sacar turno sin la app (web ligera)', () => {
     }
   }
 
+  // El estado cambia recién cuando se manda la cancelación, no según cuántas
+  // veces se consultó: la página también refresca al conectar el socket (y
+  // con un backend corriendo en :3000 el socket conecta de verdad), así que
+  // contar requests hacía que el estado nuevo llegara antes del click.
   it('deja salir de la fila con confirmación y muestra el turno cancelado', () => {
-    let statusCallCount = 0
+    let cancelRequested = false
     cy.intercept('GET', '**/queue/guest-turns/turn_4', (request) => {
-      statusCallCount += 1
       request.reply({
         statusCode: 200,
-        body: statusCallCount === 1 ? mockWaitingTurn() : mockWaitingTurn({ status: 'cancelled', position: 0 }),
+        body: cancelRequested ? mockWaitingTurn({ status: 'cancelled', position: 0 }) : mockWaitingTurn(),
       })
     }).as('turnStatus')
-    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', {
-      statusCode: 200,
-      body: { cancelled: true, turnId: 'turn_4' },
+    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', (request) => {
+      cancelRequested = true
+      request.reply({ statusCode: 200, body: { cancelled: true, turnId: 'turn_4' } })
     }).as('cancelGuestTurn')
 
     cy.visit('/q/turn/turn_4')
@@ -168,17 +171,19 @@ describe('HU-4.2 - Sacar turno sin la app (web ligera)', () => {
   })
 
   it('si lo llamaron justo antes de cancelar, muestra el error y el estado nuevo', () => {
-    let statusCallCount = 0
+    let cancelRequested = false
     cy.intercept('GET', '**/queue/guest-turns/turn_4', (request) => {
-      statusCallCount += 1
       request.reply({
         statusCode: 200,
-        body: statusCallCount === 1 ? mockWaitingTurn() : mockWaitingTurn({ status: 'called', position: 0 }),
+        body: cancelRequested ? mockWaitingTurn({ status: 'called', position: 0 }) : mockWaitingTurn(),
       })
     }).as('turnStatus')
-    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', {
-      statusCode: 409,
-      body: { message: 'Turn cannot be cancelled.', code: 'TURN_NOT_CANCELLABLE' },
+    cy.intercept('POST', '**/queue/guest-turns/turn_4/cancel', (request) => {
+      cancelRequested = true
+      request.reply({
+        statusCode: 409,
+        body: { message: 'Turn cannot be cancelled.', code: 'TURN_NOT_CANCELLABLE' },
+      })
     }).as('cancelGuestTurn')
 
     cy.visit('/q/turn/turn_4')
