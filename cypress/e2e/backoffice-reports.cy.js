@@ -26,7 +26,7 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('lista reportes y resuelve el detalle de un negocio reportado', () => {
-    cy.intercept('GET', '**/reports*', { statusCode: 200, body: [businessReport()] }).as('reports')
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, { statusCode: 200, body: [businessReport()] }).as('reports')
     cy.intercept('GET', '**/business/biz_1/review', {
       statusCode: 200,
       body: {
@@ -47,7 +47,7 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('resuelve un reporte sin suspender a nadie', () => {
-    cy.intercept('GET', '**/reports*', { statusCode: 200, body: [businessReport()] }).as('reports')
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, { statusCode: 200, body: [businessReport()] }).as('reports')
     cy.intercept('GET', '**/business/biz_1/review', {
       statusCode: 200,
       body: { business: { id: 'biz_1', name: 'Cafe Espera', status: 'approved' }, organization: {}, alerts: [] },
@@ -69,7 +69,7 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('descartar un reporte exige una nota', () => {
-    cy.intercept('GET', '**/reports*', { statusCode: 200, body: [businessReport()] }).as('reports')
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, { statusCode: 200, body: [businessReport()] }).as('reports')
     cy.intercept('GET', '**/business/biz_1/review', {
       statusCode: 200,
       body: { business: { id: 'biz_1', name: 'Cafe Espera', status: 'approved' }, organization: {}, alerts: [] },
@@ -93,7 +93,7 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('suspende el negocio reportado', () => {
-    cy.intercept('GET', '**/reports*', { statusCode: 200, body: [businessReport()] }).as('reports')
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, { statusCode: 200, body: [businessReport()] }).as('reports')
     cy.intercept('GET', '**/business/biz_1/review', {
       statusCode: 200,
       body: { business: { id: 'biz_1', name: 'Cafe Espera', status: 'approved' }, organization: {}, alerts: [] },
@@ -115,7 +115,7 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('un reporte de usuario muestra el id sin poder resolver el nombre', () => {
-    cy.intercept('GET', '**/reports*', {
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, {
       statusCode: 200,
       body: [businessReport({ id: 'report_2', reportedType: 'user', reportedId: 'user_5', reason: 'Insultó a un empleado' })],
     }).as('reports')
@@ -130,13 +130,13 @@ describe('HU-8.6 - Gestión de reportes', () => {
   })
 
   it('filtra por estado', () => {
-    cy.intercept('GET', '**/reports*', { statusCode: 200, body: [businessReport()] }).as('reports')
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, { statusCode: 200, body: [businessReport()] }).as('reports')
 
     cy.visit('/backoffice/reports')
     cy.wait('@me')
     cy.wait('@reports')
 
-    cy.intercept('GET', '**/reports*', (request) => {
+    cy.intercept({ method: 'GET', pathname: '/api/reports' }, (request) => {
       expect(request.query.status).to.equal('resolved')
       request.reply({ statusCode: 200, body: [] })
     }).as('filteredReports')

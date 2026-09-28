@@ -25,7 +25,7 @@ function businessesResponse(overrides = {}) {
         categoryId: 'cat_1',
         subscriptionPlan: 'pro',
         subscriptionStatus: 'active',
-        createdAt: '2026-01-15T00:00:00.000Z',
+        createdAt: '2026-01-15T15:00:00.000Z',
       },
     ],
     page: 1,
@@ -42,7 +42,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('lista los negocios con su categoría, plan y estado', () => {
-    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, { statusCode: 200, body: businessesResponse() }).as('businesses')
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
@@ -54,7 +54,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('suspende un negocio aprobado pidiendo motivo', () => {
-    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, { statusCode: 200, body: businessesResponse() }).as('businesses')
     cy.intercept('PATCH', '**/business/biz_1/suspend', (request) => {
       expect(request.body).to.deep.equal({ reason: 'Fraude reportado' })
       request.reply({ statusCode: 200, body: { id: 'biz_1', status: 'suspended' } })
@@ -73,7 +73,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('reactiva un negocio suspendido', () => {
-    cy.intercept('GET', '**/business?*', {
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, {
       statusCode: 200,
       body: businessesResponse({
         items: [
@@ -83,7 +83,7 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
             organizationId: 'org_2',
             status: 'suspended',
             categoryId: 'cat_1',
-            createdAt: '2026-02-01T00:00:00.000Z',
+            createdAt: '2026-02-01T15:00:00.000Z',
           },
         ],
       }),
@@ -103,13 +103,13 @@ describe('HU-8.4 - Suspender/reactivar negocio (pantalla Negocios)', () => {
   })
 
   it('cambiar el filtro de estado dispara una nueva consulta con el filtro aplicado', () => {
-    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, { statusCode: 200, body: businessesResponse() }).as('businesses')
 
     cy.visit('/backoffice/businesses')
     cy.wait('@me')
     cy.wait('@businesses')
 
-    cy.intercept('GET', '**/business?*', (request) => {
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, (request) => {
       expect(request.query.status).to.equal('suspended')
       request.reply({ statusCode: 200, body: businessesResponse({ items: [], total: 0 }) })
     }).as('filteredBusinesses')
