@@ -89,14 +89,18 @@ describe('HU-2.5 - Estado operativo y colas del negocio', () => {
     cy.contains(/internal server error/i).should('be.visible')
   })
 
-  it('lista las colas del negocio y crea una adicional', () => {
-    // Plan "pro" (colas ilimitadas) — con "basic" (default, límite 1) el
-    // form de crear cola ni se muestra, ya que el negocio ya tiene su única
-    // cola permitida (ver test "el plan no permite crear más colas").
-    authenticateVisit({ plan: 'pro' })
+  it('lista las colas del negocio', () => {
+    authenticateVisit()
 
     cy.contains('Caja principal').should('be.visible')
     cy.contains('Prefijo A').should('be.visible')
+  })
+
+  it('crea una cola cuando el negocio todavía no tiene ninguna', () => {
+    // Todos los planes permiten 1 cola por negocio (planLimits.js): el form
+    // solo aparece mientras no haya ninguna. Antes este test usaba plan "pro"
+    // con colas ilimitadas, que ya no existe.
+    authenticateVisit({ plan: 'pro', queues: [] })
 
     cy.intercept('POST', '**/business/biz_1/queues', (request) => {
       expect(request.body).to.deep.equal({ name: 'Turnos VIP', prefix: 'B' })
@@ -165,7 +169,7 @@ describe('HU-2.5 - Estado operativo y colas del negocio', () => {
       body: { id: 'queue_2', businessId: 'biz_1', name: 'Turnos VIP', prefix: 'B', isActive: false },
     }).as('toggleQueue')
 
-    cy.contains('button', /desactivar turnos vip/i).click()
+    cy.get('button[aria-label="Desactivar Turnos VIP"]').click()
 
     cy.wait('@toggleQueue')
   })
@@ -173,7 +177,7 @@ describe('HU-2.5 - Estado operativo y colas del negocio', () => {
   it('no deja desactivar la única cola activa del negocio', () => {
     authenticateVisit()
 
-    cy.contains('button', /caja principal es la única cola activa/i).should('be.disabled')
+    cy.get('button[aria-label^="Caja principal es la única cola activa"]').should('be.disabled')
   })
 
   it('traduce el error si el backend igual rechaza por ser la única cola activa (carrera entre pestañas)', () => {
@@ -192,7 +196,7 @@ describe('HU-2.5 - Estado operativo y colas del negocio', () => {
       body: { message: 'Cannot deactivate the business only active queue.', code: 'QUEUE_LAST_ACTIVE' },
     }).as('toggleQueue')
 
-    cy.contains('button', /desactivar caja principal/i).click()
+    cy.get('button[aria-label="Desactivar Caja principal"]').click()
 
     cy.wait('@toggleQueue')
     cy.contains('No podés desactivar la única cola activa del negocio.').should('be.visible')

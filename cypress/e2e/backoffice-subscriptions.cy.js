@@ -30,7 +30,7 @@ function businessesResponse() {
 describe('HU-8.4/8.5 (bugfix) - Gestión manual de suscripciones (pantalla propia)', () => {
   beforeEach(() => {
     mockSuperAdminSession()
-    cy.intercept('GET', '**/business?*', { statusCode: 200, body: businessesResponse() }).as('businesses')
+    cy.intercept({ method: 'GET', pathname: '/api/business' }, { statusCode: 200, body: businessesResponse() }).as('businesses')
   })
 
   it('lista organizaciones agrupadas por negocio y expande su suscripción', () => {
