@@ -1,16 +1,24 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useQueueRoom } from '../../../shared/queue/useQueueRoom.js'
+import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
+import { FormButton } from '../../../shared/ui/FormButton.jsx'
+import { FormError } from '../../../shared/ui/FormError.jsx'
 import { LiveIndicator } from '../../../shared/ui/LiveIndicator.jsx'
 import { guestTurnApi } from '../api/guestTurnApi.js'
 import { GuestVisualScene } from '../components/GuestVisualScene.jsx'
 
-// El visitante anónimo no tiene ningún canal de push — la web ligera
-// actualiza por polling mientras el turno sigue en espera (HU-4.2,
-// decisión de alcance explícita del backend). Se corta apenas el estado
-// deja de ser "waiting" — no hace falta seguir pidiendo una vez que ya es
-// su turno o el turno terminó.
-const POLL_INTERVAL_MS = 6000
+// El visitante anónimo se suma a la sala de la cola por Socket.IO
+// presentando su turnId (el backend valida que el turno sea de esa cola), y
+// cada `queue:update` vuelve a pedir el estado. El polling queda como red de
+// seguridad por si el socket no conecta (redes móviles, proxies). Ambos
+// siguen mientras el turno esté activo, no solo en espera: antes el polling
+// se cortaba en "called" y la página nunca se enteraba de que ya lo atendían.
+const FALLBACK_POLL_INTERVAL_MS = 15000
+
+const ACTIVE_STATUSES = new Set(['waiting', 'called', 'attending', 'redirected'])
 
 const steps = ['En espera', 'Te llamamos', 'Atendido']
 
@@ -32,17 +40,32 @@ const sceneCopyByStatus = {
   redirected: { title: 'Ya casi.', description: 'Te estamos derivando a otra ventanilla — esperá el llamado.' },
   completed: { title: 'Listo.', description: 'Tu turno ya fue atendido.' },
   cancelled: { title: 'Turno cancelado.', description: 'Este turno ya no está activo.' },
+  no_show: { title: 'Te llamamos y no estabas.', description: 'Este turno ya no está activo.' },
 }
 
 export function GuestTurnStatusPage() {
   const { turnId } = useParams()
   const shouldReduceMotion = useReducedMotion()
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false)
 
   const turnQuery = useQuery({
     queryKey: ['guest-turn-status', turnId],
     queryFn: () => guestTurnApi.getGuestTurnStatus(turnId),
-    refetchInterval: (query) => (query.state.data?.status === 'waiting' ? POLL_INTERVAL_MS : false),
+    refetchInterval: (query) => (ACTIVE_STATUSES.has(query.state.data?.status) ? FALLBACK_POLL_INTERVAL_MS : false),
     retry: false,
+  })
+
+  const isActive = ACTIVE_STATUSES.has(turnQuery.data?.status)
+  useQueueRoom(isActive ? turnQuery.data.queueId : null, () => turnQuery.refetch(), { turnId })
+
+  const cancelMutation = useMutation({
+    mutationFn: () => guestTurnApi.cancelGuestTurn(turnId),
+    onSettled: () => {
+      setIsConfirmingCancel(false)
+      // Also on error: a 409 TURN_NOT_CANCELLABLE means the turn moved on
+      // (they just got called) and the page should show that, not a stale "waiting".
+      turnQuery.refetch()
+    },
   })
 
   if (turnQuery.isLoading) {
@@ -65,7 +88,6 @@ export function GuestTurnStatusPage() {
 
   const turn = turnQuery.data
   const isYourTurn = turn.status === 'called' || turn.status === 'attending'
-  const isPolling = turn.status === 'waiting'
   const stepIndex = stepIndexFor(turn.status)
   const sceneCopy =
     sceneCopyByStatus[isYourTurn ? 'yourTurn' : turn.status] ?? sceneCopyByStatus.waiting
@@ -80,7 +102,7 @@ export function GuestTurnStatusPage() {
       >
         <div className="flex items-center justify-between gap-3">
           <p className="m-0 font-mono text-sm uppercase tracking-wider text-espera-text-muted">Tu turno</p>
-          {isPolling && <LiveIndicator />}
+          {isActive && <LiveIndicator />}
         </div>
 
         <AnimatePresence mode="wait">
@@ -134,6 +156,14 @@ export function GuestTurnStatusPage() {
               <p className="m-0 text-sm text-espera-text-muted">Tiempo estimado de espera: {turn.estimatedWaitMinutes} min.</p>
             )}
             <p className="m-0 mt-2 text-xs text-espera-text-muted">Esta página se actualiza sola — no hace falta que la recargues.</p>
+
+            {cancelMutation.isError && <FormError>{cancelMutation.error?.message ?? 'No pudimos cancelar tu turno.'}</FormError>}
+
+            <div className="mt-3">
+              <FormButton onClick={() => setIsConfirmingCancel(true)} type="button" variant="outline">
+                Salir de la fila
+              </FormButton>
+            </div>
           </div>
         )}
 
@@ -146,7 +176,24 @@ export function GuestTurnStatusPage() {
         )}
 
         {turn.status === 'cancelled' && <p className="mt-5 text-sm text-espera-text-muted">Este turno fue cancelado.</p>}
+
+        {turn.status === 'no_show' && (
+          <p className="mt-5 text-sm text-espera-text-muted">
+            Te llamamos y no te encontramos. Si seguís cerca, podés pedir un turno nuevo escaneando el QR.
+          </p>
+        )}
       </motion.section>
+
+      <ConfirmDialog
+        cancelLabel="Seguir en la fila"
+        confirmLabel="Salir de la fila"
+        description={`Vas a perder tu lugar (${turn.displayNumber}). Si querés volver, vas a tener que pedir un turno nuevo.`}
+        isConfirming={cancelMutation.isPending}
+        onCancel={() => setIsConfirmingCancel(false)}
+        onConfirm={() => cancelMutation.mutate()}
+        open={isConfirmingCancel}
+        title="¿Salir de la fila?"
+      />
     </GuestVisualScene>
   )
 }

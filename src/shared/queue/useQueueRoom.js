@@ -4,7 +4,11 @@ import { env } from '../config/env.js'
 
 // Keeps the latest onUpdate in a ref instead of the effect's dependency array
 // so passing a fresh inline callback each render doesn't reconnect the socket.
-export function useQueueRoom(queueId, onUpdate) {
+//
+// `turnId` is how a visitor without a session joins: the backend only lets an
+// anonymous socket into the room when the turnId belongs to that queue
+// (authorizeQueueJoin) and silently ignores the join otherwise.
+export function useQueueRoom(queueId, onUpdate, { turnId } = {}) {
   const onUpdateRef = useRef(onUpdate)
 
   useEffect(() => {
@@ -27,7 +31,7 @@ export function useQueueRoom(queueId, onUpdate) {
     // alone would silently miss whatever happened while disconnected, so
     // refresh on every (re)connect too, not just the first one (HU-6.6).
     socket.on('connect', () => {
-      socket.emit('queue:join', { queueId })
+      socket.emit('queue:join', turnId ? { queueId, turnId } : { queueId })
       onUpdateRef.current?.()
     })
 
@@ -47,5 +51,5 @@ export function useQueueRoom(queueId, onUpdate) {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       socket.disconnect()
     }
-  }, [queueId])
+  }, [queueId, turnId])
 }
