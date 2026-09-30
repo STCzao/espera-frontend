@@ -1,111 +1,763 @@
+@import "tailwindcss";
+
+@theme {
+  --color-espera-primary: #500097;
+  --color-espera-violet-700: #752174;
+  --color-espera-violet-600: #822e81;
+  --color-espera-violet-500: #903a8d;
+  --color-espera-violet-400: #9d479a;
+  --color-espera-violet-300: #aa54a7;
+  --color-espera-bg: #fbf7fc;
+  --color-espera-surface: #ffffff;
+  /* The floating card on top of the dark auth/guest hero (login, register,
+     recovery, guest QR, invite-acceptance) — a hair off pure white, distinct
+     from --color-espera-surface. Was repeated as a raw bg-[#fdf9ff] literal
+     in 12 files with no token backing it. */
+  --color-espera-card: #fdf9ff;
+  --color-espera-muted: #f2e8f3;
+  --color-espera-text: #2d1930;
+  --color-espera-text-muted: #705574;
+  --color-espera-border: #e5d3e7;
+  --color-espera-purple: #500097;
+  --color-espera-purple-strong: #500097;
+  --color-espera-purple-soft: #f2e8f3;
+  --color-espera-danger: #b4235f;
+  --color-espera-danger-soft: #fbe9ef;
+  /* Status tones for badges/tags — desaturated to match --color-espera-danger's
+     register instead of Tailwind's default (neon) emerald/amber/sky, which had
+     been creeping in ad hoc across ~8 files with no relation to this palette. */
+  --color-espera-success: #1f7a52;
+  --color-espera-success-soft: #e3f2e9;
+  --color-espera-warning: #8a5d12;
+  --color-espera-warning-soft: #f7ecd6;
+  --color-espera-info: #2f5f8a;
+  --color-espera-info-soft: #e5eef5;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --primary: #500097;
+  --violet-700: #752174;
+  --violet-600: #822e81;
+  --violet-500: #903a8d;
+  --violet-400: #9d479a;
+  --violet-300: #aa54a7;
+  --bg: #fbf7fc;
+  --surface: #ffffff;
+  --surface-muted: #f2e8f3;
+  --text: #2d1930;
+  --text-muted: #705574;
+  --border: #e5d3e7;
+  --accent: var(--primary);
+  --accent-strong: var(--primary);
+  --accent-soft: #f2e8f3;
+  --warning: #9b5a00;
+  --danger: #b4235f;
+  --shadow: 0 16px 40px rgba(80, 0, 151, 0.1);
+  --radius: 8px;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
   color: var(--text);
   background: var(--bg);
+  font: 16px/1.5 var(--font);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+* {
+  box-sizing: border-box;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Belt-and-suspenders: individual tables/lists already manage their own
+   overflow-x-auto where genuinely needed (HU-6.6) — this just guarantees a
+   stray element can never force the whole page to scroll/shift sideways. */
+html,
+body {
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
   min-height: 100svh;
+}
+
+.app-shell {
+  min-height: 100svh;
+}
+
+.public-layout {
+  display: grid;
+  min-height: 100svh;
+  background:
+    linear-gradient(120deg, rgba(144, 58, 141, 0.14), transparent 42%),
+    var(--bg);
+}
+
+.panel-layout {
+  display: grid;
+  min-height: 100svh;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.panel-layout__sidebar {
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
+  gap: 24px;
+  padding: 20px 16px;
+  background: var(--text);
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
+.panel-layout__nav {
+  display: grid;
+  gap: 6px;
+}
+
+.panel-layout__nav-section {
+  display: contents;
+}
+
+.panel-layout__nav-group-label {
+  margin: 10px 0 -2px;
+  padding: 0 12px;
+  font: 700 10px/1.4 var(--font-mono);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.panel-layout__nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.64);
+  text-decoration: none;
+  font-size: 13.5px;
   font-weight: 500;
-  color: var(--text-h);
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+.panel-layout__nav a:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+.panel-layout__nav a.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 650;
 }
 
-code {
+.panel-layout__nav-item--disabled {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.64);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.panel-layout__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.panel-layout__topbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 14px 32px;
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(45, 25, 48, 0.05);
+  position: relative;
+  z-index: 1;
+}
+
+.panel-layout__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-layout__topbar-business {
   font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Same look as the plain business-name text, but interactive — a native
+   <select> so it works everywhere with zero extra JS, shown only when the
+   owner actually has more than one Business to switch between. */
+.panel-layout__business-switcher {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px 20px 4px 0;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23705574' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+.panel-layout__business-switcher:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.panel-layout__add-business {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  transition: border-color 150ms ease, color 150ms ease;
+}
+
+.panel-layout__add-business:hover {
+  border-color: var(--primary);
+  border-style: solid;
+  color: var(--primary);
+}
+
+.panel-layout__add-business:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.panel-layout__user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.panel-layout__user-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.panel-layout__content {
+  flex: 1;
+  min-width: 0;
+  padding: 32px;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.placeholder h1 {
+  margin: 0;
+  font-size: clamp(28px, 3vw, 42px);
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: clamp(22px, 2.2vw, 28px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.page-header p,
+.placeholder p {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+}
+
+.placeholder {
+  width: 100%;
+  max-width: 760px;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.status-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 24px 0 0;
+  list-style: none;
+}
+
+.status-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.loading-screen {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+.business-alert,
+.business-context {
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.business-alert--warning {
+  border-color: #e7c47a;
+  background: #fff8e8;
+  color: #714500;
+}
+
+.business-alert--danger {
+  border-color: #efb7ca;
+  background: #fff1f5;
+  color: var(--danger);
+}
+
+.business-alert__led {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: #c98a00;
+  box-shadow: 0 0 0 0 rgba(201, 138, 0, 0.55);
+  animation: led-pulse 2.2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .business-alert__led {
+    animation: none;
+  }
+}
+
+@keyframes led-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(201, 138, 0, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(201, 138, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 138, 0, 0);
+  }
+}
+
+/* Chases the dots instead of both segments lighting up together: dot 1
+   peaks at 8–18% of the 3.6s cycle, dot 2 at ~41–51% (its own animation
+   starts 1.2s / 33% in), dot 3 at ~75–85% (2.4s / 67% in) — segment 1 fills
+   right after dot 1 peaks and finishes just as dot 2 peaks, segment 2 does
+   the same between dot 2 and dot 3. */
+.queue-steps__progress--1 {
+  animation: queue-progress-1 3.6s linear infinite;
+}
+
+.queue-steps__progress--2 {
+  animation: queue-progress-2 3.6s linear infinite;
+}
+
+.queue-steps__dot {
+  /* Also the resting look during items 2 and 3's `animation-delay` (1.2s /
+     2.4s, below): with `animation-fill-mode` defaulting to `none`, a
+     delayed animation applies NO styling at all until it actually starts —
+     the element shows this base value instead, not the keyframes' own 0%
+     state. Without it, opacity fell back to the UA default of 1 (fully
+     lit) for the whole delay, so every dot looked "active" from frame one
+     instead of just the first one, defeating the sequential chase. */
+  opacity: 0.6;
+  transform: scale(1);
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.queue-steps__meta,
+.queue-steps__label {
+  /* Same `animation-delay` gap as the dot above. */
+  opacity: 0.52;
+  transform: translateY(0) scale(1);
+  transition:
+    color 200ms ease,
+    opacity 200ms ease,
+    transform 200ms ease;
+}
+
+/* Split from a single shared animation: a glow (`box-shadow`) reads as a
+   soft halo on the round dot, but the exact same box-shadow on a text
+   `<span>` renders as an ugly rectangle around the word instead — text
+   gets its own keyframes with no box-shadow. */
+.queue-steps__item--1 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear infinite;
+}
+.queue-steps__item--1 .queue-steps__label,
+.queue-steps__item--1 .queue-steps__meta {
+  animation: queue-step-active-text 3.6s linear infinite;
+}
+
+.queue-steps__item--2 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear 1.2s infinite;
+}
+.queue-steps__item--2 .queue-steps__label,
+.queue-steps__item--2 .queue-steps__meta {
+  animation: queue-step-active-text 3.6s linear 1.2s infinite;
+}
+
+.queue-steps__item--3 .queue-steps__dot {
+  animation: queue-step-active-dot 3.6s linear 2.4s infinite;
+}
+.queue-steps__item--3 .queue-steps__label,
+.queue-steps__item--3 .queue-steps__meta {
+  animation: queue-step-active-text 3.6s linear 2.4s infinite;
+}
+
+@keyframes queue-progress-1 {
+  0%,
+  18% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  41% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  50%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes queue-progress-2 {
+  0%,
+  51% {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  74% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  83%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+@keyframes queue-step-active-dot {
+  0%,
+  26%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+    box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.35);
+  }
+  8%,
+  18% {
+    opacity: 1;
+    transform: scale(1.15);
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.75);
+  }
+}
+
+@keyframes queue-step-active-text {
+  0%,
+  26%,
+  100% {
+    opacity: 0.52;
+    transform: translateY(0) scale(1);
+  }
+  8%,
+  18% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-steps__progress--1,
+  .queue-steps__progress--2,
+  .queue-steps__item--1 .queue-steps__dot,
+  .queue-steps__item--1 .queue-steps__label,
+  .queue-steps__item--1 .queue-steps__meta,
+  .queue-steps__item--2 .queue-steps__dot,
+  .queue-steps__item--2 .queue-steps__label,
+  .queue-steps__item--2 .queue-steps__meta,
+  .queue-steps__item--3 .queue-steps__dot,
+  .queue-steps__item--3 .queue-steps__label,
+  .queue-steps__item--3 .queue-steps__meta,
+  .queue-steps.is-static .queue-steps__progress--1,
+  .queue-steps.is-static .queue-steps__progress--2 {
+    animation: none;
+  }
+}
+
+/* Sidebar-as-drawer chrome (close button, backdrop, mobile trigger) only
+   does anything below the 860px breakpoint — see there for the actual
+   off-canvas behavior. These are the always-present element styles. */
+/* Only holds the drawer-close button now that the logo lives in the topbar,
+   so it has nothing to show outside the mobile off-canvas drawer. */
+.panel-layout__sidebar-head {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.panel-layout__drawer-close {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.64);
+  cursor: pointer;
+}
+
+.panel-layout__drawer-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.panel-layout__backdrop {
+  display: none;
+}
+
+.panel-layout__mobile-topbar {
+  display: none;
+}
+
+.panel-layout__menu-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  :root {
+    --radius: 14px;
+  }
+
+  .panel-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-layout__backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgba(20, 0, 40, 0.45);
+  }
+
+  /* Sidebar becomes an off-canvas drawer, triggered by the mobile topbar's
+     menu button, instead of a persistent bottom tab bar. */
+  .panel-layout__sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: min(84vw, 300px);
+    border-right: 1px solid var(--border);
+    box-shadow: 12px 0 32px rgba(20, 0, 40, 0.18);
+    transform: translateX(-100%);
+    transition: transform 220ms ease;
+  }
+
+  .panel-layout__sidebar[data-open='true'] {
+    transform: translateX(0);
+  }
+
+  .panel-layout__sidebar-head {
+    display: flex;
+  }
+
+  .panel-layout__drawer-close {
+    display: inline-flex;
+  }
+
+  .panel-layout__topbar {
+    display: none;
+  }
+
+  .panel-layout__mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 20;
+    padding: 10px calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left));
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Fixed 16px left/right padding alone left a lopsided gutter in landscape
+     on notched phones — the notch's safe-area-inset only grows one side, so
+     it must be added on top of the base padding rather than assumed away
+     (HU-6.6, criterion 3: queue and button both usable in landscape). */
+  .panel-layout__content {
+    padding: 76px calc(16px + env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom))
+      calc(16px + env(safe-area-inset-left));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-layout__sidebar {
+    transition: none;
+  }
+}
+
+/* Printable QR poster — same dark-gradient brand hero used on /login and the
+   guest QR flow, but static (no motion/blur: pointless on paper and just
+   slows the print render down) and hidden outside `@media print`. */
+.qr-poster-print {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  color: #fff;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(170, 84, 167, 0.42), transparent 40%),
+    radial-gradient(circle at 78% 78%, rgba(144, 58, 141, 0.3), transparent 42%),
+    linear-gradient(135deg, #500097 0%, #2a073f 52%, #110018 100%);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.qr-poster-print__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.qr-poster-print__title {
+  max-width: 14ch;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+}
+
+.qr-poster-print__business {
+  margin-top: -8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.qr-poster-print__qr-card {
+  display: grid;
+  place-items: center;
+  width: 280px;
+  height: 280px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.qr-poster-print__qr-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-poster-print__hint {
+  max-width: 32ch;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  .panel-layout__sidebar,
+  .panel-layout__topbar,
+  .panel-layout__mobile-topbar,
+  .panel-layout__backdrop {
+    display: none !important;
+  }
+
+  .panel-layout__content {
+    padding: 0 !important;
+  }
+
+  .qr-page-screen-only {
+    display: none !important;
+  }
+
+  .qr-poster-print {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100vh;
+  }
 }

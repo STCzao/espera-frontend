@@ -1,0 +1,70 @@
+import { useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
+import { getFreshAccessToken } from '../api/httpClient.js'
+import { env } from '../config/env.js'
+
+// Keeps the latest onUpdate in a ref instead of the effect's dependency array
+// so passing a fresh inline callback each render doesn't reconnect the socket.
+//
+// `turnId` is how a visitor without a session joins: the backend only lets an
+// anonymous socket into the room when the turnId belongs to that queue
+// (authorizeQueueJoin) and silently ignores the join otherwise.
+export function useQueueRoom(queueId, onUpdate, { turnId } = {}) {
+  const onUpdateRef = useRef(onUpdate)
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate
+  }, [onUpdate])
+
+  useEffect(() => {
+    if (!queueId) {
+      return undefined
+    }
+
+    // forceNew avoids socket.io-client's manager-sharing cache: without it,
+    // StrictMode's mount→cleanup→mount in dev tears down the first socket
+    // before it finishes connecting, and the second instance can silently
+    // reuse a half-torn-down manager instead of opening a fresh connection.
+    //
+    // `auth` is a callback, not an object, so every (re)connection sends the
+    // token that is valid *then* — access tokens last 15 min and a panel can
+    // sit open all day. The backend only lets an authenticated owner/employee
+    // join a queue room without a turnId; a missing or invalid token leaves
+    // the socket anonymous instead of dropping it.
+    const socket = io(env.socketUrl, {
+      forceNew: true,
+      transports: ['websocket'],
+      auth: (callback) => {
+        getFreshAccessToken()
+          .catch(() => null)
+          .then((token) => callback(token ? { token } : {}))
+      },
+    })
+
+    // `connect` fires again after the browser/OS drops and restores the
+    // connection (e.g. phone screen locks and unlocks) — re-joining the room
+    // alone would silently miss whatever happened while disconnected, so
+    // refresh on every (re)connect too, not just the first one (HU-6.6).
+    socket.on('connect', () => {
+      socket.emit('queue:join', turnId ? { queueId, turnId } : { queueId })
+      onUpdateRef.current?.()
+    })
+
+    socket.on('queue:update', (payload) => onUpdateRef.current?.(payload))
+
+    // Belt and suspenders: some mobile browsers suspend background tabs
+    // aggressively enough that the socket's own reconnect isn't enough to
+    // notice — refresh whenever the tab becomes visible again.
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        onUpdateRef.current?.()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      socket.disconnect()
+    }
+  }, [queueId, turnId])
+}
