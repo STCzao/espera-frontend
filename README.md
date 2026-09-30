@@ -137,6 +137,53 @@ npm run build
 npm run test:e2e
 ```
 
+`npm run build` corre antes `scripts/check-build-env.mjs`: falla si falta
+`VITE_API_BASE_URL`, si no termina en `/api` o, en Vercel, si no es una URL
+pública `https`.
+
+## Despliegue en Vercel
+
+`vercel.json` ya define el build (Vite, `dist/`), la caché larga de `/assets`
+(archivos con hash) y el rewrite de toda ruta a `index.html`. Sin ese rewrite,
+cualquier link directo daría 404: los QR impresos (`/q/...`), los links de los
+emails (`/verify-email`, `/reset-password`) y recargar cualquier pantalla del
+panel.
+
+### Variables en Vercel (Settings → Environment Variables)
+
+| Variable | Valor |
+| --- | --- |
+| `VITE_API_BASE_URL` | URL pública del backend terminada en `/api`, p. ej. `https://espera-backend.onrender.com/api` |
+| `CYPRESS_INSTALL_BINARY` | `0`: Cypress es dependencia de desarrollo; sin esto el build descarga su binario (cientos de MB) en cada deploy |
+
+`VITE_API_BASE_URL` se incrusta en el bundle al compilar: cambiarla requiere un
+redeploy.
+
+### Variables que el backend necesita apuntando a este frontend (en Render)
+
+| Variable | Valor | Si está mal |
+| --- | --- | --- |
+| `APP_ORIGIN` | `https://<proyecto>.vercel.app` (sin `/` final) | CORS bloquea toda la API y el socket |
+| `APP_URL` | la misma URL | Los QR y los links de los emails apuntan a otro lado |
+| `COOKIE_SAMESITE` | `none` mientras front y back estén en `*.vercel.app` + `*.onrender.com` | El usuario se desloguea a los 15 min y falla el login con Google |
+| `GOOGLE_CALLBACK_URL` | `https://<proyecto>.vercel.app/oauth/google/callback` (también en Google Cloud Console) | Falla el login con Google |
+
+Ver la sección "Cookies y dominios" del README de espera-backend.
+
+### Antes de imprimir QR: definir el dominio final
+
+El QR impreso contiene `APP_URL` + `/q/<token>`. Si más adelante el frontend
+pasa de `*.vercel.app` a un dominio propio, **todos los QR ya impresos siguen
+apuntando al dominio viejo**. Conviene tener el dominio definitivo antes de
+entregar QR a los negocios (y con dominio propio, `app.` + `api.` del mismo
+dominio, `COOKIE_SAMESITE` vuelve a quedar sin setear).
+
+### Previews de Vercel
+
+Cada preview tiene su propia URL, distinta de `APP_ORIGIN`: el backend de
+producción las rechaza por CORS. Sirven para revisar la interfaz; para probar
+contra la API hace falta un backend de staging con su propio `APP_ORIGIN`.
+
 ## Documentación
 
 - [Estado del proyecto](D:/Programacion/SaaS/Espera/espera-front/docs/project-status.md)
