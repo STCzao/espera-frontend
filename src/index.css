@@ -91,8 +91,16 @@ textarea {
   font: inherit;
 }
 
-a {
-  color: inherit;
+/* En @layer base a propósito: Tailwind v4 emite las utilidades (text-white,
+   text-espera-purple…) dentro de @layer utilities, y el CSS sin capa le gana a
+   cualquier capa sin importar la especificidad. Con esta regla suelta, un
+   <Link className="… text-white"> se veía con el color heredado (texto oscuro
+   sobre fondo púrpura). Si otra regla global de elemento pisa utilidades,
+   probablemente es el mismo problema. */
+@layer base {
+  a {
+    color: inherit;
+  }
 }
 
 #root {
