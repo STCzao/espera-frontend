@@ -18,7 +18,12 @@ describe('Verificación de email', () => {
 
     cy.wait('@verify').its('request.url').should('include', 'token=valid-token-123')
     cy.contains('h1', /email verificado/i).should('be.visible')
-    cy.contains('a', /ir a iniciar sesión/i).should('have.attr', 'href', '/login')
+    cy.contains('a', /ir a iniciar sesión/i)
+      .should('have.attr', 'href', '/login')
+      // Regresión: `a { color: inherit }` estaba fuera de @layer y le ganaba a
+      // text-white (Tailwind v4 emite las utilidades en una capa): el botón se
+      // veía con texto oscuro sobre fondo púrpura.
+      .and('have.css', 'color', 'rgb(255, 255, 255)')
   })
 
   it('muestra error y permite reenviar cuando el token es inválido o venció', () => {

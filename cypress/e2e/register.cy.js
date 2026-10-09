@@ -90,7 +90,10 @@ describe('HU-1.1 - Registro con email y password', () => {
 
     cy.wait('@register')
     cy.contains('h1', /revisá tu email/i).should('be.visible')
-    cy.contains('a', /ir a iniciar sesión/i).should('have.attr', 'href', '/login')
+    cy.contains('a', /ir a iniciar sesión/i)
+      .should('have.attr', 'href', '/login')
+      // Mismo bug que en verify-email: texto blanco pisado por `a { color: inherit }`.
+      .and('have.css', 'color', 'rgb(255, 255, 255)')
   })
 
   it('muestra el error de backend sin perder el formulario', () => {
