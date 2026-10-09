@@ -5,26 +5,13 @@ import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
-
-const planLabels = { basic: 'Basic', pro: 'Pro', premium: 'Premium' }
-
-const subscriptionStatusLabels = {
-  pending: 'Pendiente',
-  trial: 'Prueba',
-  active: 'Activa',
-  expired: 'Vencida',
-  cancelled: 'Cancelada',
-}
+import { formatDate, formatDateTime, planLabels, shortId, subscriptionStatusLabels } from '../model/backofficeLabels.js'
 
 // Bugfix (2026-08-20, backend): reactivar ahora también funciona desde
 // cancelled/expired, no solo pending/trial — cubre tanto la primera
 // activación como una renovación después de vencer.
 const ACTIVATABLE_STATUSES = ['pending', 'trial', 'cancelled', 'expired']
 const TERMINAL_STATUSES = ['cancelled', 'expired']
-
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
 
 // No hay pasarela de pago en el MVP — el equipo Espera confirma el pago por
 // fuera del sistema y lo refleja acá a mano (activar/cancelar/cambiar
@@ -102,6 +89,16 @@ export function SubscriptionPanel({ organizationId }) {
           <> · motivo: {subscription.cancellationReason}</>
         )}
       </p>
+
+      <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs text-espera-text-muted sm:grid-cols-2">
+        {subscription.createdAt && <SubscriptionDetail at={subscription.createdAt} label="Creada" />}
+        {subscription.activatedAt && (
+          <SubscriptionDetail actorId={subscription.activatedByUserId} at={subscription.activatedAt} label="Activada" />
+        )}
+        {subscription.cancelledAt && (
+          <SubscriptionDetail actorId={subscription.cancelledByUserId} at={subscription.cancelledAt} label="Cancelada" />
+        )}
+      </dl>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {canActivate && (
@@ -191,6 +188,23 @@ export function SubscriptionPanel({ organizationId }) {
           <FormError>{cancelMutation.error?.message ?? 'No pudimos cancelar la suscripción.'}</FormError>
         </div>
       )}
+    </div>
+  )
+}
+
+function SubscriptionDetail({ actorId, at, label }) {
+  return (
+    <div className="flex flex-wrap gap-x-1.5">
+      <dt className="font-semibold">{label}:</dt>
+      <dd className="m-0">
+        {formatDateTime(at)}
+        {actorId && (
+          <>
+            {' · por '}
+            <span title={actorId}>{shortId(actorId)}</span>
+          </>
+        )}
+      </dd>
     </div>
   )
 }

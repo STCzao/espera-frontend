@@ -1,21 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useBusinessCategories } from '../../business-onboarding/hooks/useBusinessCategories.js'
 import { ConfirmDialog } from '../../../shared/ui/ConfirmDialog.jsx'
 import { FormButton } from '../../../shared/ui/FormButton.jsx'
 import { FormError } from '../../../shared/ui/FormError.jsx'
 import { Skeleton } from '../../../shared/ui/Skeleton.jsx'
 import { backofficeApi } from '../api/backofficeApi.js'
-
-const alertLabels = {
-  CATEGORY_MISMATCH: 'La categoría del negocio no coincide con el rubro declarado de la organización.',
-  MISSING_LEGAL_ID: 'La organización no tiene CUIT/legalId cargado.',
-}
-
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-}
+import { coherenceAlertLabels as alertLabels, formatDate } from '../model/backofficeLabels.js'
 
 export function PendingBusinessesPanel() {
   const [expandedBusinessId, setExpandedBusinessId] = useState(null)
@@ -89,7 +82,17 @@ export function PendingBusinessesPanel() {
   )
 }
 
+function ReviewField({ label, value }) {
+  return (
+    <div className="flex flex-wrap gap-x-1.5">
+      <dt className="text-espera-text-muted">{label}:</dt>
+      <dd className="m-0 break-words">{value || '—'}</dd>
+    </div>
+  )
+}
+
 function BusinessReviewPanel({ businessId }) {
+  const categoriesQuery = useBusinessCategories()
   const queryClient = useQueryClient()
   const [note, setNote] = useState('')
   const [isRejecting, setIsRejecting] = useState(false)
@@ -135,12 +138,32 @@ function BusinessReviewPanel({ businessId }) {
     )
   }
 
-  const { alerts, organization } = reviewQuery.data
+  const { alerts, business, organization } = reviewQuery.data
   const requiresNote = alerts.length > 0
+  const categoryName = (categoriesQuery.data ?? []).find((category) => category.id === business.categoryId)?.name
 
   return (
     <div className="border-t border-espera-border bg-espera-purple-soft/10 px-5 py-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-espera-text-muted">Organización</p>
+      {/* El backend ya manda el negocio completo en esta misma respuesta; antes
+          el panel solo leía alerts y organization y descartaba el resto, así que
+          el revisor aprobaba sin ver la dirección ni el teléfono. */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="m-0 text-xs font-semibold uppercase tracking-wider text-espera-text-muted">Negocio</p>
+        <Link
+          className="text-xs font-semibold text-espera-purple hover:underline"
+          to={`/backoffice/businesses/${businessId}`}
+        >
+          Ver detalle completo
+        </Link>
+      </div>
+      <dl className="m-0 mt-1 grid gap-x-6 gap-y-1 text-sm text-espera-text sm:grid-cols-2">
+        <ReviewField label="Rubro" value={categoryName} />
+        <ReviewField label="Alta" value={business.createdAt && formatDate(business.createdAt)} />
+        <ReviewField label="Dirección" value={business.address} />
+        <ReviewField label="Teléfono" value={business.phone} />
+      </dl>
+
+      <p className="mb-0 mt-4 text-xs font-semibold uppercase tracking-wider text-espera-text-muted">Organización</p>
       <p className="mt-1 text-sm text-espera-text">
         {organization.name} {organization.legalId ? `· CUIT ${organization.legalId}` : ''}
       </p>

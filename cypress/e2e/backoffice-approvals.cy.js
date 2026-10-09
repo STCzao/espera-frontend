@@ -82,7 +82,14 @@ describe('HU-8.2/8.3 - Aprobaciones pendientes (Backoffice)', () => {
     cy.intercept('GET', '**/business/biz_1/review', {
       statusCode: 200,
       body: {
-        business: { id: 'biz_1', name: 'Cafe Espera' },
+        business: {
+          id: 'biz_1',
+          name: 'Cafe Espera',
+          categoryId: 'cat_1',
+          address: 'Av. Corrientes 1234',
+          phone: '+54 11 4000-1234',
+          createdAt: '2026-08-01T15:00:00.000Z',
+        },
         organization: { id: 'org_1', name: 'Café Espera SRL', legalId: null },
         alerts: ['MISSING_LEGAL_ID'],
       },
@@ -101,6 +108,13 @@ describe('HU-8.2/8.3 - Aprobaciones pendientes (Backoffice)', () => {
     cy.contains('Cafetería').should('be.visible')
     cy.contains('button', /revisar/i).click()
     cy.wait('@businessReview')
+
+    // El revisor ve el negocio completo, no solo la organización.
+    cy.contains('dt', 'Dirección:').next('dd').should('have.text', 'Av. Corrientes 1234')
+    cy.contains('dt', 'Teléfono:').next('dd').should('have.text', '+54 11 4000-1234')
+    cy.contains('dt', 'Rubro:').next('dd').should('have.text', 'Cafetería')
+    cy.contains('dt', 'Alta:').next('dd').should('contain.text', '01/08/2026')
+    cy.contains('a', /ver detalle completo/i).should('have.attr', 'href', '/backoffice/businesses/biz_1')
 
     cy.contains('Café Espera SRL').should('be.visible')
     cy.contains('no tiene CUIT/legalId cargado').should('be.visible')
