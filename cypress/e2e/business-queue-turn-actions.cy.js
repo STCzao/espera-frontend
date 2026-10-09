@@ -311,12 +311,27 @@ describe('HU-3.9 / HU-3.10 / HU-3.11 - Acciones sobre turnos', () => {
   it('marca un turno llamado como ausente, con confirmación', () => {
     authenticateVisit()
 
-    cy.intercept('POST', '**/queue/queue_1/turns/turn_called/no-show', {
-      statusCode: 200,
-      body: { turnId: 'turn_called', status: 'no_show', noShowAt: '2026-07-29T21:23:25.151Z' },
+    // La lista pasa a venir vacía recién cuando se marcó la ausencia. Antes
+    // este test registraba la lista vacía ANTES del clic: cualquier refetch de
+    // fondo previo (foco de la ventana, reconexión del socket) vaciaba la
+    // lista, el botón desaparecía mientras Cypress lo clickeaba y el test
+    // fallaba al azar (3 de cada 5 corridas).
+    let noShowRequested = false
+
+    cy.intercept('POST', '**/queue/queue_1/turns/turn_called/no-show', (request) => {
+      noShowRequested = true
+      request.reply({
+        statusCode: 200,
+        body: { turnId: 'turn_called', status: 'no_show', noShowAt: '2026-07-29T21:23:25.151Z' },
+      })
     }).as('markNoShow')
 
-    cy.intercept('GET', '**/queue/queue_1/turns', { statusCode: 200, body: { queueId: 'queue_1', items: [] } })
+    // Sin respuesta antes del no-show: el pedido pasa al listado normal de authenticateVisit.
+    cy.intercept('GET', '**/queue/queue_1/turns', (request) => {
+      if (noShowRequested) {
+        request.reply({ statusCode: 200, body: { queueId: 'queue_1', items: [] } })
+      }
+    })
 
     cy.get('button[aria-label="Marcar ausente a A-002"]').click()
     cy.contains('¿Marcar este turno como ausente?').should('be.visible')
