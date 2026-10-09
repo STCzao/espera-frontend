@@ -610,6 +610,19 @@ a {
     inset: 0;
     z-index: 29;
     background: rgba(20, 0, 40, 0.45);
+    /* Arrastrar sobre el fondo oscuro no tiene que mover la página de atrás. */
+    touch-action: none;
+    overscroll-behavior: contain;
+  }
+
+  /* El fondo solo existe en el DOM mientras el menú está abierto (ver
+     BusinessPanelLayout), así que sirve de señal para trabar el scroll de la
+     página sin tocar el componente. El `body.style.overflow = 'hidden'` del
+     layout solo no alcanza: iOS Safari lo ignora para el scroll táctil, y
+     hay que trabar también el elemento raíz. */
+  html:has(.panel-layout__backdrop),
+  body:has(.panel-layout__backdrop) {
+    overflow: hidden;
   }
 
   /* Sidebar becomes an off-canvas drawer, triggered by the mobile topbar's
@@ -623,6 +636,11 @@ a {
     box-shadow: 12px 0 32px rgba(20, 0, 40, 0.18);
     transform: translateX(-100%);
     transition: transform 220ms ease;
+    /* El cajón scrollea por sí mismo cuando el menú no entra en pantalla
+       (celular chico o apaisado), y al llegar al final el gesto no pasa a la
+       página de atrás. Sin overflow-y, el gesto caía sobre el documento. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .panel-layout__sidebar[data-open='true'] {
