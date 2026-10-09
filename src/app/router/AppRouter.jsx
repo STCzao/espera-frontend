@@ -28,6 +28,7 @@ const AcceptEmployeeInvitationPage = lazy(() => import('../../features/business-
 const BackofficeHomePage = lazy(() => import('../../features/backoffice/pages/BackofficeHomePage.jsx').then((module) => ({ default: module.BackofficeHomePage })))
 const BackofficeApprovalsPage = lazy(() => import('../../features/backoffice/pages/BackofficeApprovalsPage.jsx').then((module) => ({ default: module.BackofficeApprovalsPage })))
 const BackofficeBusinessesPage = lazy(() => import('../../features/backoffice/pages/BackofficeBusinessesPage.jsx').then((module) => ({ default: module.BackofficeBusinessesPage })))
+const BackofficeUsersPage = lazy(() => import('../../features/backoffice/pages/BackofficeUsersPage.jsx').then((module) => ({ default: module.BackofficeUsersPage })))
 const BackofficeSubscriptionsPage = lazy(() => import('../../features/backoffice/pages/BackofficeSubscriptionsPage.jsx').then((module) => ({ default: module.BackofficeSubscriptionsPage })))
 const BackofficeReportsPage = lazy(() => import('../../features/backoffice/pages/BackofficeReportsPage.jsx').then((module) => ({ default: module.BackofficeReportsPage })))
 
@@ -66,6 +67,7 @@ export function AppRouter() {
             <Route index element={<BackofficeHomePage />} />
             <Route path="approvals" element={<BackofficeApprovalsPage />} />
             <Route path="businesses" element={<BackofficeBusinessesPage />} />
+            <Route path="users" element={<BackofficeUsersPage />} />
             <Route path="subscriptions" element={<BackofficeSubscriptionsPage />} />
             <Route path="reports" element={<BackofficeReportsPage />} />
           </Route>

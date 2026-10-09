@@ -69,4 +69,16 @@ export const backofficeApi = {
   suspendReport(reportId, note) {
     return httpClient.patch(`/reports/${reportId}/suspend`, note ? { note } : undefined)
   },
+  listUsers(params = {}) {
+    return httpClient.get(`/auth/users${toQueryString(params)}`)
+  },
+  getUser(userId) {
+    return httpClient.get(`/auth/users/${userId}`)
+  },
+  blockUser(userId, reason) {
+    return httpClient.patch(`/auth/users/${userId}/block`, { reason })
+  },
+  unblockUser(userId) {
+    return httpClient.patch(`/auth/users/${userId}/unblock`)
+  },
 }
